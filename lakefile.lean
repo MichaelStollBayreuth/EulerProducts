@@ -30,4 +30,5 @@ require mathlib from git
 lean_lib «EulerProducts» where
   moreLeanArgs := moreLeanArgs
   weakLeanArgs := weakLeanArgs
+  globs := #[.submodules `EulerProducts]
   -- add any library configuration options here
