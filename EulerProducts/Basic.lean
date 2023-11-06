@@ -3,7 +3,7 @@ import Mathlib
 namespace Nat
 
 /-- `primesBelow n` is the set of primes less than `n` as a finset. -/
-abbrev primesBelow (n : ℕ) : Finset ℕ := (Finset.range n).filter (fun p ↦ p.Prime)
+def primesBelow (n : ℕ) : Finset ℕ := (Finset.range n).filter (fun p ↦ p.Prime)
 
 @[simp]
 lemma primesBelow_zero : primesBelow 0 = ∅ := rfl
@@ -16,7 +16,7 @@ lemma lt_of_mem_primesBelow {p n : ℕ} (h : p ∈ n.primesBelow) : p < n :=
 
 lemma primesBelow_succ (n : ℕ) :
     primesBelow n.succ = if n.Prime then insert n (primesBelow n) else primesBelow n := by
-  rw [primesBelow, Finset.range_succ, Finset.filter_insert]
+  rw [primesBelow, primesBelow, Finset.range_succ, Finset.filter_insert]
 
 lemma not_mem_primesBelow (n : ℕ) : n ∉ primesBelow n := by
   intro hn
@@ -24,7 +24,7 @@ lemma not_mem_primesBelow (n : ℕ) : n ∉ primesBelow n := by
 
 /-- `smoothNumbers n` is the set of positive natural numbers all of whose prime factors
 are less than `n`. -/
-abbrev smoothNumbers (n : ℕ) : Set ℕ := {m | m ≠ 0 ∧ ∀ p ∈ factors m, p < n}
+def smoothNumbers (n : ℕ) : Set ℕ := {m | m ≠ 0 ∧ ∀ p ∈ factors m, p < n}
 
 @[simp]
 lemma smoothNumbers_zero : smoothNumbers 0 = {1} := by
@@ -32,7 +32,7 @@ lemma smoothNumbers_zero : smoothNumbers 0 = {1} := by
   · rw [List.eq_nil_iff_forall_not_mem]
     exact ⟨fun H p hp ↦ not_succ_le_zero p (H p hp), fun H p hp ↦ False.elim <| H p hp⟩
   ext m
-  rw [Set.mem_setOf, h, factors_eq_nil,
+  rw [smoothNumbers, Set.mem_setOf, h, factors_eq_nil,
       (show m ∈ ({1} : Set ℕ) ↔ m = 1 from Set.mem_def), Ne.def]
   exact ⟨fun ⟨H₁, H₂⟩ ↦ H₂.resolve_left H₁, fun H ↦ ⟨H.symm ▸ one_ne_zero, Or.inr H⟩⟩
 
