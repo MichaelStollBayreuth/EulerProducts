@@ -9,9 +9,9 @@ open BigOperators
 variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ℕ → F}
 variable (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
 
-lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.factorsBelow} :
+lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
     f (p ^ e * m) = f (p ^ e) * f m :=
-  hmul <| Nat.Coprime.pow_left _ <| hp.factorsBelow_coprime <| Subtype.mem m
+  hmul <| Nat.Coprime.pow_left _ <| hp.smoothNumbers_coprime <| Subtype.mem m
 
 lemma hasSum_singleton (m : ℕ) (f : ℕ → F) : HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f m) := by
   convert_to HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f (⟨m, rfl⟩ : ({m} : Set ℕ)))
@@ -22,16 +22,16 @@ open Nat in
 infinite sum. -/
 lemma hasSum_prod_tsum_primesBelow (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖))
     (N : ℕ) :
-    Summable (fun m : N.factorsBelow ↦ ‖f m‖) ∧
-      HasSum (fun m : N.factorsBelow ↦ f m) (∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n)) := by
+    Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
+      HasSum (fun m : N.smoothNumbers ↦ f m) (∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n)) := by
   induction' N with N ih
-  · rw [factorsBelow_zero, primesBelow_zero, Finset.prod_empty]
+  · rw [smoothNumbers_zero, primesBelow_zero, Finset.prod_empty]
     exact ⟨Set.Finite.summable (Set.finite_singleton 1) (‖f ·‖), hf₁ ▸ hasSum_singleton 1 f⟩
   · rw [primesBelow_succ]
     split_ifs with hN
     · constructor
-      · rw [← (equivProdNatFactorsBelow hN).summable_iff]
-        simp_rw [Function.comp_def, equivProdNatFactorsBelow_apply', map_prime_pow_mul hmul hN,
+      · rw [← (equivProdNatSmoothNumbers hN).summable_iff]
+        simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN,
                  norm_mul]
         conv at ih => conv in (‖f _‖) => rw [← norm_norm]
         have hs := hsum hN
@@ -39,20 +39,20 @@ lemma hasSum_prod_tsum_primesBelow (hsum : ∀ {p : ℕ}, p.Prime → Summable (
         -- `exact summable_mul_of_summable_norm hs ih.1` gives a time-out
         have := summable_mul_of_summable_norm hs ih.1
         exact this
-      · rw [Finset.prod_insert (not_mem_primesBelow N), ← (equivProdNatFactorsBelow hN).hasSum_iff]
-        simp_rw [Function.comp_def, equivProdNatFactorsBelow_apply', map_prime_pow_mul hmul hN]
+      · rw [Finset.prod_insert (not_mem_primesBelow N), ← (equivProdNatSmoothNumbers hN).hasSum_iff]
+        simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
         -- below, `(α := F)` seems to be necessary to avoid a time-out
         apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
         -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
         have := summable_mul_of_summable_norm (hsum hN) ih.1
         exact this
-    · rwa [factorsBelow_succ hN]
+    · rwa [smoothNumbers_succ hN]
 
 -- We now assume that `f` is norm-summable.
 variable (hsum : Summable (‖f ·‖))
 
-lemma prod_primesBelow_tsum_eq_tsum_factorsBelow (N : ℕ) :
-    ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.factorsBelow, f m :=
+lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
+    ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.smoothNumbers, f m :=
   (hasSum_prod_tsum_primesBelow hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
@@ -72,15 +72,15 @@ lemma tail_estimate' {ε : ℝ} (εpos : 0 < ε) :
   · exact (t.le_max' _ hnt).not_lt ((Nat.lt_succ_self _).trans_le this)
   · exact h ⟨m, hnt⟩
 
-lemma norm_tsum_factorsBelow_sub_tsum_lt {ε : ℝ} (εpos : 0 < ε) :
-    ∃ N₀ : ℕ, ∀ N ≥ N₀, ‖(∑' m : N.factorsBelow, f m) - (∑' m : ℕ, f m)‖ < ε := by
+lemma norm_tsum_smoothNumbers_sub_tsum_lt {ε : ℝ} (εpos : 0 < ε) :
+    ∃ N₀ : ℕ, ∀ N ≥ N₀, ‖(∑' m : N.smoothNumbers, f m) - (∑' m : ℕ, f m)‖ < ε := by
   conv =>
     enter [1, N₀, N]
-    rw [← tsum_subtype_add_tsum_subtype_compl (summable_of_summable_norm hsum) N.factorsBelow,
-        ← sub_sub, sub_self, zero_sub, norm_neg, tsum_nat_eq_tsum_diff_zero (N.factorsBelow)ᶜ hf₀]
+    rw [← tsum_subtype_add_tsum_subtype_compl (summable_of_summable_norm hsum) N.smoothNumbers,
+        ← sub_sub, sub_self, zero_sub, norm_neg, tsum_nat_eq_tsum_diff_zero (N.smoothNumbers)ᶜ hf₀]
   obtain ⟨N₀, hN₀⟩ := tail_estimate' hsum <| half_pos εpos
   refine ⟨N₀, fun N hN₁ ↦ (hN₀ _ ?_).trans_lt <| half_lt_self εpos⟩
-  exact (Nat.factorsBelow_compl _).trans fun n ↦ hN₁.le.trans
+  exact (Nat.smoothNumbers_compl _).trans fun n ↦ hN₁.le.trans
 
 open Filter Nat in
 /-- The *Euler Product* for multiplicative (on coprime arguments) functions.
@@ -94,12 +94,12 @@ theorem euler_product :
   rw [Metric.tendsto_nhds]
   intro ε εpos
   simp only [Finset.mem_range, eventually_atTop, ge_iff_le]
-  obtain ⟨N₀, hN₀⟩ := norm_tsum_factorsBelow_sub_tsum_lt hf₀ hsum εpos
+  obtain ⟨N₀, hN₀⟩ := norm_tsum_smoothNumbers_sub_tsum_lt hf₀ hsum εpos
   use N₀
   convert hN₀ using 3 with m
   rw [dist_eq_norm]
   congr 2
-  exact prod_primesBelow_tsum_eq_tsum_factorsBelow hf₁ hmul hsum m
+  exact prod_primesBelow_tsum_eq_tsum_smoothNumbers hf₁ hmul hsum m
 
 open Filter Nat in
 /-- The *Euler Product* for completely multiplicative functions.
