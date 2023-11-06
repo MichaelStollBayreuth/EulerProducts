@@ -89,8 +89,8 @@ def equivProdNatSmoothNumbers {p : ℕ} (hp: p.Prime) :
                                ⟨(m.factors.filter (· < p)).prod, prod_mem_smoothNumbers ..⟩)
       left_inv := by
         rintro ⟨e, m, hm₀, hm⟩
-        simp (config := { etaStruct := .all }) only [Set.coe_setOf, Set.mem_setOf_eq,
-          Prod.mk.injEq, Subtype.mk.injEq]
+        simp (config := { etaStruct := .all }) only
+          [Set.coe_setOf, Set.mem_setOf_eq, Prod.mk.injEq, Subtype.mk.injEq]
         constructor
         · rw [factorization_mul (pos_iff_ne_zero.mp <| pos_pow_of_pos e hp.pos) hm₀]
           simp only [factorization_pow, Finsupp.coe_add, Finsupp.coe_smul, nsmul_eq_mul,
@@ -99,22 +99,11 @@ def equivProdNatSmoothNumbers {p : ℕ} (hp: p.Prime) :
           rw [← factors_count_eq, count_eq_zero]
           exact fun H ↦ lt_irrefl p <| hm p H
         · nth_rw 2 [← prod_factors hm₀]
-          refine Perm.prod_eq ?_
-          calc
-            _ ~ ((p ^ e).factors ++ m.factors).filter (· < p) :=
-                  Perm.filter _ <| perm_factors_mul (pow_ne_zero e hp.ne_zero) hm₀
-            _ = (p ^ e).factors.filter (· < p) ++ m.factors.filter (· < p) :=
-                  filter_append ..
-            _ = [] ++ m.factors := by
-                  refine congrArg₂ _ ?_ ?_
-                  · rw [hp.factors_pow, filter_eq_nil]
-                    intros q hq
-                    rw [mem_replicate] at hq
-                    simp [hq.2]
-                  · rw [filter_eq_self]
-                    intros q hq
-                    simp [hm q hq]
-            _ = m.factors := rfl
+          refine Perm.prod_eq <|
+            Perm.trans (Perm.filter _ <| perm_factors_mul (pow_ne_zero e hp.ne_zero) hm₀) ?_
+          rw [filter_append, hp.factors_pow,
+              filter_eq_nil.mpr <| fun q hq ↦ by rw [mem_replicate] at hq; simp [hq.2],
+              nil_append, filter_eq_self.mpr <| fun q hq ↦ by simp [hm q hq]]
       right_inv := by
         rintro ⟨m, hm₀, hm⟩
         simp only [Set.coe_setOf, Set.mem_setOf_eq, Subtype.mk.injEq]
@@ -147,7 +136,7 @@ open BigOperators
 
 variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [T2Space α] {f : ℕ → α}
 
--- this should go into `Mathlib.Topology.Algebra.InfiniteSum.Basic`
+-- this should perhaps go into `Mathlib.Topology.Algebra.InfiniteSum.Basic`
 lemma tsum_nat_eq_tsum_diff_zero (s : Set ℕ) (hf₀ : f 0 = 0) :
     ∑' n : s, f n = ∑' n : (s \ {0} : Set ℕ), f n := by
   simp_rw [tsum_subtype]
