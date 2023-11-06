@@ -82,7 +82,7 @@ lemma Prime.factorsBelow_coprime {p n : ℕ} (hp : p.Prime) (hn : n ∈ factorsB
 open List in
 /-- We establish the bijection from `ℕ × factorsBelow p` to `factorsBelow (p+1)`
 given by `(e, n) ↦ p^e * n` when `p` is a prime. -/
-def equivProdNatFactorsBelow {p : ℕ} (hp: p.Prime) :
+def equivProdNatfactorsBelow {p : ℕ} (hp: p.Prime) :
     ℕ × factorsBelow p ≃ factorsBelow p.succ where
       toFun := fun ⟨e, n⟩ ↦ ⟨p ^ e * n, hp.pow_mul_mem_factorsBelow n.2⟩
       invFun := fun ⟨m, _⟩  ↦ (m.factorization p,
@@ -132,8 +132,12 @@ def equivProdNatFactorsBelow {p : ℕ} (hp: p.Prime) :
         simp
 
 @[simp]
-lemma equivProdNatFactorsBelow_apply {p e m : ℕ} (hp: p.Prime) (hm : m ∈ p.factorsBelow) :
-    equivProdNatFactorsBelow hp (e, ⟨m, hm⟩) = p ^ e * m := rfl
+lemma equivProdNatfactorsBelow_apply {p e m : ℕ} (hp: p.Prime) (hm : m ∈ p.factorsBelow) :
+    equivProdNatfactorsBelow hp (e, ⟨m, hm⟩) = p ^ e * m := rfl
+
+@[simp]
+lemma equivProdNatfactorsBelow_apply' {p : ℕ} (hp: p.Prime) (x : ℕ × p.factorsBelow) :
+    equivProdNatfactorsBelow hp x = p ^ x.1 * x.2 := rfl
 
 end Nat
 

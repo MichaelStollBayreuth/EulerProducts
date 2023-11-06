@@ -7,8 +7,54 @@ open scoped Topology
 open BigOperators
 
 variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ℕ → F}
-variable (hsum : Summable (‖f ·‖))
 variable (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
+
+lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.factorsBelow} :
+    f (p ^ e * m) = f (p ^ e) * f m :=
+  hmul <| Nat.Coprime.pow_left _ <| hp.factorsBelow_coprime <| Subtype.mem m
+
+lemma hasSum_singleton (m : ℕ) (f : ℕ → F) : HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f m) := by
+  convert_to HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f (⟨m, rfl⟩ : ({m} : Set ℕ)))
+  exact hasSum_single (α := F) _ <| fun m' h ↦ False.elim <| h <| Subtype.ext m'.2
+
+open Nat in
+/-- This is the key lemma that relates a finite product over primes to a partial
+infinite sum. -/
+lemma hasSum_prod_tsum_primesBelow (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖))
+    (N : ℕ) :
+    Summable (fun m : N.factorsBelow ↦ ‖f m‖) ∧
+      HasSum (fun m : N.factorsBelow ↦ f m) (∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n)) := by
+  induction' N with N ih
+  · rw [factorsBelow_zero, primesBelow_zero, Finset.prod_empty]
+    exact ⟨Set.Finite.summable (Set.finite_singleton 1) (‖f ·‖), hf₁ ▸ hasSum_singleton 1 f⟩
+  · rw [primesBelow_succ]
+    split_ifs with hN
+    · constructor
+      · rw [← (equivProdNatFactorsBelow hN).summable_iff]
+        simp_rw [Function.comp_def, equivProdNatFactorsBelow_apply', map_prime_pow_mul hmul hN,
+                 norm_mul]
+        conv at ih => conv in (‖f _‖) => rw [← norm_norm]
+        have hs := hsum hN
+        conv at hs => enter [1]; conv in (‖f _‖) => rw [← norm_norm]
+        -- `exact summable_mul_of_summable_norm hs ih.1` gives a time-out
+        have := summable_mul_of_summable_norm hs ih.1
+        exact this
+      · rw [Finset.prod_insert (not_mem_primesBelow N), ← (equivProdNatFactorsBelow hN).hasSum_iff]
+        simp_rw [Function.comp_def, equivProdNatFactorsBelow_apply', map_prime_pow_mul hmul hN]
+        -- below, `(α := F)` seems to be necessary to avoid a time-out
+        apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
+        -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
+        have := summable_mul_of_summable_norm (hsum hN) ih.1
+        exact this
+    · rwa [factorsBelow_succ hN]
+
+-- We now assume that `f` is norm-summable.
+variable (hsum : Summable (‖f ·‖))
+
+lemma prod_primesBelow_tsum_eq_tsum_factorsBelow (N : ℕ) :
+    ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.factorsBelow, f m :=
+  (hasSum_prod_tsum_primesBelow hf₁ hmul
+    (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
 -- Can simplify when #8194 is merged
 lemma tail_estimate' {ε : ℝ} (εpos : 0 < ε) :
@@ -36,27 +82,6 @@ lemma norm_tsum_factorsBelow_sub_tsum_lt {ε : ℝ} (εpos : 0 < ε) :
   refine ⟨N₀, fun N hN₁ ↦ (hN₀ _ ?_).trans_lt <| half_lt_self εpos⟩
   exact (Nat.factorsBelow_compl _).trans fun n ↦ hN₁.le.trans
 
-open Nat in
-/-- This is the key lemma that relates a finite product over primes to a partial
-infinite sum. -/
-lemma prod_of_tsum_geometric (N : ℕ) :
-    ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.factorsBelow, f m := by
-  induction' N with N ih
-  · rw [factorsBelow_zero, primesBelow_zero]
-    simp [hf₁]
-  · rw [primesBelow_succ]
-    split_ifs with hN
-    · rw [Finset.prod_insert (not_mem_primesBelow N), ih, tsum_mul_tsum_of_summable_norm]
-      · convert Equiv.tsum_eq (equivProdNatFactorsBelow hN) ?_ with em
-        · rw [equivProdNatFactorsBelow_apply]
-          exact (hmul <| Coprime.pow_left em.1 <| hN.factorsBelow_coprime
-            <| Subtype.mem em.2).symm
-        · infer_instance
-      · exact hsum.comp_injective <| Nat.pow_right_injective hN.one_lt
-      · exact Summable.subtype hsum N.factorsBelow
-    · rw [ih]
-      exact tsum_congr_subtype f (factorsBelow_succ hN).symm
-
 open Filter Nat in
 /-- The *Euler Product* for multiplicative (on coprime arguments) functions.
 If `f : ℕ → F`, where `F` is a complete normed field, `f 0 = 0`,
@@ -69,12 +94,12 @@ theorem euler_product :
   rw [Metric.tendsto_nhds]
   intro ε εpos
   simp only [Finset.mem_range, eventually_atTop, ge_iff_le]
-  obtain ⟨N₀, hN₀⟩ := norm_tsum_factorsBelow_sub_tsum_lt hsum hf₀ εpos
+  obtain ⟨N₀, hN₀⟩ := norm_tsum_factorsBelow_sub_tsum_lt hf₀ hsum εpos
   use N₀
   convert hN₀ using 3 with m
   rw [dist_eq_norm]
   congr 2
-  exact prod_of_tsum_geometric hsum hf₁ hmul m
+  exact prod_primesBelow_tsum_eq_tsum_factorsBelow hf₁ hmul hsum m
 
 open Filter Nat in
 /-- The *Euler Product* for completely multiplicative functions.
@@ -87,7 +112,7 @@ theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x 
   have hf₀ : f 0 = 0 := MonoidWithZeroHom.map_zero f
   have hf₁ : f 1 = 1 := MonoidWithZeroHom.map_one f
   have hmul {m n} (_ : Nat.Coprime m n) : f (m * n) = f m * f n := MonoidWithZeroHom.map_mul f m n
-  convert euler_product hsum hf₀ hf₁ hmul with N p hN
+  convert euler_product hf₀ hf₁ hmul hsum with N p hN
   simp_rw [map_pow]
   refine (tsum_geometric_of_norm_lt_1 <| summable_geometric_iff_norm_lt_1.mp ?_).symm
   refine summable_of_summable_norm ?_
