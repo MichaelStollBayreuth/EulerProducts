@@ -20,8 +20,8 @@ lemma hasSum_singleton (m : ℕ) (f : ℕ → F) : HasSum (fun x : ({m} : Set �
 open Nat in
 /-- This is the key lemma that relates a finite product over primes to a partial
 infinite sum. -/
-lemma hasSum_prod_tsum_primesBelow (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖))
-    (N : ℕ) :
+lemma hasSum_prod_tsum_primesBelow
+    (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖)) (N : ℕ) :
     Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
       HasSum (fun m : N.smoothNumbers ↦ f m) (∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n)) := by
   induction' N with N ih
@@ -39,7 +39,8 @@ lemma hasSum_prod_tsum_primesBelow (hsum : ∀ {p : ℕ}, p.Prime → Summable (
         -- `exact summable_mul_of_summable_norm hs ih.1` gives a time-out
         have := summable_mul_of_summable_norm hs ih.1
         exact this
-      · rw [Finset.prod_insert (not_mem_primesBelow N), ← (equivProdNatSmoothNumbers hN).hasSum_iff]
+      · rw [Finset.prod_insert (not_mem_primesBelow N),
+            ← (equivProdNatSmoothNumbers hN).hasSum_iff]
         simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
         -- below, `(α := F)` seems to be necessary to avoid a time-out
         apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
