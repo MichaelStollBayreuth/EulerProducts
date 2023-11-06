@@ -124,7 +124,6 @@ def equivProdNatFactorsBelow {p : ℕ} (hp: p.Prime) :
         rw [← filter_eq']
         have : m.factors.filter (· = p) = m.factors.filter (¬ · < p)
         · refine (filter_congr' <| fun q hq ↦ ?_).symm
-          have := hm q hq
           have H : ¬ p < q := fun hf ↦ Nat.lt_le_asymm hf <| lt_succ_iff.mp (hm q hq)
           simp only [not_lt, le_iff_eq_or_lt, H, or_false, eq_comm, Bool.true_eq_decide_iff]
         rw [this]
