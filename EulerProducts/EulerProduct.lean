@@ -49,6 +49,7 @@ lemma hasSum_prod_tsum_primesBelow
 -- We now assume that `f` is norm-summable.
 variable (hsum : Summable (‖f ·‖))
 
+/-- A version of `hasSum_prod_tsum_primesBelow` in terms of the value of the series. -/
 lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
     ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.smoothNumbers, f m :=
   (hasSum_prod_tsum_primesBelow hf₁ hmul
@@ -88,6 +89,7 @@ If `f : ℕ → F`, where `F` is a complete normed field, `f 0 = 0`,
 and `‖f ·‖` is summable, then `∏' p : {p : ℕ | p.Prime}, ∑' e, f (p ^ e) = ∑' n, f n`.
 Since there are no infinite products yet in Mathlib, we state it in the form of
 convergence of finite partial products. -/
+-- TODO: Change to use `∏'` once infinite products are in Mathlib
 theorem euler_product :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, ∑' e, f (p ^ e)) atTop (𝓝 (∑' n, f n)) := by
   rw [Metric.tendsto_nhds]
@@ -106,6 +108,7 @@ If `f : ℕ →*₀ F`, where `F` is a complete normed field
 and `‖f ·‖` is summable, then `∏' p : {p : ℕ | p.Prime}, (1 - f p)⁻¹ = ∑' n, f n`.
 Since there are no infinite products yet in Mathlib, we state it in the form of
 convergence of finite partial products. -/
+-- TODO: Change to use `∏'` once infinite products are in Mathlib
 theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x => ‖f x‖) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - f p)⁻¹) atTop (𝓝 (∑' n, f n)) := by
   have hf₀ : f 0 = 0 := MonoidWithZeroHom.map_zero f
