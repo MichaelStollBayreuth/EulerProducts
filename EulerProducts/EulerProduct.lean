@@ -8,7 +8,13 @@ open scoped Topology
 
 open BigOperators
 
+-- We work with series indexed by the natural numbers
+-- and with terms in a complete normed field `F`.
 variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ℕ → F}
+
+-- We assume that `f` is *multiplicative* in the sense of arithmetic functions,
+-- i.e., multiplicative on coprime elements. For convenience, we also assume that `f 0 = 0`.
+-- The condition `f 1 = 1` is then equivalent to `f 1 ≠ 0`, but more convenient to use.
 variable (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
 
 lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
@@ -44,7 +50,7 @@ lemma hasSum_prod_tsum_primesBelow
         exact this
     · rwa [smoothNumbers_succ hN]
 
--- We now assume that `f` is norm-summable.
+-- We now assume in addition that `f` is norm-summable.
 variable (hsum : Summable (‖f ·‖))
 
 /-- A version of `hasSum_prod_tsum_primesBelow` in terms of the value of the series. -/
