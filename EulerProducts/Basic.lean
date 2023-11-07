@@ -136,7 +136,7 @@ open BigOperators
 
 variable {α β : Type*} [AddCommMonoid α] [TopologicalSpace α]
 
--- this should perhaps go into `Mathlib.Topology.Algebra.InfiniteSum.Basic`
+-- these should go into `Mathlib.Topology.Algebra.InfiniteSum.Basic`
 lemma tsum_eq_tsum_diff_singleton [T2Space α] {f : β → α} (s : Set β) (b : β) (hf₀ : f b = 0) :
     ∑' n : s, f n = ∑' n : (s \ {b} : Set β), f n := by
   simp_rw [tsum_subtype]
