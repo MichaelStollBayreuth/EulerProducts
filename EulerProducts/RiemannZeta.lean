@@ -8,7 +8,7 @@ local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
 open Complex
 
--- should go to `Mathlib.Analysis.SpecialFunctions.Pow.Real`
+-- should perhaps go to `Mathlib.Analysis.SpecialFunctions.Pow.Real`
 lemma Complex.norm_nat_cpow_eq_rpow_re (n : ℕ) {s : ℂ} (h : s.re ≠ 0) :
     ‖(n : ℂ) ^ s‖ = (n : ℝ) ^ s.re := by
   rcases Nat.eq_zero_or_pos n with rfl | H

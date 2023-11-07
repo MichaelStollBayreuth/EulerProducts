@@ -33,12 +33,10 @@ lemma hasSum_prod_tsum_primesBelow
       · rw [← (equivProdNatSmoothNumbers hN).summable_iff]
         simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN,
                  norm_mul]
-        conv at ih => conv in (‖f _‖) => rw [← norm_norm]
-        have hs := hsum hN
-        conv at hs => enter [1]; conv in (‖f _‖) => rw [← norm_norm]
-        -- `exact summable_mul_of_summable_norm hs ih.1` gives a time-out
-        have := summable_mul_of_summable_norm hs ih.1
-        exact this
+        apply summable_mul_of_summable_norm (f := (fun (x : ℕ) ↦ ‖f (N ^ x)‖))
+          (g := (fun (x : N.smoothNumbers) ↦ ‖f x.val‖))
+        · simpa only [norm_norm] using hsum hN
+        · simpa only [norm_norm] using ih.1
       · rw [Finset.prod_insert (not_mem_primesBelow N),
             ← (equivProdNatSmoothNumbers hN).hasSum_iff]
         simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
@@ -78,7 +76,8 @@ lemma norm_tsum_smoothNumbers_sub_tsum_lt {ε : ℝ} (εpos : 0 < ε) :
   conv =>
     enter [1, N₀, N]
     rw [← tsum_subtype_add_tsum_subtype_compl (summable_of_summable_norm hsum) N.smoothNumbers,
-        ← sub_sub, sub_self, zero_sub, norm_neg, tsum_nat_eq_tsum_diff_zero (N.smoothNumbers)ᶜ hf₀]
+        ← sub_sub, sub_self, zero_sub, norm_neg,
+        tsum_eq_tsum_diff_singleton (N.smoothNumbers)ᶜ 0 hf₀]
   obtain ⟨N₀, hN₀⟩ := tail_estimate' hsum <| half_pos εpos
   refine ⟨N₀, fun N hN₁ ↦ (hN₀ _ ?_).trans_lt <| half_lt_self εpos⟩
   exact (Nat.smoothNumbers_compl _).trans fun n ↦ hN₁.le.trans

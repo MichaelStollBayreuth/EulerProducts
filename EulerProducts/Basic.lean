@@ -134,20 +134,20 @@ section tsum
 
 open BigOperators
 
-variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [T2Space α] {f : ℕ → α}
+variable {α β : Type*} [AddCommMonoid α] [TopologicalSpace α] [T2Space α] {f : β → α}
 
 -- this should perhaps go into `Mathlib.Topology.Algebra.InfiniteSum.Basic`
-lemma tsum_nat_eq_tsum_diff_zero (s : Set ℕ) (hf₀ : f 0 = 0) :
-    ∑' n : s, f n = ∑' n : (s \ {0} : Set ℕ), f n := by
+lemma tsum_eq_tsum_diff_singleton (s : Set β) (b : β) (hf₀ : f b = 0) :
+    ∑' n : s, f n = ∑' n : (s \ {b} : Set β), f n := by
   simp_rw [tsum_subtype]
-  refine tsum_congr fun n ↦ ?_
-  by_cases hs : n ∈ s \ {0}
+  refine tsum_congr fun b' ↦ ?_
+  by_cases hs : b' ∈ s \ {b}
   · rw [Set.indicator_of_mem hs f, Set.indicator_of_mem (Set.mem_of_mem_diff hs) f]
   · rw [Set.indicator_of_not_mem hs f]
-    rcases eq_or_ne n 0 with rfl | hn
-    · by_cases h₀ : 0 ∈ s
+    rcases eq_or_ne b b' with rfl | hb
+    · by_cases h₀ : b ∈ s
       · rwa [Set.indicator_of_mem h₀ f]
       · rw [Set.indicator_of_not_mem h₀ f]
-    · rw [Set.indicator_of_not_mem (not_and'.mp (mt Set.mem_diff_singleton.mpr hs) hn) f]
+    · rw [Set.indicator_of_not_mem (not_and'.mp (mt Set.mem_diff_singleton.mpr hs) hb.symm) f]
 
 end tsum
