@@ -1,4 +1,5 @@
 import EulerProducts.EulerProduct
+import Mathlib.NumberTheory.ZetaFunction
 
 /-!
 ## The Euler Product for the Riemann Zeta Function

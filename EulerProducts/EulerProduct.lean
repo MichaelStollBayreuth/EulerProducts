@@ -1,4 +1,6 @@
 import EulerProducts.Basic
+import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.Analysis.Normed.Field.InfiniteSum
 
 namespace EulerProduct
 
@@ -12,10 +14,6 @@ variable (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n 
 lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
     f (p ^ e * m) = f (p ^ e) * f m :=
   hmul <| Nat.Coprime.pow_left _ <| hp.smoothNumbers_coprime <| Subtype.mem m
-
-lemma hasSum_singleton (m : ℕ) (f : ℕ → F) : HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f m) := by
-  convert_to HasSum (fun x : ({m} : Set ℕ) ↦ f x) (f (⟨m, rfl⟩ : ({m} : Set ℕ)))
-  exact hasSum_single (α := F) _ <| fun m' h ↦ False.elim <| h <| Subtype.ext m'.2
 
 open Nat in
 /-- This is the key lemma that relates a finite product over primes to a partial
