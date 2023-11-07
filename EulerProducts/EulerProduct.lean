@@ -55,7 +55,7 @@ lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
   (hasSum_prod_tsum_primesBelow hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
--- Can simplify when #8194 is merged
+-- Can simplify when #8194 is merged (also below where it is used: `ε/2 → ε`)
 lemma tail_estimate' {ε : ℝ} (εpos : 0 < ε) :
      ∃ N : ℕ, ∀ s ⊆ {n | N ≤ n}, ‖∑' m : s, f m‖ ≤ ε := by
   obtain ⟨t, ht⟩ := summable_iff_vanishing.mp hsum _ (Metric.closedBall_mem_nhds 0 εpos)
