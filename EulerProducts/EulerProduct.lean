@@ -30,16 +30,15 @@ lemma hasSum_prod_tsum_primesBelow
   · rw [primesBelow_succ]
     split_ifs with hN
     · constructor
-      · rw [← (equivProdNatSmoothNumbers hN).summable_iff]
-        simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN,
-                 norm_mul]
-        apply summable_mul_of_summable_norm (f := (fun (x : ℕ) ↦ ‖f (N ^ x)‖))
-          (g := (fun (x : N.smoothNumbers) ↦ ‖f x.val‖))
-        · simpa only [norm_norm] using hsum hN
-        · simpa only [norm_norm] using ih.1
-      · rw [Finset.prod_insert (not_mem_primesBelow N),
-            ← (equivProdNatSmoothNumbers hN).hasSum_iff]
-        simp_rw [Function.comp_def, equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
+      · simp_rw [← (equivProdNatSmoothNumbers hN).summable_iff, Function.comp_def,
+                 equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN, norm_mul]
+        apply summable_mul_of_summable_norm (f := fun (x : ℕ) ↦ ‖f (N ^ x)‖)
+          (g := fun (x : N.smoothNumbers) ↦ ‖f x.val‖) <;>
+          simp_rw [norm_norm]
+        exacts [hsum hN, ih.1]
+      · simp_rw [Finset.prod_insert (not_mem_primesBelow N),
+                 ← (equivProdNatSmoothNumbers hN).hasSum_iff, Function.comp_def,
+                 equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
         -- below, `(α := F)` seems to be necessary to avoid a time-out
         apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
         -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
