@@ -22,8 +22,8 @@ lemma not_mem_primesBelow (n : ℕ) : n ∉ primesBelow n := by
   intro hn
   simp [primesBelow] at hn
 
-/-- `smoothNumbers n` is the set of positive natural numbers all of whose prime factors
-are less than `n`. -/
+/-- `smoothNumbers n` is the set of *`n`-smooth positive natural numbers*, i.e., the
+positive natural numbers all of whose prime factors are less than `n`. -/
 def smoothNumbers (n : ℕ) : Set ℕ := {m | m ≠ 0 ∧ ∀ p ∈ factors m, p < n}
 
 @[simp]
@@ -36,6 +36,7 @@ lemma smoothNumbers_zero : smoothNumbers 0 = {1} := by
       (show m ∈ ({1} : Set ℕ) ↔ m = 1 from Set.mem_def), Ne.def]
   exact ⟨fun ⟨H₁, H₂⟩ ↦ H₂.resolve_left H₁, fun H ↦ ⟨H.symm ▸ one_ne_zero, Or.inr H⟩⟩
 
+/-- The product of the prime factors of `n` that are less than `N` is an `N`-smooth number. -/
 lemma prod_mem_smoothNumbers (n N : ℕ) : (n.factors.filter (· < N)).prod ∈ smoothNumbers N := by
   have h₀ : (n.factors.filter (· < N)).prod ≠ 0
   · simp only [ne_eq, List.prod_eq_zero_iff]
@@ -50,6 +51,7 @@ lemma prod_mem_smoothNumbers (n N : ℕ) : (n.factors.filter (· < N)).prod ∈ 
   refine hpq.symm ▸ ?_
   simpa only [decide_eq_true_eq] using List.of_mem_filter hq₁
 
+/-- The sets of `N`-smooth and of `(N+1)`-smooth numbers are the same when `N` is not prime. -/
 lemma smoothNumbers_succ {N : ℕ} (hN : ¬ N.Prime) : N.succ.smoothNumbers = N.smoothNumbers := by
   ext m
   refine ⟨fun hm ↦ ⟨hm.1, fun p hp ↦ ?_⟩,
@@ -57,6 +59,7 @@ lemma smoothNumbers_succ {N : ℕ} (hN : ¬ N.Prime) : N.succ.smoothNumbers = N.
   have H : p ≠ N := fun h ↦ hN <| h ▸ prime_of_mem_factors hp
   exact Nat.lt_of_le_of_ne (lt_succ.mp <| hm.2 p hp) H
 
+/-- The non-zero noon-`N`-smooth numbers are `≥ N`. -/
 lemma smoothNumbers_compl (N : ℕ) : (N.smoothNumbers)ᶜ \ {0} ⊆ {n | N ≤ n} := by
   intro n hn
   have H := Set.mem_diff_singleton.mp hn
@@ -65,6 +68,7 @@ lemma smoothNumbers_compl (N : ℕ) : (N.smoothNumbers)ᶜ \ {0} ⊆ {n | N ≤ 
   obtain ⟨m, hm₁, hm₂⟩ := H₁ H.2
   exact hm₂.trans <| le_of_mem_factors hm₁
 
+/-- If `p` is a prime and `n` is `p`-smooth, then every product `p^e * n` is `(p+1)`-smooth. -/
 lemma Prime.pow_mul_mem_smoothNumbers {p n : ℕ} (hp : p.Prime) (hn : n ∈ smoothNumbers p) :
     p ^ e * n ∈ smoothNumbers (succ p) := by
   have hp' (e : ℕ) : p ^ e ≠ 0 := pow_ne_zero e hp.ne_zero
@@ -74,6 +78,7 @@ lemma Prime.pow_mul_mem_smoothNumbers {p n : ℕ} (hp : p.Prime) (hn : n ∈ smo
     exact lt_succ.mpr <| le_of_dvd hp.pos <| Prime.dvd_of_dvd_pow H.1 H.2
   · exact (hn.2 q H).trans <| lt.base p
 
+/-- If `p` is a prime and `n` is `p`-smooth, then `p` and `n` are coprime. -/
 lemma Prime.smoothNumbers_coprime {p n : ℕ} (hp : p.Prime) (hn : n ∈ smoothNumbers p) :
     Nat.Coprime p n := by
   rw [Prime.coprime_iff_not_dvd hp, ← mem_factors_iff_dvd hn.1 hp]
