@@ -3,11 +3,11 @@ import Mathlib.Tactic
 /-!
 Docstring LaTeX test
 
-* just `#`: $#a$
+* just `#`: $#a {b}$
 
-* `\#`: $\#a$
+* `\#`: $\#a \{b\}$
 
-* two backslashes: $\\#a$
+* two backslashes: $\\#a \\{b\\}$
 
-* three_ $\\\#a$
+* three_ $\\\#a \\\{b\\\}$
 -/
