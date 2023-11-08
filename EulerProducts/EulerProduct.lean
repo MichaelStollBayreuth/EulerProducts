@@ -58,9 +58,8 @@ lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric {f : ℕ →*
     (h : ∀ {p : ℕ}, p.Prime → ‖f p‖ < 1) (N : ℕ) :
     Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
       HasSum (fun m : N.smoothNumbers ↦ f m) (∏ p in N.primesBelow, (1 - f p)⁻¹) := by
-  have hf₁ : f 1 = 1 := f.map_one
   have hmul {m n} (_ : Nat.Coprime m n) := f.map_mul m n
-  convert summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul ?_ N with M hM <;>
+  convert summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum f.map_one hmul ?_ N with M hM <;>
     simp_rw [map_pow]
   · exact (tsum_geometric_of_norm_lt_1 <| h <| prime_of_mem_primesBelow hM).symm
   · intro p hp
