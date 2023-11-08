@@ -1,6 +1,6 @@
-import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import Mathlib.NumberTheory.PrimeCounting
 
 namespace Nat
 
@@ -23,6 +23,15 @@ lemma primesBelow_succ (n : ℕ) :
 lemma not_mem_primesBelow (n : ℕ) : n ∉ primesBelow n := by
   intro hn
   simp [primesBelow] at hn
+
+lemma primesBelow_card_eq_primeCounting' (n : ℕ) : n.primesBelow.card = primeCounting' n := by
+  induction n with
+  | zero => simp only
+  | succ n ih =>
+      simp only [primesBelow_succ, primeCounting', count_succ] at ih ⊢
+      split_ifs
+      · rw [Finset.card_insert_of_not_mem (not_mem_primesBelow n), ih]
+      · rwa [add_zero]
 
 /-- `smoothNumbers n` is the set of *`n`-smooth positive natural numbers*, i.e., the
 positive natural numbers all of whose prime factors are less than `n`. -/
@@ -71,7 +80,7 @@ lemma smoothNumbers_compl (N : ℕ) : (N.smoothNumbers)ᶜ \ {0} ⊆ {n | N ≤ 
   exact hm₂.trans <| le_of_mem_factors hm₁
 
 /-- If `p` is a prime and `n` is `p`-smooth, then every product `p^e * n` is `(p+1)`-smooth. -/
-lemma Prime.pow_mul_mem_smoothNumbers {p n : ℕ} (hp : p.Prime) (hn : n ∈ smoothNumbers p) :
+lemma Prime.pow_mul_mem_smoothNumbers {p n : ℕ} (hp : p.Prime) (e : ℕ) (hn : n ∈ smoothNumbers p) :
     p ^ e * n ∈ smoothNumbers (succ p) := by
   have hp' (e : ℕ) : p ^ e ≠ 0 := pow_ne_zero e hp.ne_zero
   refine ⟨mul_ne_zero (hp' e) hn.1, fun q hq ↦ ?_⟩
@@ -91,7 +100,7 @@ open List in
 given by `(e, n) ↦ p^e * n` when `p` is a prime. -/
 def equivProdNatSmoothNumbers {p : ℕ} (hp: p.Prime) :
     ℕ × smoothNumbers p ≃ smoothNumbers p.succ where
-      toFun := fun ⟨e, n⟩ ↦ ⟨p ^ e * n, hp.pow_mul_mem_smoothNumbers n.2⟩
+      toFun := fun ⟨e, n⟩ ↦ ⟨p ^ e * n, hp.pow_mul_mem_smoothNumbers e n.2⟩
       invFun := fun ⟨m, _⟩  ↦ (m.factorization p,
                                ⟨(m.factors.filter (· < p)).prod, prod_mem_smoothNumbers ..⟩)
       left_inv := by

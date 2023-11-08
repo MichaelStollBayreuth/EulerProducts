@@ -22,9 +22,8 @@ lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers}
   hmul <| Nat.Coprime.pow_left _ <| hp.smoothNumbers_coprime <| Subtype.mem m
 
 open Nat in
-/-- This is the key lemma that relates a finite product over primes to a partial
-infinite sum. -/
-lemma hasSum_prod_tsum_primesBelow
+/-- This relates a finite product over primes to an infinite sum over smooth numbers. -/
+lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum
     (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖)) (N : ℕ) :
     Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
       HasSum (fun m : N.smoothNumbers ↦ f m) (∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n)) := by
@@ -50,14 +49,40 @@ lemma hasSum_prod_tsum_primesBelow
         exact this
     · rwa [smoothNumbers_succ hN]
 
+open Nat in
+/-- Given a (completely) multiplicative function `f : ℕ → F`, where `F` is a normed field,
+such that `‖f p‖ < 1` for all primes `p`, we can express the sum of `f n` over all `N`-smooth
+positive integers `n` as a product of `(1 - f p)⁻¹` over the primes `p < N`. At the same time,
+we show that the sum involved converges absolutely. -/
+lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric {f : ℕ →* F}
+    (h : ∀ {p : ℕ}, p.Prime → ‖f p‖ < 1) (N : ℕ) :
+    Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
+      HasSum (fun m : N.smoothNumbers ↦ f m) (∏ p in N.primesBelow, (1 - f p)⁻¹) := by
+  have hf₁ : f 1 = 1 := f.map_one
+  have hmul {m n} (_ : Nat.Coprime m n) := f.map_mul m n
+  convert summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul ?_ N with M hM <;>
+    simp_rw [map_pow]
+  · exact (tsum_geometric_of_norm_lt_1 <| h <| prime_of_mem_primesBelow hM).symm
+  · intro p hp
+    simp_rw [norm_pow]
+    exact summable_geometric_iff_norm_lt_1.mpr <| (norm_norm (f p)).symm ▸ h hp
+
 -- We now assume in addition that `f` is norm-summable.
 variable (hsum : Summable (‖f ·‖))
 
-/-- A version of `hasSum_prod_tsum_primesBelow` in terms of the value of the series. -/
+/-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum` in terms of the
+value of the series. -/
 lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
     ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.smoothNumbers, f m :=
-  (hasSum_prod_tsum_primesBelow hf₁ hmul
+  (summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
+
+/-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric` in terms of
+the value of the series. -/
+lemma prod_primesBelow_geometric_eq_tsum_smoothNumbers {f : ℕ →* F}
+    (h : ∀ {p : ℕ}, p.Prime → ‖f p‖ < 1) (N : ℕ) :
+    ∏ p in N.primesBelow, (1 - f p)⁻¹ = ∑' m : N.smoothNumbers, f m :=
+  (summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric h N).2.tsum_eq.symm
 
 -- Can simplify when #8194 is merged (also below where it is used: `ε/2 → ε`)
 lemma tail_estimate' {ε : ℝ} (εpos : 0 < ε) :
@@ -115,14 +140,11 @@ convergence of finite partial products. -/
 -- TODO: Change to use `∏'` once infinite products are in Mathlib
 theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x => ‖f x‖) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - f p)⁻¹) atTop (𝓝 (∑' n, f n)) := by
-  have hf₀ : f 0 = 0 := MonoidWithZeroHom.map_zero f
-  have hf₁ : f 1 = 1 := MonoidWithZeroHom.map_one f
-  have hmul {m n} (_ : Nat.Coprime m n) : f (m * n) = f m * f n := MonoidWithZeroHom.map_mul f m n
-  convert euler_product hf₀ hf₁ hmul hsum with N p hN
+  convert euler_product f.map_zero f.map_one (fun {m n} _ ↦ f.map_mul m n) hsum with N p hN
   simp_rw [map_pow]
   refine (tsum_geometric_of_norm_lt_1 <| summable_geometric_iff_norm_lt_1.mp ?_).symm
   refine summable_of_summable_norm ?_
   convert hsum.comp_injective <| Nat.pow_right_injective (prime_of_mem_primesBelow hN).one_lt
-  simp
+  simp only [norm_pow, Function.comp_apply, map_pow]
 
 end EulerProduct
