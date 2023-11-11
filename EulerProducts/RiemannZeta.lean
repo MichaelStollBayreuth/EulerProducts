@@ -49,7 +49,7 @@ variable {s : ℂ}
 
 /-- When `s ≠ 0`, the map `n ↦ n^(-s)` is completely multiplicative and vanishes at zero. -/
 noncomputable
-def RiemannZetaSummandHom (hs : s ≠ 0) : ℕ →*₀ ℂ where
+def riemannZetaSummandHom (hs : s ≠ 0) : ℕ →*₀ ℂ where
   toFun := riemannZetaSummand s
   map_zero' := by simpa [riemannZetaSummand]
   map_one' := by simp [riemannZetaSummand]
@@ -58,7 +58,7 @@ def RiemannZetaSummandHom (hs : s ≠ 0) : ℕ →*₀ ℂ where
 /-- When `χ` is a Dirichlet character and `s ≠ 0`, the map `n ↦ n^(-s)` is completely
 multiplicative and vanishes at zero. -/
 noncomputable
-def DirichletSummandHom {n : ℕ} (χ : DirichletCharacter ℂ n) (hs : s ≠ 0) : ℕ →*₀ ℂ where
+def dirichletSummandHom {n : ℕ} (χ : DirichletCharacter ℂ n) (hs : s ≠ 0) : ℕ →*₀ ℂ where
   toFun n := χ n * riemannZetaSummand s n
   map_zero' := by simp [riemannZetaSummand, hs]
   map_one' := by simp [riemannZetaSummand]
@@ -76,16 +76,16 @@ lemma Complex.re_neg_ne_zero_of_one_lt_re (hs : 1 < s.re) : (-s).re ≠ 0 := by
 
 /-- When `s.re > 1`, the map `n ↦ n^(-s)` is norm-summable. -/
 lemma summable_riemannZetaSummand (hs : 1 < s.re) :
-  Summable (fun n ↦ ‖RiemannZetaSummandHom (Complex.ne_zero_of_one_lt_re hs) n‖) := by
-  simp only [RiemannZetaSummandHom, riemannZetaSummand, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
+  Summable (fun n ↦ ‖riemannZetaSummandHom (Complex.ne_zero_of_one_lt_re hs) n‖) := by
+  simp only [riemannZetaSummandHom, riemannZetaSummand, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
   convert Real.summable_nat_rpow_inv.mpr hs with n
   rw [n.complex_norm_cpow_eq_rpow_re <| Complex.re_neg_ne_zero_of_one_lt_re hs, neg_re,
     Real.rpow_neg <| Nat.cast_nonneg _]
 
 /-- When `s.re > 1`, the map `n ↦ χ(n) * n^(-s)` is norm-summable. -/
 lemma summable_dirichletSummand {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
-  Summable (fun n ↦ ‖DirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n‖) := by
-  simp only [DirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, norm_mul]
+  Summable (fun n ↦ ‖dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n‖) := by
+  simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, norm_mul]
   refine summable_of_nonneg_of_le (fun n ↦ ?_) (fun n ↦ ?_) <| summable_riemannZetaSummand hs
   · positivity
   · exact mul_le_of_le_one_left (norm_nonneg _) <| χ.norm_le_one n
@@ -99,11 +99,11 @@ theorem riemannZeta_eulerProduct (hs : 1 < s.re) :
   convert euler_product_multiplicative hsum
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, tsum_eq_zero_add <| summable_of_summable_norm hsum,
     map_zero, zero_add]
-  simp [RiemannZetaSummandHom, riemannZetaSummand, cpow_neg]
+  simp [riemannZetaSummandHom, riemannZetaSummand, cpow_neg]
 
 open Filter Nat Topology BigOperators EulerProduct in
 /-- The Euler product for Dirichlet L-series, valid for `s.re > 1`. -/
 theorem dirichletLSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - χ p * (p : ℂ) ^ (-s))⁻¹) atTop
-      (𝓝 (∑' n : ℕ, DirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n)) := by
+      (𝓝 (∑' n : ℕ, dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n)) := by
   convert euler_product_multiplicative <| summable_dirichletSummand χ hs
