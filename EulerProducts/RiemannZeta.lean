@@ -14,8 +14,7 @@ lemma DirichletCharacter.norm_le_one {n : ℕ} (χ : DirichletCharacter ℂ n) (
   by_cases h : IsUnit m
   · match n with
     | 0 =>
-        rw [Int.isUnit_iff] at h
-        rcases h with rfl | rfl <;> push_cast
+        rcases Int.isUnit_iff.mp h with rfl | rfl
         · rw [map_one, norm_one]
         · refine (sq_le_one_iff <| norm_nonneg _).mp ?_
           rw [← norm_pow, ← map_pow, neg_one_sq, map_one, norm_one]

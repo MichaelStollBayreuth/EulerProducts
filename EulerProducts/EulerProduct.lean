@@ -3,7 +3,14 @@ import Mathlib.NumberTheory.SmoothNumbers
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 
-set_option autoImplicit false
+variable {F : Type*} [NormedField F] [CompleteSpace F]
+
+lemma Summable.norm_lt_one {f : ℕ →* F} (hsum : Summable f) {p : ℕ} (hp : 1 < p) :
+    ‖f p‖ < 1 := by
+  refine summable_geometric_iff_norm_lt_1.mp ?_
+  simp_rw [← map_pow]
+  exact hsum.comp_injective <| Nat.pow_right_injective hp
+
 
 namespace EulerProduct
 
@@ -78,12 +85,6 @@ lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
   (summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
-lemma _root_.Summable.norm_lt_one {f : ℕ →* F} (hsum : Summable f) {p : ℕ} (hp : 1 < p) :
-    ‖f p‖ < 1 := by
-  refine summable_geometric_iff_norm_lt_1.mp ?_
-  simp_rw [← map_pow]
-  exact hsum.comp_injective <| Nat.pow_right_injective hp
-
 /-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric` in terms of
 the value of the series. -/
 lemma prod_primesBelow_geometric_eq_tsum_smoothNumbers {f : ℕ →* F} (hsum : Summable f) (N : ℕ) :
@@ -100,7 +101,7 @@ lemma norm_tsum_smoothNumbers_sub_tsum_lt (hsum : Summable f) (hf₀ : f 0 = 0) 
     summable_iff_nat_tsum_vanishing.mp hsum (Metric.ball 0 ε) <| Metric.ball_mem_nhds 0 εpos
   simp_rw [mem_ball_zero_iff] at hN₀
   refine ⟨N₀, fun N hN₁ ↦ ?_⟩
-  convert hN₀ _ <| (Nat.smoothNumbers_compl N).trans <| fun m hm ↦ hN₁.le.trans hm
+  convert hN₀ _ <| N.smoothNumbers_compl.trans fun _ ↦ hN₁.le.trans
   simp_rw [← tsum_subtype_add_tsum_subtype_compl hsum N.smoothNumbers,
     add_sub_cancel', tsum_eq_tsum_diff_singleton (N.smoothNumbers)ᶜ hf₀]
 
