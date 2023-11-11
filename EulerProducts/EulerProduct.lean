@@ -47,8 +47,7 @@ lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum
         -- below, `(α := F)` seems to be necessary to avoid a time-out
         apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
         -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
-        have := summable_mul_of_summable_norm (hsum hN) ih.1
-        exact this
+        convert summable_mul_of_summable_norm (hsum hN) ih.1
     · rwa [smoothNumbers_succ hN]
 
 open Nat in
