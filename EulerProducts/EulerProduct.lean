@@ -2,6 +2,8 @@ import EulerProducts.Basic
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 
+set_option autoImplicit false
+
 namespace EulerProduct
 
 open scoped Topology
@@ -13,9 +15,9 @@ open BigOperators
 variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ℕ → F}
 
 -- We assume that `f` is *multiplicative* in the sense of arithmetic functions,
--- i.e., multiplicative on coprime elements. For convenience, we also assume that `f 0 = 0`.
+-- i.e., multiplicative on coprime elements.
 -- The condition `f 1 = 1` is then equivalent to `f 1 ≠ 0`, but more convenient to use.
-variable (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
+variable (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
 
 lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
     f (p ^ e * m) = f (p ^ e) * f m :=
@@ -76,39 +78,32 @@ lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
   (summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
+lemma norm_lt_one_of_summable {f : ℕ →* F} (hsum : Summable f) {p : ℕ} (hp : 1 < p) :
+    ‖f p‖ < 1 := by
+  refine summable_geometric_iff_norm_lt_1.mp ?_
+  simp_rw [← map_pow]
+  exact hsum.comp_injective <| Nat.pow_right_injective hp
+
 /-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric` in terms of
 the value of the series. -/
-lemma prod_primesBelow_geometric_eq_tsum_smoothNumbers {f : ℕ →* F}
-    (h : ∀ {p : ℕ}, p.Prime → ‖f p‖ < 1) (N : ℕ) :
-    ∏ p in N.primesBelow, (1 - f p)⁻¹ = ∑' m : N.smoothNumbers, f m :=
-  (summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric h N).2.tsum_eq.symm
+lemma prod_primesBelow_geometric_eq_tsum_smoothNumbers {f : ℕ →* F} (hsum : Summable f) (N : ℕ) :
+    ∏ p in N.primesBelow, (1 - f p)⁻¹ = ∑' m : N.smoothNumbers, f m := by
+  refine (summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric ?_ N).2.tsum_eq.symm
+  exact fun {_} hp ↦ norm_lt_one_of_summable hsum hp.one_lt
 
--- Can simplify when #8194 is merged (also below where it is used: `ε/2 → ε`)
-lemma tail_estimate' {ε : ℝ} (εpos : 0 < ε) :
-     ∃ N : ℕ, ∀ s ⊆ {n | N ≤ n}, ‖∑' m : s, f m‖ ≤ ε := by
-  obtain ⟨t, ht⟩ := summable_iff_vanishing.mp hsum _ (Metric.closedBall_mem_nhds 0 εpos)
-  use if emp : t.Nonempty then t.max' emp + 1 else 0
-  refine fun s hs ↦ (norm_tsum_le_tsum_norm <| hsum.subtype _).trans ?_
-  refine tsum_le_of_sum_le (hsum.subtype _) fun s' ↦ (le_abs_self _).trans ?_
-  rw [← Finset.sum_subtype_map_embedding (g := fun i ↦ ‖f i‖) fun _ _ ↦ rfl]
-  simp_rw [mem_closedBall_zero_iff, Real.norm_eq_abs, Finset.disjoint_left] at ht
-  refine ht _ fun n hns' hnt ↦ ?_
-  obtain ⟨⟨m, hms⟩, -, rfl⟩ := Finset.mem_map.mp hns'
-  have := hs hms
-  split_ifs at this with h
-  · exact (t.le_max' _ hnt).not_lt ((Nat.lt_succ_self _).trans_le this)
-  · exact h ⟨m, hnt⟩
-
-lemma norm_tsum_smoothNumbers_sub_tsum_lt {ε : ℝ} (εpos : 0 < ε) :
+/-- We need the following statement that says that summing over `N`-smooth numbers
+for large enough `N` gets us arbitrarily close to the sum over all natural numbers
+(assuming `f` is norm-summable and `f 0 = 0`; the latter since `0` is not smooth). -/
+lemma norm_tsum_smoothNumbers_sub_tsum_lt (hsum : Summable f) (hf₀ : f 0 = 0) {ε : ℝ} (εpos : 0 < ε) :
     ∃ N₀ : ℕ, ∀ N ≥ N₀, ‖(∑' m : N.smoothNumbers, f m) - (∑' m : ℕ, f m)‖ < ε := by
-  conv =>
-    enter [1, N₀, N]
-    rw [← tsum_subtype_add_tsum_subtype_compl (summable_of_summable_norm hsum) N.smoothNumbers,
-        ← sub_sub, sub_self, zero_sub, norm_neg,
-        tsum_eq_tsum_diff_singleton (N.smoothNumbers)ᶜ 0 hf₀]
-  obtain ⟨N₀, hN₀⟩ := tail_estimate' hsum <| half_pos εpos
-  refine ⟨N₀, fun N hN₁ ↦ (hN₀ _ ?_).trans_lt <| half_lt_self εpos⟩
-  exact (Nat.smoothNumbers_compl _).trans fun n ↦ hN₁.le.trans
+  obtain ⟨N₀, hN₀⟩ :=
+    summable_iff_nat_tsum_vanishing.mp hsum (Metric.ball 0 ε) <| Metric.ball_mem_nhds 0 εpos
+  simp_rw [mem_ball_zero_iff] at hN₀
+  refine ⟨N₀, fun N hN₁ ↦ ?_⟩
+  simp_rw [norm_sub_rev]
+  convert hN₀ _ <| (Nat.smoothNumbers_compl N).trans <| fun m hm ↦ hN₁.le.trans hm
+  simp_rw [← tsum_subtype_add_tsum_subtype_compl hsum N.smoothNumbers,
+    add_sub_cancel', tsum_eq_tsum_diff_singleton (N.smoothNumbers)ᶜ hf₀]
 
 open Filter Nat in
 /-- The *Euler Product* for multiplicative (on coprime arguments) functions.
@@ -118,12 +113,13 @@ and `‖f ·‖` is summable, then `∏' p : {p : ℕ | p.Prime}, ∑' e, f (p ^
 Since there are no infinite products yet in Mathlib, we state it in the form of
 convergence of finite partial products. -/
 -- TODO: Change to use `∏'` once infinite products are in Mathlib
-theorem euler_product :
+theorem euler_product (hf₀ : f 0 = 0) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, ∑' e, f (p ^ e)) atTop (𝓝 (∑' n, f n)) := by
   rw [Metric.tendsto_nhds]
   intro ε εpos
   simp only [Finset.mem_range, eventually_atTop, ge_iff_le]
-  obtain ⟨N₀, hN₀⟩ := norm_tsum_smoothNumbers_sub_tsum_lt hf₀ hsum εpos
+  have hsum' := summable_of_summable_norm hsum
+  obtain ⟨N₀, hN₀⟩ := norm_tsum_smoothNumbers_sub_tsum_lt hsum' hf₀ εpos
   use N₀
   convert hN₀ using 3 with m
   rw [dist_eq_norm]
@@ -139,7 +135,7 @@ convergence of finite partial products. -/
 -- TODO: Change to use `∏'` once infinite products are in Mathlib
 theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x => ‖f x‖) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - f p)⁻¹) atTop (𝓝 (∑' n, f n)) := by
-  convert euler_product f.map_zero f.map_one (fun {m n} _ ↦ f.map_mul m n) hsum with N p hN
+  convert euler_product f.map_one (fun {m n} _ ↦ f.map_mul m n) hsum f.map_zero with N p hN
   simp_rw [map_pow]
   refine (tsum_geometric_of_norm_lt_1 <| summable_geometric_iff_norm_lt_1.mp ?_).symm
   refine summable_of_summable_norm ?_
