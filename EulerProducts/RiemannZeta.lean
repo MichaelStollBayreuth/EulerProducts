@@ -106,6 +106,5 @@ open Filter Nat Topology BigOperators EulerProduct in
 /-- The Euler product for Dirichlet L-series, valid for `s.re > 1`. -/
 theorem dirichletLSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - χ p * (p : ℂ) ^ (-s))⁻¹) atTop
-      (𝓝 (∑' n : ℕ, DirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n))
-    := by
+      (𝓝 (∑' n : ℕ, DirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n)) := by
   convert euler_product_multiplicative <| summable_dirichletSummand χ hs

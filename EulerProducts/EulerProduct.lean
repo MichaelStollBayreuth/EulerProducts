@@ -1,4 +1,5 @@
 import EulerProducts.Basic
+import Mathlib.NumberTheory.SmoothNumbers
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 
