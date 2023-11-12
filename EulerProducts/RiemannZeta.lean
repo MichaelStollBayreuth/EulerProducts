@@ -13,10 +13,9 @@ section DirichletChar
 
 variable {F : Type} [NormedField F]
 
-lemma ZMod.exists_pos_unit_pow_eq_one : (n : ℕ) → ∃ m : ℕ, 0 < m ∧ ∀ a : (ZMod n)ˣ, a ^ m = 1 :=
-fun
-| 0     => ⟨2, zero_lt_two, Int.units_sq⟩
-| n + 1 => ⟨n.succ.totient, Nat.totient_pos n.succ_pos, ZMod.pow_totient⟩
+lemma ZMod.exists_pos_unit_pow_eq_one : (n : ℕ) → ∃ m : ℕ, 0 < m ∧ ∀ a : (ZMod n)ˣ, a ^ m = 1
+  | 0     => ⟨2, zero_lt_two, Int.units_sq⟩
+  | n + 1 => ⟨n.succ.totient, Nat.totient_pos n.succ_pos, ZMod.pow_totient⟩
 
 -- This will eventually show up in Mathlib (future PR by Yaël Dillies)
 lemma pow_eq_one_iff_of_nonneg {R : Type*} [LinearOrderedRing R] {x : R} (hx : 0 ≤ x)
