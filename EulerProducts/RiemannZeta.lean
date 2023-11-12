@@ -13,7 +13,8 @@ section DirichletChar
 
 variable {F : Type} [NormedField F]
 
-lemma ZMod.exists_pos_unit_pow_eq_one : (n : ℕ) → ∃ m : ℕ, 0 < m ∧ ∀ a : (ZMod n)ˣ, a ^ m = 1
+lemma ZMod.exists_pos_unit_pow_eq_one (n : ℕ) : ∃ m : ℕ, 0 < m ∧ ∀ a : (ZMod n)ˣ, a ^ m = 1 :=
+  match n with
   | 0     => ⟨2, zero_lt_two, Int.units_sq⟩
   | n + 1 => ⟨n.succ.totient, Nat.totient_pos n.succ_pos, ZMod.pow_totient⟩
 
