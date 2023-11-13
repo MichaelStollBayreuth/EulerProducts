@@ -53,7 +53,7 @@ lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum
                  ← (equivProdNatSmoothNumbers hN).hasSum_iff, Function.comp_def,
                  equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
         -- below, `(α := F)` seems to be necessary to avoid a time-out
-        apply HasSum.mul (α := F) (Summable.hasSum <| summable_of_summable_norm <| hsum hN) ih.2
+        apply HasSum.mul (α := F) (Summable.hasSum (hsum hN).of_norm) ih.2
         -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
         convert summable_mul_of_summable_norm (hsum hN) ih.1
     · rwa [smoothNumbers_succ hN]
@@ -118,8 +118,7 @@ theorem euler_product (hf₀ : f 0 = 0) :
   rw [Metric.tendsto_nhds]
   intro ε εpos
   simp only [Finset.mem_range, eventually_atTop, ge_iff_le]
-  have hsum' := summable_of_summable_norm hsum
-  obtain ⟨N₀, hN₀⟩ := norm_tsum_smoothNumbers_sub_tsum_lt hsum' hf₀ εpos
+  obtain ⟨N₀, hN₀⟩ := norm_tsum_smoothNumbers_sub_tsum_lt hsum.of_norm hf₀ εpos
   use N₀
   convert hN₀ using 3 with m
   rw [dist_eq_norm, norm_sub_rev]
@@ -138,7 +137,7 @@ theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x 
   convert euler_product f.map_one (fun {m n} _ ↦ f.map_mul m n) hsum f.map_zero with N p hN
   simp_rw [map_pow]
   refine (tsum_geometric_of_norm_lt_1 <| summable_geometric_iff_norm_lt_1.mp ?_).symm
-  refine summable_of_summable_norm ?_
+  refine Summable.of_norm ?_
   convert hsum.comp_injective <| Nat.pow_right_injective (prime_of_mem_primesBelow hN).one_lt
   simp only [norm_pow, Function.comp_apply, map_pow]
 

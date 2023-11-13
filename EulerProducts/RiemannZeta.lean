@@ -4,44 +4,10 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.FieldTheory.Finite.Basic
 
 /-!
-## The Euler Product for the Riemann Zeta Function
+## The Euler Product for the Riemann Zeta Function and Dirichlet L-Series
 -/
 
-local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
-
-section DirichletChar
-
-variable {F : Type} [NormedField F]
-
-lemma ZMod.exists_pos_unit_pow_eq_one (n : ℕ) : ∃ m : ℕ, 0 < m ∧ ∀ a : (ZMod n)ˣ, a ^ m = 1 :=
-  match n with
-  | 0     => ⟨2, zero_lt_two, Int.units_sq⟩
-  | n + 1 => ⟨n.succ.totient, Nat.totient_pos n.succ_pos, ZMod.pow_totient⟩
-
--- This will eventually show up in Mathlib (future PR by Yaël Dillies)
-lemma pow_eq_one_iff_of_nonneg {R : Type*} [LinearOrderedRing R] {x : R} (hx : 0 ≤ x)
-    {n : ℕ} (hn : n ≠ 0) : x ^ n = 1 ↔ x = 1 := by
-  constructor
-  · intro h
-    exact le_antisymm ((pow_le_one_iff_of_nonneg hx hn).mp h.le)
-      ((one_le_pow_iff_of_nonneg hx hn).mp h.ge)
-  · rintro rfl
-    exact one_pow _
-
-lemma DirichletCharacter.norm_eq_one {n : ℕ} (χ : DirichletCharacter F n) (m : (ZMod n)ˣ) :
-    ‖χ m‖ = 1 := by
-  obtain ⟨e, he₀, he₁⟩ := ZMod.exists_pos_unit_pow_eq_one n
-  refine (pow_eq_one_iff_of_nonneg (norm_nonneg _) he₀.ne').mp ?_
-  rw [← norm_pow, ← map_pow, ← Units.val_pow_eq_pow_val, he₁ m, Units.val_one, map_one, norm_one]
-
-lemma DirichletCharacter.norm_le_one {n : ℕ} (χ : DirichletCharacter F n) (m : ZMod n) :
-    ‖χ m‖ ≤ 1 := by
-  by_cases h : IsUnit m
-  · exact (DirichletCharacter.norm_eq_one χ h.unit).le
-  · rw [χ.map_nonunit h, norm_zero]
-    exact zero_le_one
-
-end DirichletChar
+-- local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
 open Complex
 
@@ -102,7 +68,7 @@ lemma summable_riemannZetaSummand (hs : 1 < s.re) :
 lemma summable_dirichletSummand {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
   Summable (fun n ↦ ‖dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n‖) := by
   simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, norm_mul]
-  refine summable_of_nonneg_of_le (fun n ↦ ?_) (fun n ↦ ?_) <| summable_riemannZetaSummand hs
+  refine (summable_riemannZetaSummand hs).of_nonneg_of_le (fun n ↦ ?_) (fun n ↦ ?_)
   · positivity
   · exact mul_le_of_le_one_left (norm_nonneg _) <| χ.norm_le_one n
 
@@ -113,8 +79,7 @@ theorem riemannZeta_eulerProduct (hs : 1 < s.re) :
     := by
   have hsum := summable_riemannZetaSummand hs
   convert euler_product_multiplicative hsum
-  rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, tsum_eq_zero_add <| summable_of_summable_norm hsum,
-    map_zero, zero_add]
+  rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, tsum_eq_zero_add hsum.of_norm, map_zero, zero_add]
   simp [riemannZetaSummandHom, riemannZetaSummand, cpow_neg]
 
 open Filter Nat Topology BigOperators EulerProduct in
