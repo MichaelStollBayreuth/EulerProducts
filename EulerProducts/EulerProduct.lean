@@ -1,18 +1,37 @@
-import EulerProducts.Basic
 import Mathlib.NumberTheory.SmoothNumbers
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 
+/-!
+# Euler Products
+
+The main results in this file are `EulerProduct.euler_product`, which says that
+if `f : ℕ → F` is norm-summable, where `F` is a complete normed field and `f` is
+multiplicative on coprime arguments with `f 0 = 0`, then
+`∏ p in primesBelow N, ∑' e : ℕ, f (p^e)` tends to `∑' n, f n` as `N` tends to infinity,
+and `EulerProduct.euler_product_multiplicative`, which states that
+`∏ p in primesBelow N, (1 - f p)⁻¹` tends to `∑' n, f n` as `N` tends to infinity,
+when `f` is completely multiplicative (implemented as `f : ℕ →*₀ F`).
+
+An intermediate step is `EulerProduct.summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum`
+(and its variant `EulerProduct.summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum_geometric`),
+which relates the finite product over primes to the sum of `f n` over `N`-smooth `n`.
+
+## Tags
+
+Euler product
+-/
+
 variable {F : Type*} [NormedField F] [CompleteSpace F]
 
+/-- If `f` is multiplicative and summable, then its values at natural numbers `> 1`
+have norm strictly less than `1`. -/
 lemma Summable.norm_lt_one {f : ℕ →* F} (hsum : Summable f) {p : ℕ} (hp : 1 < p) :
     ‖f p‖ < 1 := by
   refine summable_geometric_iff_norm_lt_1.mp ?_
   simp_rw [← map_pow]
   exact hsum.comp_injective <| Nat.pow_right_injective hp
 
-
-namespace EulerProduct
 
 open scoped Topology
 
@@ -27,12 +46,14 @@ variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ℕ → F}
 -- The condition `f 1 = 1` is then equivalent to `f 1 ≠ 0`, but more convenient to use.
 variable (hf₁ : f 1 = 1) (hmul : ∀ {m n}, Nat.Coprime m n → f (m * n) = f m * f n)
 
-lemma map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
+lemma Nat.map_prime_pow_mul {p : ℕ} (hp : p.Prime) (e : ℕ) {m : p.smoothNumbers} :
     f (p ^ e * m) = f (p ^ e) * f m :=
   hmul <| Nat.Coprime.pow_left _ <| hp.smoothNumbers_coprime <| Subtype.mem m
 
+namespace EulerProduct
+
 open Nat in
-/-- This relates a finite product over primes to an infinite sum over smooth numbers. -/
+/-- We relate a finite product over primes to an infinite sum over smooth numbers. -/
 lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum
     (hsum : ∀ {p : ℕ}, p.Prime → Summable (fun n : ℕ ↦ ‖f (p ^ n)‖)) (N : ℕ) :
     Summable (fun m : N.smoothNumbers ↦ ‖f m‖) ∧
@@ -52,8 +73,7 @@ lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum
       · simp_rw [Finset.prod_insert (not_mem_primesBelow N),
                  ← (equivProdNatSmoothNumbers hN).hasSum_iff, Function.comp_def,
                  equivProdNatSmoothNumbers_apply', map_prime_pow_mul hmul hN]
-        -- below, `(α := F)` seems to be necessary to avoid a time-out
-        apply HasSum.mul (α := F) (Summable.hasSum (hsum hN).of_norm) ih.2
+        apply (hsum hN).of_norm.hasSum.mul ih.2
         -- `exact summable_mul_of_summable_norm (hsum hN) ih.1` gives a time-out
         convert summable_mul_of_summable_norm (hsum hN) ih.1
     · rwa [smoothNumbers_succ hN]
@@ -78,21 +98,21 @@ lemma summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric {f : ℕ →*
 -- We now assume in addition that `f` is norm-summable.
 variable (hsum : Summable (‖f ·‖))
 
-/-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum` in terms of the
-value of the series. -/
+/-- A version of `EulerProduct.summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum`
+in terms of the value of the series. -/
 lemma prod_primesBelow_tsum_eq_tsum_smoothNumbers (N : ℕ) :
     ∏ p in N.primesBelow, ∑' (n : ℕ), f (p ^ n) = ∑' m : N.smoothNumbers, f m :=
   (summable_and_hasSum_smoothNumbers_prod_primesBelow_tsum hf₁ hmul
     (fun hp ↦ hsum.comp_injective <| Nat.pow_right_injective hp.one_lt) _).2.tsum_eq.symm
 
-/-- A version of `summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric` in terms of
-the value of the series. -/
+/-- A version of `EulerProduct.summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric`
+in terms of the value of the series. -/
 lemma prod_primesBelow_geometric_eq_tsum_smoothNumbers {f : ℕ →* F} (hsum : Summable f) (N : ℕ) :
     ∏ p in N.primesBelow, (1 - f p)⁻¹ = ∑' m : N.smoothNumbers, f m := by
   refine (summable_and_hasSum_smoothNumbers_prod_primesBelow_geometric ?_ N).2.tsum_eq.symm
   exact fun {_} hp ↦ hsum.norm_lt_one hp.one_lt
 
-/-- We need the following statement that says that summing over `N`-smooth numbers
+/-- The following statement says that summing over `N`-smooth numbers
 for large enough `N` gets us arbitrarily close to the sum over all natural numbers
 (assuming `f` is norm-summable and `f 0 = 0`; the latter since `0` is not smooth). -/
 lemma norm_tsum_smoothNumbers_sub_tsum_lt (hsum : Summable f) (hf₀ : f 0 = 0) {ε : ℝ} (εpos : 0 < ε) :
@@ -138,7 +158,7 @@ theorem euler_product_multiplicative {f : ℕ →*₀ F} (hsum : Summable fun x 
   simp_rw [map_pow]
   refine (tsum_geometric_of_norm_lt_1 <| summable_geometric_iff_norm_lt_1.mp ?_).symm
   refine Summable.of_norm ?_
-  convert hsum.comp_injective <| Nat.pow_right_injective (prime_of_mem_primesBelow hN).one_lt
+  convert hsum.comp_injective <| pow_right_injective (prime_of_mem_primesBelow hN).one_lt
   simp only [norm_pow, Function.comp_apply, map_pow]
 
 end EulerProduct
