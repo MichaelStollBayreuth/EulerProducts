@@ -1,5 +1,5 @@
 import EulerProducts.Basic
-import EulerProducts.EulerProduct
+import Mathlib.NumberTheory.EulerProduct.Basic
 import Mathlib.NumberTheory.ZetaFunction
 import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.FieldTheory.Finite.Basic
@@ -79,7 +79,7 @@ theorem riemannZeta_eulerProduct (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) atTop (𝓝 (riemannZeta s))
     := by
   have hsum := summable_riemannZetaSummand hs
-  convert euler_product_multiplicative hsum
+  convert eulerProduct_completely_multiplicative hsum
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, tsum_eq_zero_add hsum.of_norm, map_zero, zero_add]
   simp [riemannZetaSummandHom, riemannZetaSummand, cpow_neg]
 
@@ -88,4 +88,4 @@ open Filter Nat Topology BigOperators EulerProduct in
 theorem dirichletLSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - χ p * (p : ℂ) ^ (-s))⁻¹) atTop
       (𝓝 (∑' n : ℕ, dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n)) := by
-  convert euler_product_multiplicative <| summable_dirichletSummand χ hs
+  convert eulerProduct_completely_multiplicative <| summable_dirichletSummand χ hs
