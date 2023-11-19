@@ -52,10 +52,8 @@ def dirichletSummandHom {n : ℕ} (χ : DirichletCharacter ℂ n) (hs : s ≠ 0)
 lemma Complex.ne_zero_of_one_lt_re (hs : 1 < s.re) : s ≠ 0 :=
   fun h ↦ ((zero_re ▸ h ▸ hs).trans zero_lt_one).false
 
-lemma Complex.re_neg_ne_zero_of_one_lt_re (hs : 1 < s.re) : (-s).re ≠ 0 := by
-  intro h
-  rw [neg_re, neg_eq_zero] at h
-  exact lt_irrefl (1 : ℝ) <| (h ▸ hs).trans zero_lt_one
+lemma Complex.re_neg_ne_zero_of_one_lt_re (hs : 1 < s.re) : (-s).re ≠ 0 :=
+  ne_iff_lt_or_gt.mpr <| Or.inl <| neg_re s ▸ by linarith
 
 /-- When `s.re > 1`, the map `n ↦ n^(-s)` is norm-summable. -/
 lemma summable_riemannZetaSummand (hs : 1 < s.re) :
@@ -69,12 +67,13 @@ lemma summable_riemannZetaSummand (hs : 1 < s.re) :
 lemma summable_dirichletSummand {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
   Summable (fun n ↦ ‖dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n‖) := by
   simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, norm_mul]
-  refine (summable_riemannZetaSummand hs).of_nonneg_of_le (fun n ↦ ?_) (fun n ↦ ?_)
-  · positivity
-  · exact mul_le_of_le_one_left (norm_nonneg _) <| χ.norm_le_one n
+  exact (summable_riemannZetaSummand hs).of_nonneg_of_le (fun _ ↦ by positivity)
+    (fun n ↦ mul_le_of_le_one_left (norm_nonneg _) <| χ.norm_le_one n)
 
-open Filter Nat Topology BigOperators EulerProduct in
+open Filter Nat Topology BigOperators EulerProduct
+
 /-- The Euler product for the Riemann ζ function, valid for `s.re > 1`. -/
+-- TODO: state in terms of `∏'` once this is in Mathlib
 theorem riemannZeta_eulerProduct (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) atTop (𝓝 (riemannZeta s))
     := by
@@ -83,8 +82,8 @@ theorem riemannZeta_eulerProduct (hs : 1 < s.re) :
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, tsum_eq_zero_add hsum.of_norm, map_zero, zero_add]
   simp [riemannZetaSummandHom, riemannZetaSummand, cpow_neg]
 
-open Filter Nat Topology BigOperators EulerProduct in
 /-- The Euler product for Dirichlet L-series, valid for `s.re > 1`. -/
+-- TODO: state in terms of `∏'` once this is in Mathlib
 theorem dirichletLSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) (hs : 1 < s.re) :
     Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - χ p * (p : ℂ) ^ (-s))⁻¹) atTop
       (𝓝 (∑' n : ℕ, dirichletSummandHom χ (Complex.ne_zero_of_one_lt_re hs) n)) := by
