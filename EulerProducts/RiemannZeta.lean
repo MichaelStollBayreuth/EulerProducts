@@ -1,3 +1,4 @@
+import EulerProducts.Basic
 import EulerProducts.EulerProduct
 import Mathlib.NumberTheory.ZetaFunction
 import Mathlib.NumberTheory.DirichletCharacter.Basic
@@ -37,7 +38,7 @@ def riemannZetaSummandHom (hs : s ≠ 0) : ℕ →*₀ ℂ where
   map_one' := by simp [riemannZetaSummand]
   map_mul' := riemannZetaSummand.mul s
 
-/-- When `χ` is a Dirichlet character and `s ≠ 0`, the map `n ↦ n^(-s)` is completely
+/-- When `χ` is a Dirichlet character and `s ≠ 0`, the map `n ↦ χ n * n^(-s)` is completely
 multiplicative and vanishes at zero. -/
 noncomputable
 def dirichletSummandHom {n : ℕ} (χ : DirichletCharacter ℂ n) (hs : s ≠ 0) : ℕ →*₀ ℂ where
