@@ -5,10 +5,19 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.FieldTheory.Finite.Basic
 
 /-!
-## The Euler Product for the Riemann Zeta Function and Dirichlet L-Series
--/
+# The Euler Product for the Riemann Zeta Function and Dirichlet L-Series
 
--- local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
+The first main result of this file is `riemannZeta_eulerProduct`, which states
+the Euler Product formula for the Riemann ζ function
+$$\prod_p \frac{1}{1 - p^{-s}}
+   = \lim_{n \to \infty} \prod_{p < n} \frac{1}{1 - p^{-s}} = \zeta(s)$$
+for $s$ with real part $> 1$ ($p$ runs through the primes).
+The formalized statement is the second equality, since infinite products are not yet
+available in Mathlib.
+
+The second result is `dirichletLSeries_eulerProduct`, which is the analogous statement
+for Dirichlet L-functions.
+-/
 
 open Complex
 
