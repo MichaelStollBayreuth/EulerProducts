@@ -42,11 +42,17 @@ lemma integral_unitInterval_eq_sub {C E : Type*} [NontriviallyNormedField C]
 
 namespace Complex
 
+/-!
+### Define the "slit plane" `ℂ ∖ ℝ≤0` and provide some API
+-/
+
 /-- The *slit plane* is the complex plane with the closed negative real axis removed. -/
 def slitPlane : Set ℂ := {z | 0 < z.re ∨ z.im ≠ 0}
 
 lemma mem_slitPlane_iff {z : ℂ} : z ∈ slitPlane ↔ 0 < z.re ∨ z.im ≠ 0 := Iff.rfl
 
+/-- An alternative description of the slit plane as consisting of nonzero complex numbers
+whose argument is not π. -/
 lemma mem_slitPlane_iff' {z : ℂ} : z ∈ slitPlane ↔ z.arg ≠ Real.pi ∧ z ≠ 0 := by
   simp only [mem_slitPlane_iff, ne_eq, arg_eq_pi_iff, not_and]
   refine ⟨fun H ↦ ⟨fun h ↦ H.resolve_left fun h' ↦ lt_irrefl 0 <| h'.trans h, fun h ↦ ?_⟩,
@@ -64,7 +70,7 @@ lemma slitPlane_ne_zero {z : ℂ} (hz : z ∈ slitPlane) : z ≠ 0 :=
 lemma slitPlane_arg_ne_pi {z : ℂ} (hz : z ∈ slitPlane) : z.arg ≠ Real.pi :=
   (mem_slitPlane_iff'.mp hz).1
 
-
+/-- The slit plane is star-shaped with respect to the point `1`. -/
 lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
     1 + t * z ∈ slitPlane := by
   rw [Set.mem_Icc] at ht
@@ -82,17 +88,26 @@ lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht :
   have H' := mul_pos (ht.1.eq_or_lt.resolve_left ht₀.symm) hz
   nlinarith
 
+/-- The slit plane contains the open unit ball of radius `1` around `1`. -/
 lemma mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 + z ∈ slitPlane := by
   simp only [slitPlane, Set.mem_setOf_eq, add_re, one_re, add_im, one_im, zero_add]
   simp only [norm_eq_abs] at hz
   by_contra' H
   linarith only [H.1, neg_lt_of_abs_lt <| (abs_re_le_abs z).trans_lt hz]
 
+/-!
+### Some missing differentiability statements on the complex log
+-/
+
 lemma hasDerivAt_log {z : ℂ} (hz : z ∈ slitPlane) : HasDerivAt log z⁻¹ z :=
   HasStrictDerivAt.hasDerivAt <| hasStrictDerivAt_log hz
 
 lemma differentiableAt_log {z : ℂ} (hz : z ∈ slitPlane) : DifferentiableAt ℂ log z :=
   (hasDerivAt_log hz).differentiableAt
+
+/-!
+### Integral representation of the complex log
+-/
 
 lemma continousOn_one_add_mul_inv {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     ContinuousOn (fun t : ℝ ↦ (1 + t * z)⁻¹) (Set.Icc 0 1) :=
@@ -113,6 +128,10 @@ lemma log_inv_eq_integral {z : ℂ} (hz : 1 - z ∈ slitPlane) :
   rw [log_inv _ <| slitPlane_arg_ne_pi hz, neg_eq_iff_eq_neg, ← neg_mul]
   convert log_eq_integral hz using 5
   rw [sub_eq_add_neg, mul_neg]
+
+/-!
+### The Taylor polynomials of the logarithm
+-/
 
 open BigOperators
 
@@ -154,6 +173,10 @@ lemma hasDerivAt_logTaylor (n : ℕ) (z : ℂ) :
       ring
     exact HasDerivAt.const_mul _ this
 
+/-!
+### Bounds for the difference between log and its Taylor polynomials
+-/
+
 lemma hasDerivAt_log_sub_logTaylor (n : ℕ) {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     HasDerivAt (fun z : ℂ ↦ log (1 + z) - logTaylor (n + 1) z) ((-z) ^ n * (1 + z)⁻¹) z := by
   convert HasDerivAt.sub ((hasDerivAt_log hz).comp_const_add 1 z) (hasDerivAt_logTaylor n z) using 1
@@ -189,6 +212,8 @@ lemma integrable_pow_mul_norm_one_add_mul_inv (n : ℕ) {z : ℂ} (hz : ‖z‖ 
   exact ContinuousOn.intervalIntegrable <|
     Continuous.continuousOn (by continuity) |>.mul <| ContinuousOn.norm this
 
+/-- The difference of `log (1+z)` and its `(n+1)`st Taylor polynomial can be bounded in
+terms of `‖z‖`. -/
 lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 + z) - logTaylor (n + 1) z‖ ≤ ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
   have help : IntervalIntegrable (fun t : ℝ ↦ t ^ n * (1 - ‖z‖)⁻¹) MeasureTheory.volume 0 1 :=
@@ -228,6 +253,12 @@ lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     _ = (1 - ‖z‖)⁻¹ / (n + 1) := by
         rw [intervalIntegral.integral_mul_const, mul_comm, integral_pow]
         field_simp
+
+lemma norm_log_sub_self_le {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 + z) - z‖ ≤ ‖z‖ ^ 2 * (1 - ‖z‖)⁻¹ / 2 := by
+  convert log_sub_logTaylor_norm_le 1 hz using 2
+  · simp [logTaylor_succ, logTaylor_zero, sub_eq_add_neg]
+  · norm_num
 
 lemma log_inv_add_logTaylor_neg_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 - z)⁻¹ + logTaylor (n + 1) (-z)‖ ≤ ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
