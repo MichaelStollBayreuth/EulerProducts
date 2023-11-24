@@ -1,5 +1,5 @@
 import Mathlib
 
-example : ContinuousOn (fun t : ℝ ↦ t) (Set.Icc 0 1) := by
-  continuity
-  sorry
+
+example {C E : Type*} [IsROrC C] [NormedAddCommGroup E] [NormedSpace ℂ E] :
+    NormedSpace ℝ E := inferInstance
