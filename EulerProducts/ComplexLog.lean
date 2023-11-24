@@ -205,7 +205,7 @@ lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     exact (Continuous.continuousOn (by continuity)).mul <|
       continousOn_one_add_mul_inv <| mem_slitPlane_of_norm_lt_one hz
   have H : f z = z * ∫ t in (0 : ℝ)..1, (-(t * z)) ^ n * (1 + t * z)⁻¹
-  · convert intervalIntegral_sub_eq_integral_unitInterval hcont hderiv using 1
+  · convert (integral_unitInterval_eq_sub hcont hderiv).symm using 1
     · simp only [zero_add, add_zero, log_one, logTaylor_at_zero, sub_self, sub_zero]
     · simp only [add_zero, log_one, logTaylor_at_zero, sub_self, real_smul, zero_add, smul_eq_mul]
   simp only [H, norm_mul]
