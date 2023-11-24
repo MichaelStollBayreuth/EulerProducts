@@ -15,7 +15,7 @@ lemma HasDerivAt.comp_add_const {𝕜 : Type*} [NontriviallyNormedField 𝕜] (x
   simpa [Function.comp_def] using HasDerivAt.scomp (𝕜 := 𝕜) x hh <| hasDerivAt_id' x |>.add_const a
 
 
-open intervalIntegral
+namespace intervalIntegral
 
 /-- A variant of the Fundamental theorem of calculus-2 involving integrating over the
 unit interval. -/
@@ -38,6 +38,8 @@ lemma integral_unitInterval_eq_sub {C E : Type*} [NontriviallyNormedField C]
   convert (integral_eq_sub_of_hasDerivAt hderiv' hint) using 1
   · simp_rw [← integral_smul, Function.comp_apply]
   · simp only [Function.comp_apply, one_smul, zero_smul, add_zero]
+
+end intervalIntegral
 
 
 namespace Complex
@@ -114,6 +116,7 @@ lemma continousOn_one_add_mul_inv {z : ℂ} (hz : 1 + z ∈ slitPlane) :
   ContinuousOn.inv₀ (Continuous.continuousOn (by continuity))
     (fun t ht ↦ slitPlane_ne_zero <| slitPlane_star_shaped hz ht)
 
+open intervalIntegral in
 /-- Represent `log (1 + z)` as an integral over the unit interval -/
 lemma log_eq_integral {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     log (1 + z) = z * ∫ (t : ℝ) in (0 : ℝ)..1, (1 + t * z)⁻¹ := by
