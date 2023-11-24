@@ -215,6 +215,7 @@ lemma integrable_pow_mul_norm_one_add_mul_inv (n : ℕ) {z : ℂ} (hz : ‖z‖ 
   exact ContinuousOn.intervalIntegrable <|
     Continuous.continuousOn (by continuity) |>.mul <| ContinuousOn.norm this
 
+open intervalIntegral in
 /-- The difference of `log (1+z)` and its `(n+1)`st Taylor polynomial can be bounded in
 terms of `‖z‖`. -/
 lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
