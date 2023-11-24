@@ -20,8 +20,7 @@ lemma pow_eq_one_iff_of_nonneg {R : Type*} [LinearOrderedRing R] {x : R} (hx : 0
             ((one_le_pow_iff_of_nonneg hx hn).mp h.ge),
    fun h ↦ by rw [h]; exact one_pow _⟩
 
--- TODO: change to `{F : Type*}` when this is done in `DirichletCharacter.Basic`
-variable {F : Type} [NormedField F]
+variable {F : Type*} [NormedField F]
 
 namespace DirichletCharacter
 
