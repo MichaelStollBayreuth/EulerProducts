@@ -1,47 +1,5 @@
 import Mathlib
 
-/-- Translation in the domain does not change the derivative. -/
-lemma HasDerivAt.comp_const_add {𝕜 : Type*} [NontriviallyNormedField 𝕜] (a x : 𝕜) {𝕜' : Type*}
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {h : 𝕜 → 𝕜'} {h' : 𝕜'}
-    (hh : HasDerivAt h h' (a + x)) :
-    HasDerivAt (fun x ↦ h (a + x)) h' x  := by
-  simpa [Function.comp_def] using HasDerivAt.scomp (𝕜 := 𝕜) x hh <| hasDerivAt_id' x |>.const_add a
-
-/-- Translation in the domain does not change the derivative. -/
-lemma HasDerivAt.comp_add_const {𝕜 : Type*} [NontriviallyNormedField 𝕜] (x a : 𝕜) {𝕜' : Type*}
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {h : 𝕜 → 𝕜'} {h' : 𝕜'}
-    (hh : HasDerivAt h h' (x + a)) :
-    HasDerivAt (fun x ↦ h (x + a)) h' x  := by
-  simpa [Function.comp_def] using HasDerivAt.scomp (𝕜 := 𝕜) x hh <| hasDerivAt_id' x |>.add_const a
-
-
-namespace intervalIntegral
-
-/-- A variant of the Fundamental theorem of calculus-2 involving integrating over the
-unit interval. -/
-lemma integral_unitInterval_eq_sub {C E : Type*} [NontriviallyNormedField C]
-    [NormedAlgebra ℝ C] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace C E]
-    [CompleteSpace E] [IsScalarTower ℝ C E] {f f' : C → E} {z₀ z₁ : C}
-    (hcont : ContinuousOn (fun t : ℝ ↦ f' (z₀ + t • z₁)) (Set.Icc 0 1))
-    (hderiv : ∀ t ∈ Set.Icc (0 : ℝ) 1, HasDerivAt f (f' (z₀ + t • z₁)) (z₀ + t • z₁)) :
-    z₁ • ∫ t in (0 : ℝ)..1, f' (z₀ + t • z₁) = f (z₀ + z₁) - f z₀ := by
-  let γ (t : ℝ) : C := z₀ + t • z₁
-  have hint : IntervalIntegrable (z₁ • (f' ∘ γ)) MeasureTheory.volume 0 1 :=
-    (ContinuousOn.const_smul hcont z₁).intervalIntegrable_of_Icc zero_le_one
-  have hderiv' : ∀ t ∈ Set.uIcc (0 : ℝ) 1, HasDerivAt (f ∘ γ) (z₁ • (f' ∘ γ) t) t
-  · intro t ht
-    refine (hderiv t <| (Set.uIcc_of_le (α := ℝ) zero_le_one).symm ▸ ht).scomp t ?_
-    have : HasDerivAt (fun t : ℝ ↦ t • z₁) z₁ t
-    · convert (hasDerivAt_id t).smul_const (F := C) _ using 1
-      simp only [one_smul]
-    exact this.const_add z₀
-  convert (integral_eq_sub_of_hasDerivAt hderiv' hint) using 1
-  · simp_rw [← integral_smul, Function.comp_apply]
-  · simp only [Function.comp_apply, one_smul, zero_smul, add_zero]
-
-end intervalIntegral
-
-
 namespace Complex
 
 /-!
@@ -60,7 +18,7 @@ lemma mem_slitPlane_iff' {z : ℂ} : z ∈ slitPlane ↔ z.arg ≠ Real.pi ∧ z
   refine ⟨fun H ↦ ⟨fun h ↦ H.resolve_left fun h' ↦ lt_irrefl 0 <| h'.trans h, fun h ↦ ?_⟩,
           fun H ↦ ?_⟩
   · simp only [h, zero_re, lt_self_iff_false, zero_im, not_true_eq_false, or_self] at H
-  · by_contra' h
+  · by_contra! h
     simp only [h.2, not_true_eq_false] at H
     have h₁ : z = 0 ↔ z.re = 0 ∧ z.im = 0 := ext_iff
     have h₂ : z.re ≤ 0 ↔ z.re = 0 ∨ z.re < 0 := le_iff_eq_or_lt
@@ -78,7 +36,7 @@ lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht :
   rw [Set.mem_Icc] at ht
   simp only [slitPlane, Set.mem_setOf_eq, add_re, one_re, add_im, one_im, zero_add, mul_re,
     ofReal_re, ofReal_im, zero_mul, sub_zero, mul_im, add_zero, mul_eq_zero] at hz ⊢
-  by_contra' H
+  by_contra! H
   simp only [mul_eq_zero] at H hz
   have ht₀ : t ≠ 0
   · rintro rfl
@@ -94,7 +52,7 @@ lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht :
 lemma mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 + z ∈ slitPlane := by
   simp only [slitPlane, Set.mem_setOf_eq, add_re, one_re, add_im, one_im, zero_add]
   simp only [norm_eq_abs] at hz
-  by_contra' H
+  by_contra! H
   linarith only [H.1, neg_lt_of_abs_lt <| (abs_re_le_abs z).trans_lt hz]
 
 /-!
@@ -120,7 +78,7 @@ open intervalIntegral in
 /-- Represent `log (1 + z)` as an integral over the unit interval -/
 lemma log_eq_integral {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     log (1 + z) = z * ∫ (t : ℝ) in (0 : ℝ)..1, (1 + t * z)⁻¹ := by
-  convert (integral_unitInterval_eq_sub (continousOn_one_add_mul_inv hz)
+  convert (integral_unitInterval_deriv_eq_sub (continousOn_one_add_mul_inv hz)
     (fun _ ht ↦ hasDerivAt_log <| slitPlane_star_shaped hz ht)).symm using 1
   simp only [log_one, sub_zero]
 
@@ -157,7 +115,7 @@ lemma logTaylor_succ (n : ℕ) :
 lemma logTaylor_at_zero (n : ℕ) : logTaylor n 0 = 0 := by
   induction n with
   | zero => simp [logTaylor_zero]
-  | succ n ih => simpa [logTaylor_succ, ih] using (Nat.eq_zero_or_pos n).symm
+  | succ n ih => simpa [logTaylor_succ, ih] using ne_or_eq n 0
 
 lemma hasDerivAt_logTaylor (n : ℕ) (z : ℂ) :
     HasDerivAt (logTaylor (n + 1)) (∑ j in Finset.range n, (-1) ^ j * z ^ j) z := by
@@ -234,7 +192,7 @@ lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     exact (Continuous.continuousOn (by continuity)).mul <|
       continousOn_one_add_mul_inv <| mem_slitPlane_of_norm_lt_one hz
   have H : f z = z * ∫ t in (0 : ℝ)..1, (-(t * z)) ^ n * (1 + t * z)⁻¹
-  · convert (integral_unitInterval_eq_sub hcont hderiv).symm using 1
+  · convert (integral_unitInterval_deriv_eq_sub hcont hderiv).symm using 1
     · simp only [zero_add, add_zero, log_one, logTaylor_at_zero, sub_self, sub_zero]
     · simp only [add_zero, log_one, logTaylor_at_zero, sub_self, real_smul, zero_add, smul_eq_mul]
   simp only [H, norm_mul]
