@@ -1,4 +1,5 @@
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.Convex.Star
 
 namespace Complex
 
@@ -10,6 +11,10 @@ namespace Complex
 def slitPlane : Set ℂ := {z | 0 < z.re ∨ z.im ≠ 0}
 
 lemma mem_slitPlane_iff {z : ℂ} : z ∈ slitPlane ↔ 0 < z.re ∨ z.im ≠ 0 := Iff.rfl
+
+lemma slitPlane_eq_union : slitPlane = {z | 0 < z.re} ∪ {z | z.im ≠ 0} := by
+  ext
+  simp [mem_slitPlane_iff]
 
 /-- An alternative description of the slit plane as consisting of nonzero complex numbers
 whose argument is not π. -/
@@ -48,7 +53,16 @@ lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht :
   have H' := mul_pos (ht.1.eq_or_lt.resolve_left ht₀.symm) hz
   nlinarith
 
-/-- The slit plane contains the open unit ball of radius `1` around `1`. -/
+/-- The slit plane is star-convex with respect to the point `1`. -/
+lemma slitPlane_starConvex : StarConvex ℝ (1 : ℂ) slitPlane := by
+  refine (starConvex_iff_forall_pos ?_).mpr fun x hx a b apos bpos hsum ↦ ?_
+  · refine Or.inl <| by simp only [one_re, zero_lt_one]
+  · let z := x - 1
+    have hz : x = 1 + z := eq_add_of_sub_eq' rfl
+    rw [hz, smul_add, ← add_assoc, ← add_smul, hsum, one_smul]
+    exact slitPlane_star_shaped (hz ▸ hx) <| by constructor <;> linarith
+
+    /-- The slit plane contains the open unit ball of radius `1` around `1`. -/
 lemma mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 + z ∈ slitPlane := by
   simp only [slitPlane, Set.mem_setOf_eq, add_re, one_re, add_im, one_im, zero_add]
   simp only [norm_eq_abs] at hz
