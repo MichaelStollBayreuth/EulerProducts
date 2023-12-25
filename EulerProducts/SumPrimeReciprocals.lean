@@ -57,7 +57,7 @@ lemma ne_zero_of_mem_smoothNumbers {n m : ℕ} (h : m ∈ smoothNumbers n) : m �
   (mem_smoothNumbers_iff_forall_le.mp h).1
 
 /-- The `k`-smooth numbers up to and including `N` as a `Finset` -/
-abbrev smoothNumbersUpTo (N k : ℕ) : Finset ℕ :=
+def smoothNumbersUpTo (N k : ℕ) : Finset ℕ :=
     (Finset.range N.succ).filter (· ∈ smoothNumbers k)
 
 lemma mem_smoothNumbersUpTo {N k n : ℕ} :
@@ -65,12 +65,13 @@ lemma mem_smoothNumbersUpTo {N k n : ℕ} :
   simp [smoothNumbersUpTo, lt_succ]
 
 /-- The positive non-`k`-smooth numbers up to and including `N` as a `Finset` -/
-abbrev roughNumbersUpTo (N k : ℕ) : Finset ℕ :=
+def roughNumbersUpTo (N k : ℕ) : Finset ℕ :=
     (Finset.range N.succ).filter (fun n ↦ n ≠ 0 ∧ n ∉ smoothNumbers k)
 
 lemma smoothNumbersUpTo_card_add_roughNumbersUpTo_card (N k : ℕ) :
     (smoothNumbersUpTo N k).card + (roughNumbersUpTo N k).card = N := by
-  rw [← Finset.card_union_eq <| Finset.disjoint_filter.mpr fun n _ hn₂ h ↦ h.2 hn₂,
+  rw [smoothNumbersUpTo, roughNumbersUpTo,
+    ← Finset.card_union_eq <| Finset.disjoint_filter.mpr fun n _ hn₂ h ↦ h.2 hn₂,
     Finset.filter_union_right]
   suffices : Finset.card (Finset.filter (fun x ↦ x ≠ 0) (Finset.range (succ N))) = N
   · convert this with n
