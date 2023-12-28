@@ -1,10 +1,12 @@
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.SpecialFunctions.Integrals
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib
--- import EulerProducts.SlitPlane
-
 namespace Complex
 
+-- Mathlib.Analysis.Complex.Convex
 /-- The slit plane is star-shaped with respect to the point `1`. -/
-lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
+lemma starConvex_one_slitPlane' {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
     1 + t * z ∈ slitPlane := by
   convert starConvex_one_slitPlane hz (sub_nonneg.mpr ht.2) ht.1 (by ring) using 1
   simp only [real_smul, ofReal_sub, ofReal_one, mul_one, smul_add]
@@ -13,7 +15,7 @@ lemma slitPlane_star_shaped {z : ℂ} (hz : 1 + z ∈ slitPlane) {t : ℝ} (ht :
 /-!
 ### Some missing differentiability statements on the complex log
 -/
-
+-- Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 lemma hasDerivAt_log {z : ℂ} (hz : z ∈ slitPlane) : HasDerivAt log z⁻¹ z :=
   HasStrictDerivAt.hasDerivAt <| hasStrictDerivAt_log hz
 
@@ -27,14 +29,14 @@ lemma differentiableAt_log {z : ℂ} (hz : z ∈ slitPlane) : DifferentiableAt �
 lemma continousOn_one_add_mul_inv {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     ContinuousOn (fun t : ℝ ↦ (1 + t * z)⁻¹) (Set.Icc 0 1) :=
   ContinuousOn.inv₀ (Continuous.continuousOn (by continuity))
-    (fun t ht ↦ slitPlane_ne_zero <| slitPlane_star_shaped hz ht)
+    (fun t ht ↦ slitPlane_ne_zero <| starConvex_one_slitPlane' hz ht)
 
 open intervalIntegral in
 /-- Represent `log (1 + z)` as an integral over the unit interval -/
 lemma log_eq_integral {z : ℂ} (hz : 1 + z ∈ slitPlane) :
     log (1 + z) = z * ∫ (t : ℝ) in (0 : ℝ)..1, (1 + t * z)⁻¹ := by
   convert (integral_unitInterval_deriv_eq_sub (continousOn_one_add_mul_inv hz)
-    (fun _ ht ↦ hasDerivAt_log <| slitPlane_star_shaped hz ht)).symm using 1
+    (fun _ ht ↦ hasDerivAt_log <| starConvex_one_slitPlane' hz ht)).symm using 1
   simp only [log_one, sub_zero]
 
 /-- Represent `log (1 - z)⁻¹` as an integral over the unit interval -/
@@ -51,7 +53,7 @@ lemma log_inv_eq_integral {z : ℂ} (hz : 1 - z ∈ slitPlane) :
 
 open BigOperators
 
-local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
+-- local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
 /-- The `n`th Taylor polynomial of `log` at `1`, as a function `ℂ → ℂ` -/
 noncomputable
@@ -87,7 +89,8 @@ lemma hasDerivAt_logTaylor (n : ℕ) (z : ℂ) :
       convert HasDerivAt.mul_const (hasDerivAt_pow (n + 1) z) (((n : ℂ) + 1)⁻¹) using 1
       field_simp [Nat.cast_add_one_ne_zero n]
       ring
-    exact HasDerivAt.const_mul _ this
+    convert HasDerivAt.const_mul _ this using 2
+    ring
 
 /-!
 ### Bounds for the difference between log and its Taylor polynomials
@@ -141,7 +144,7 @@ lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
   · intro t ht
     rw [zero_add]
     exact hasDerivAt_log_sub_logTaylor n <|
-      slitPlane_star_shaped (mem_slitPlane_of_norm_lt_one hz) ht
+      starConvex_one_slitPlane' (mem_slitPlane_of_norm_lt_one hz) ht
   have hcont : ContinuousOn (fun t : ℝ ↦ f' (0 + t * z)) (Set.Icc 0 1)
   · simp only [zero_add, zero_le_one, not_true_eq_false]
     exact (Continuous.continuousOn (by continuity)).mul <|
