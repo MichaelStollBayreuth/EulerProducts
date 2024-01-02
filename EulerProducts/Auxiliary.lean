@@ -158,10 +158,10 @@ lemma tsum_setProd_eq_tsum_prod {α β : Type*} (s : Set α) (t : Set β) (f : �
     (∑' x : s ×ˢ t, f x) = ∑' x : s × t, f ((Equiv.Set.prod s t).symm x) :=
   ((Equiv.Set.prod s t).symm.tsum_eq <| (s ×ˢ t).restrict f).symm
 
-lemma tsum_prod_singleton_left {α β : Type*} (a : α) (t : Set β) (f : α × β → ℂ) :
+lemma tsum_setProd_singleton_left {α β : Type*} (a : α) (t : Set β) (f : α × β → ℂ) :
     (∑' x : {a} ×ˢ t, f x) = ∑' b : t, f (a, b) :=
   (Equiv.Set.prod_singleton_left a t |>.symm.tsum_eq <| ({a} ×ˢ t).restrict f).symm
 
-lemma tsum_prod_singleton_right {α β : Type*} (s : Set α) (b : β) (f : α × β → ℂ) :
+lemma tsum_setProd_singleton_right {α β : Type*} (s : Set α) (b : β) (f : α × β → ℂ) :
     (∑' x : s ×ˢ {b}, f x) = ∑' a : s, f (a, b) :=
   (Equiv.Set.prod_singleton_right s b |>.symm.tsum_eq <| (s ×ˢ {b}).restrict f).symm

@@ -415,7 +415,7 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
       rw [tsum_congr_set_coe h hS,
         tsum_union_disjoint (Set.Disjoint.set_prod_left Set.disjoint_sdiff_right ..)
           (hsum.subtype _) (hsum.subtype _),
-        tsum_prod_singleton_left 0 _ h, tsum_prod_singleton_right _ 0 h]
+        tsum_setProd_singleton_left 0 _ h, tsum_setProd_singleton_right _ 0 h]
       simp only [map_zero, zero_div, zero_mul, tsum_zero, mul_zero, add_zero]
   -- now `n > 0`
   have H : n.divisorsAntidiagonal = m ⁻¹' {n}
