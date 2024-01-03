@@ -28,57 +28,60 @@ end Real
 
 namespace EReal
 
-lemma exists_between_ofReal_left {x : EReal} {z : ℝ} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
+open Set
+
+lemma exists_between_ofReal {x z : EReal} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
   obtain ⟨a, ha₁, ha₂⟩ := exists_between h
   induction' a using EReal.rec with a₀
-  · simp only [not_lt_bot] at ha₁
+  · exact (not_lt_bot ha₁).elim
   · exact ⟨a₀, by exact_mod_cast ha₁, by exact_mod_cast ha₂⟩
-  · simp only [not_top_lt] at ha₂
+  · exact (not_top_lt ha₂).elim
 
-lemma exists_between_ofReal_right {x : ℝ} {z : EReal} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
-  obtain ⟨a, ha₁, ha₂⟩ := exists_between h
-  induction' a using EReal.rec with a₀
-  · simp only [not_lt_bot] at ha₁
-  · exact ⟨a₀, by exact_mod_cast ha₁, by exact_mod_cast ha₂⟩
-  · simp only [not_top_lt] at ha₂
-
-lemma Icc_of_Real {x y : ℝ} : Real.toEReal '' Set.Icc x y = Set.Icc ↑x ↑y := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Icc {x y : ℝ} : Real.toEReal '' Icc x y = Icc ↑x ↑y := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Icc, WithBot.image_coe_Icc]
   rfl
 
-lemma Ico_of_Real {x y : ℝ} : Real.toEReal '' Set.Ico x y = Set.Ico ↑x ↑y := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Ico {x y : ℝ} : Real.toEReal '' Ico x y = Ico ↑x ↑y := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Ico, WithBot.image_coe_Ico]
   rfl
 
-lemma Ici_of_Real {x : ℝ} : Real.toEReal '' Set.Ici x = Set.Ico ↑x ⊤ := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Ici {x : ℝ} : Real.toEReal '' Ici x = Ico ↑x ⊤ := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Ici, WithBot.image_coe_Ico]
   rfl
 
-lemma Ioc_of_Real {x y : ℝ} : Real.toEReal '' Set.Ioc x y = Set.Ioc ↑x ↑y := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Ioc {x y : ℝ} : Real.toEReal '' Ioc x y = Ioc ↑x ↑y := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Ioc, WithBot.image_coe_Ioc]
   rfl
 
-lemma Ioo_of_Real {x y : ℝ} : Real.toEReal '' Set.Ioo x y = Set.Ioo ↑x ↑y := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Ioo {x y : ℝ} : Real.toEReal '' Ioo x y = Ioo ↑x ↑y := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Ioo, WithBot.image_coe_Ioo]
   rfl
 
-lemma Ioi_ofReal {x : ℝ} : Real.toEReal '' Set.Ioi x = Set.Ioo ↑x ⊤ := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Ioi {x : ℝ} : Real.toEReal '' Ioi x = Ioo ↑x ⊤ := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Ioi, WithBot.image_coe_Ioo]
   rfl
 
-lemma Iic_ofReal {x : ℝ} : Real.toEReal '' Set.Iic x = Set.Ioc ⊥ ↑x := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Iic {x : ℝ} : Real.toEReal '' Iic x = Ioc ⊥ ↑x := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Iic, WithBot.image_coe_Iic]
   rfl
 
-lemma Iio_ofReal {x : ℝ} : Real.toEReal '' Set.Iio x = Set.Ioo ⊥ ↑x := by
-  refine (Set.image_comp WithBot.some WithTop.some _).trans ?_
+@[simp]
+lemma image_coe_Iio {x : ℝ} : Real.toEReal '' Iio x = Ioo ⊥ ↑x := by
+  refine (image_comp WithBot.some WithTop.some _).trans ?_
   rw [WithTop.image_coe_Iio, WithBot.image_coe_Iio]
   rfl
 

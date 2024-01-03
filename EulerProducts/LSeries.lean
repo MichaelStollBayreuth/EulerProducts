@@ -175,8 +175,8 @@ lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s
 lemma LSeriesSummable_re_lt_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
     (hs : abscissaOfAbsConv f < s.re) :
     ∃ x : ℝ, x < s.re ∧ LSeriesSummable f x := by
-  obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal_left hs
-  refine ⟨x, hx₂, LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁⟩
+  obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal hs
+  refine ⟨x, EReal.coe_lt_coe_iff.mp hx₂, LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁⟩
 
 lemma LSeriesSummable.abscissaOfAbsConv_le {f : ArithmeticFunction ℂ} {s : ℂ}
     (h : LSeriesSummable f s) : abscissaOfAbsConv f ≤ s.re := by
@@ -267,8 +267,8 @@ lemma abscissaOfAbsConv_le_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x 
     (h : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ x) : abscissaOfAbsConv f ≤ x + 1 := by
   rw [show x = x + 1 - 1 by ring] at h
   by_contra! H
-  obtain ⟨y, hy₁, hy₂⟩ := EReal.exists_between_ofReal_right H
-  exact (LSeriesSummable_of_le_const_mul_rpow (s := y) hy₁ h
+  obtain ⟨y, hy₁, hy₂⟩ := EReal.exists_between_ofReal H
+  exact (LSeriesSummable_of_le_const_mul_rpow (s := y) (EReal.coe_lt_coe_iff.mp hy₁) h
     |>.abscissaOfAbsConv_le.trans_lt hy₂).false
 
 /-- If `f` is bounded, the the abscissa of absolute convergence of `f` is bounded above by `1`. -/
@@ -309,11 +309,11 @@ lemma abscissaOfAbsConv_pmul_log {f : ArithmeticFunction ℂ} :
     abscissaOfAbsConv (pmul log f) = abscissaOfAbsConv f := by
   refine le_antisymm ?_ ?_
   · refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
-    obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal_left hy
+    obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal hy
     have hx₁' : abscissaOfAbsConv f < ↑((x : ℂ).re)
     · simp only [ofReal_re, hx₁]
     have hx₂' : (x : ℂ).re < (y : ℂ).re
-    · simp only [ofReal_re, hx₂]
+    · simp only [ofReal_re, EReal.coe_lt_coe_iff.mp hx₂]
     exact (LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁').log_pmul_of_re_lt_re hx₂'
   · refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
     have hy' : abscissaOfAbsConv (pmul (↑log) f) < ↑((y : ℂ).re)
@@ -472,7 +472,7 @@ lemma LSeries.one : LSeries 1 = 1 := by
 /-- The abscissa of convergence of `ζ` is `1`. -/
 lemma abscissaOfAbsConv_zeta : abscissaOfAbsConv ζ = 1 := by
   simpa only [abscissaOfAbsConv, zeta_LSeriesSummable_iff_one_lt_re, ofReal_re, Set.Ioi_def,
-    EReal.Ioi_ofReal, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
+    EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
 
 /-- The L-series of the arithmetic function `ζ` equals the Riemann Zeta Function on its
 domain of convergence `1 < re s`. -/
@@ -513,7 +513,7 @@ lemma moebius_LSeriesSummable_iff {s : ℂ} : LSeriesSummable μ s ↔ 1 < s.re 
 
 lemma abscissaOfAbsConv_mu : abscissaOfAbsConv μ = 1 := by
   simpa only [abscissaOfAbsConv, moebius_LSeriesSummable_iff, ofReal_re, Set.Ioi_def,
-    EReal.Ioi_ofReal, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
+    EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
 
 lemma LSeries.zeta_mul_mu_eq_one {s : ℂ} (hs : 1 < s.re) : LSeries ζ s * LSeries μ s = 1 := by
   rw [← LSeries_mul (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
