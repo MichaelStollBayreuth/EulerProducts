@@ -6,6 +6,30 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 ### Auxiliary lemmas
 -/
 
+namespace Nat
+
+lemma Prime.one_le {p : ℕ} (hp : p.Prime) : 1 ≤ p := hp.one_lt.le
+
+lemma pow_eq_one_iff {m n : ℕ} : m ^ n = 1 ↔ m = 1 ∨ n = 0 := by
+  refine ⟨fun H ↦ ?_, fun H ↦ ?_⟩
+  · rcases eq_or_ne n 0 with h | h
+    · exact Or.inr h
+    · refine Or.inl ?_
+      rcases m.eq_zero_or_pos with rfl | hm
+      · simp [h] at H
+      by_contra! hm'
+      exact (H ▸ (one_lt_pow_iff h).mpr <| lt_of_le_of_ne hm hm'.symm).false
+  · rcases H with rfl | rfl <;> simp
+
+lemma pow_injective_on_primes {p q m n : ℕ} (hp : p.Prime) (hq : q.Prime)
+    (h : p ^ (m + 1) = q ^ (n + 1)) : p = q ∧ m = n := by
+  have H := dvd_antisymm (Prime.dvd_of_dvd_pow hp <| h ▸ dvd_pow_self p (succ_ne_zero m))
+    (Prime.dvd_of_dvd_pow hq <| h.symm ▸ dvd_pow_self q (succ_ne_zero n))
+  exact ⟨H, succ_inj'.mp <| Nat.pow_right_injective hq.two_le (H ▸ h)⟩
+
+end Nat
+
+
 namespace Real
 
 lemma log_le_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) :
@@ -93,6 +117,10 @@ namespace Complex
 @[simp, norm_cast]
 lemma ofNat_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
 
+@[simp, norm_cast]
+lemma ofNat_arg {n : ℕ} : arg n = 0 :=
+  ofReal_nat_cast n ▸ arg_ofReal_of_nonneg n.cast_nonneg
+
 lemma norm_log_ofNat_le_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
     ‖log n‖ ≤ ε⁻¹ * n ^ ε := by
   rcases n.eq_zero_or_pos with rfl | h
@@ -103,6 +131,14 @@ lemma norm_log_ofNat_le_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
 
 lemma mul_cpow_ofNat (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
   ofReal_nat_cast m ▸ ofReal_nat_cast n ▸ mul_cpow_ofReal_nonneg m.cast_nonneg n.cast_nonneg s
+
+lemma ofNat_cpow_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
+  rw [cpow_mul]
+  · rw [cpow_nat_cast]
+  all_goals
+    rw [← ofNat_log]
+    norm_cast
+    linarith [Real.pi_pos]
 
 lemma norm_ofNat_cpow_of_re_ne_zero (n : ℕ) {s : ℂ} (hs : s.re ≠ 0) :
     ‖(n : ℂ) ^ s‖ = (n : ℝ) ^ (s.re) := by
@@ -115,6 +151,14 @@ lemma norm_ofNat_cpow_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) :
 lemma norm_ofNat_cpow_pos_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) : 0 < ‖(n : ℂ) ^ s‖ :=
   (norm_ofNat_cpow_of_pos hn _).symm ▸ Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
 
+lemma norm_prime_cpow_le_one_half (p : Nat.Primes) {s : ℂ} (hs : 1 < s.re) :
+    ‖(p : ℂ) ^ (-s)‖ ≤ 1 / 2 := by
+  rw [norm_ofNat_cpow_of_re_ne_zero p <| by rw [neg_re]; linarith only [hs]]
+  refine (Real.rpow_le_rpow_of_nonpos zero_lt_two (Nat.cast_le.mpr p.prop.two_le) <|
+    by rw [neg_re]; linarith only [hs]).trans ?_
+  rw [one_div, ← Real.rpow_neg_one]
+  exact Real.rpow_le_rpow_of_exponent_le one_le_two <| (neg_lt_neg hs).le
+
 lemma norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos {n : ℕ} (hn : 0 < n) {w z : ℂ} (h : w.re ≤ z.re) :
     ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖ := by
   simp_rw [norm_ofNat_cpow_of_pos hn]
@@ -126,6 +170,14 @@ lemma indicator_ofReal {f : ℕ → ℝ} {s : Set ℕ} :
   by_cases h : n ∈ s
   · simp only [h, Set.indicator_of_mem]
   · simp only [h, not_false_eq_true, Set.indicator_of_not_mem, ofReal_zero]
+
+lemma summable_re {α : Type u_1} {f : α → ℂ} (h : Summable f) :
+    Summable fun x ↦ (f x).re :=
+  HasSum.summable <| Complex.hasSum_re h.hasSum
+
+lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) :
+    Summable fun x ↦ (f x).im :=
+  HasSum.summable <| Complex.hasSum_im h.hasSum
 
 end Complex
 
