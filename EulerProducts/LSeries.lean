@@ -1,5 +1,5 @@
 import EulerProducts.Auxiliary
-import EulerProducts.SumPrimeReciprocals
+import Mathlib.NumberTheory.SumPrimeReciprocals
 import Mathlib.NumberTheory.LSeries
 import Mathlib.NumberTheory.VonMangoldt
 import Mathlib.NumberTheory.ZetaFunction
