@@ -54,7 +54,7 @@ namespace EReal
 
 open Set
 
-lemma exists_between_ofReal {x z : EReal} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
+lemma exists_between_coe_real {x z : EReal} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
   obtain ⟨a, ha₁, ha₂⟩ := exists_between h
   induction' a using EReal.rec with a₀
   · exact (not_lt_bot ha₁).elim
