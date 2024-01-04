@@ -7,9 +7,6 @@ Some results have by now made it into Mathlib.
 Current projects:
 * [__EulerProducts/ComplexLog.lean__](EulerProducts/ComplexLog.lean): estimates for the complex
   logarithm
-* [__EulerProducts/SumPrimeReciprocals.lean__](EulerProducts/SumPrimeReciprocals.lean): a proof
-  that the sum of 1/p over the primes diverges
-  (now in Mathlib)
 * [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean): auxiliary lemmas
 * [__EulerProducts/Logarithm.lean__](EulerProducts/Logarithm.lean): proves a logarithmic version
   of the Euler product formula for completely multiplicative arithmetic functions
