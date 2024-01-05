@@ -175,7 +175,7 @@ lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s
 lemma LSeriesSummable_re_lt_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
     (hs : abscissaOfAbsConv f < s.re) :
     ∃ x : ℝ, x < s.re ∧ LSeriesSummable f x := by
-  obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal hs
+  obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_coe_real hs
   refine ⟨x, EReal.coe_lt_coe_iff.mp hx₂, LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁⟩
 
 lemma LSeriesSummable.abscissaOfAbsConv_le {f : ArithmeticFunction ℂ} {s : ℂ}
@@ -267,7 +267,7 @@ lemma abscissaOfAbsConv_le_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x 
     (h : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ x) : abscissaOfAbsConv f ≤ x + 1 := by
   rw [show x = x + 1 - 1 by ring] at h
   by_contra! H
-  obtain ⟨y, hy₁, hy₂⟩ := EReal.exists_between_ofReal H
+  obtain ⟨y, hy₁, hy₂⟩ := EReal.exists_between_coe_real H
   exact (LSeriesSummable_of_le_const_mul_rpow (s := y) (EReal.coe_lt_coe_iff.mp hy₁) h
     |>.abscissaOfAbsConv_le.trans_lt hy₂).false
 
@@ -309,7 +309,7 @@ lemma abscissaOfAbsConv_pmul_log {f : ArithmeticFunction ℂ} :
     abscissaOfAbsConv (pmul log f) = abscissaOfAbsConv f := by
   refine le_antisymm ?_ ?_
   · refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
-    obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_ofReal hy
+    obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_coe_real hy
     have hx₁' : abscissaOfAbsConv f < ↑((x : ℂ).re)
     · simp only [ofReal_re, hx₁]
     have hx₂' : (x : ℂ).re < (y : ℂ).re
