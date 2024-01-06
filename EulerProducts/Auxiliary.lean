@@ -34,11 +34,10 @@ namespace Real
 
 lemma log_le_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) :
     log x ≤ ε⁻¹ * x ^ ε := by
-  have hε' : 0 < ε⁻¹ := inv_pos.mpr hε
   rcases hx.eq_or_lt with rfl | h
   · rw [log_zero, zero_rpow hε.ne', mul_zero]
   suffices : ε * log x ≤ x ^ ε
-  · apply_fun (ε⁻¹ * ·) at this using monotone_mul_left_of_nonneg hε'.le
+  · apply_fun (ε⁻¹ * ·) at this using monotone_mul_left_of_nonneg (inv_pos.mpr hε).le
     simp only at this
     rwa [← mul_assoc, inv_mul_cancel hε.ne', one_mul] at this
   exact (log_rpow h ε).symm.trans_le <| (log_le_sub_one_of_pos <| rpow_pos_of_pos h ε).trans
@@ -49,69 +48,6 @@ lemma log_ofNat_le_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
   log_le_rpow n.cast_nonneg hε
 
 end Real
-
-namespace EReal
-
--- See #9404
-
-open Set
-
-lemma exists_between_coe_real {x z : EReal} (h : x < z) : ∃ y : ℝ, x < y ∧ y < z := by
-  obtain ⟨a, ha₁, ha₂⟩ := exists_between h
-  induction' a using EReal.rec with a₀
-  · exact (not_lt_bot ha₁).elim
-  · exact ⟨a₀, by exact_mod_cast ha₁, by exact_mod_cast ha₂⟩
-  · exact (not_top_lt ha₂).elim
-
-@[simp]
-lemma image_coe_Icc (x y : ℝ) : Real.toEReal '' Icc x y = Icc ↑x ↑y := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Icc, WithBot.image_coe_Icc]
-  rfl
-
-@[simp]
-lemma image_coe_Ico (x y : ℝ) : Real.toEReal '' Ico x y = Ico ↑x ↑y := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Ico, WithBot.image_coe_Ico]
-  rfl
-
-@[simp]
-lemma image_coe_Ici (x : ℝ) : Real.toEReal '' Ici x = Ico ↑x ⊤ := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Ici, WithBot.image_coe_Ico]
-  rfl
-
-@[simp]
-lemma image_coe_Ioc (x y : ℝ) : Real.toEReal '' Ioc x y = Ioc ↑x ↑y := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Ioc, WithBot.image_coe_Ioc]
-  rfl
-
-@[simp]
-lemma image_coe_Ioo (x y : ℝ) : Real.toEReal '' Ioo x y = Ioo ↑x ↑y := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Ioo, WithBot.image_coe_Ioo]
-  rfl
-
-@[simp]
-lemma image_coe_Ioi (x : ℝ) : Real.toEReal '' Ioi x = Ioo ↑x ⊤ := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Ioi, WithBot.image_coe_Ioo]
-  rfl
-
-@[simp]
-lemma image_coe_Iic (x : ℝ) : Real.toEReal '' Iic x = Ioc ⊥ ↑x := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Iic, WithBot.image_coe_Iic]
-  rfl
-
-@[simp]
-lemma image_coe_Iio (x : ℝ) : Real.toEReal '' Iio x = Ioo ⊥ ↑x := by
-  refine (image_comp WithBot.some WithTop.some _).trans ?_
-  rw [WithTop.image_coe_Iio, WithBot.image_coe_Iio]
-  rfl
-
-end EReal
 
 
 namespace Complex
