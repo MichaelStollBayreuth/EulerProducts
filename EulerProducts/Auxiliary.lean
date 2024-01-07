@@ -1,6 +1,6 @@
-import Mathlib.Data.Real.EReal
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.NumberTheory.DirichletCharacter.Basic
 
 /-!
 ### Auxiliary lemmas
@@ -158,3 +158,17 @@ lemma tsum_setProd_singleton_left {α β : Type*} (a : α) (t : Set β) (f : α 
 lemma tsum_setProd_singleton_right {α β : Type*} (s : Set α) (b : β) (f : α × β → ℂ) :
     (∑' x : s ×ˢ {b}, f x) = ∑' a : s, f (a, b) :=
   (Equiv.Set.prod_singleton_right s b |>.symm.tsum_eq <| (s ×ˢ {b}).restrict f).symm
+
+
+namespace MulChar
+
+@[coe]
+def toMonoidWithZeroHom  {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZero R']
+    [Nontrivial R] (χ : MulChar R R') : R →*₀ R' where
+      toFun := χ.toFun
+      map_zero' := χ.map_zero
+      map_one' := χ.map_one'
+      map_mul' := χ.map_mul'
+
+
+end MulChar
