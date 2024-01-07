@@ -134,7 +134,7 @@ lemma integrable_pow_mul_norm_one_add_mul_inv (n : ℕ) {z : ℂ} (hz : ‖z‖ 
 open intervalIntegral in
 /-- The difference of `log (1+z)` and its `(n+1)`st Taylor polynomial can be bounded in
 terms of `‖z‖`. -/
-lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
+lemma norm_log_sub_logTaylor_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 + z) - logTaylor (n + 1) z‖ ≤ ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
   have help : IntervalIntegrable (fun t : ℝ ↦ t ^ n * (1 - ‖z‖)⁻¹) MeasureTheory.volume 0 1 :=
     IntervalIntegrable.mul_const (Continuous.intervalIntegrable (by continuity) 0 1) (1 - ‖z‖)⁻¹
@@ -174,22 +174,22 @@ lemma log_sub_logTaylor_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
         rw [intervalIntegral.integral_mul_const, mul_comm, integral_pow]
         field_simp
 
-lemma norm_log_sub_self_le {z : ℂ} (hz : ‖z‖ < 1) :
+lemma norm_log_one_add_sub_self_le {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 + z) - z‖ ≤ ‖z‖ ^ 2 * (1 - ‖z‖)⁻¹ / 2 := by
-  convert log_sub_logTaylor_norm_le 1 hz using 2
+  convert norm_log_sub_logTaylor_le 1 hz using 2
   · simp [logTaylor_succ, logTaylor_zero, sub_eq_add_neg]
   · norm_num
 
-lemma log_inv_add_logTaylor_neg_norm_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
+lemma norm_log_one_sub_inv_add_logTaylor_neg_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 - z)⁻¹ + logTaylor (n + 1) (-z)‖ ≤ ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
   rw [sub_eq_add_neg,
     log_inv _ <| slitPlane_arg_ne_pi <| mem_slitPlane_of_norm_lt_one <| (norm_neg z).symm ▸ hz,
     ← sub_neg_eq_add, ← neg_sub', norm_neg]
-  convert log_sub_logTaylor_norm_le n <| (norm_neg z).symm ▸ hz using 4 <;> rw [norm_neg]
+  convert norm_log_sub_logTaylor_le n <| (norm_neg z).symm ▸ hz using 4 <;> rw [norm_neg]
 
-lemma norm_log_inv_sub_self_le {z : ℂ} (hz : ‖z‖ < 1) :
+lemma norm_log_one_sub_inv_sub_self_le {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 - z)⁻¹ - z‖ ≤ ‖z‖ ^ 2 * (1 - ‖z‖)⁻¹ / 2 := by
-  convert log_inv_add_logTaylor_neg_norm_le 1 hz using 2
+  convert norm_log_one_sub_inv_add_logTaylor_neg_le 1 hz using 2
   · simp [logTaylor_succ, logTaylor_zero, sub_eq_add_neg]
   · norm_num
 

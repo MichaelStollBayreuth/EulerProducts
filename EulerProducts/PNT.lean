@@ -46,7 +46,7 @@ lemma hasSum_taylorSeries_log {z : ℂ} (hz : ‖z‖ < 1) :
         cases n with
         | zero => simp [logTaylor_zero]
         | succ n =>
-            refine (log_sub_logTaylor_norm_le n hz).trans ?_
+            refine (norm_log_sub_logTaylor_le n hz).trans ?_
             rw [mul_comm, ← div_one ((max _ _) * _)]
             gcongr
             · exact le_max_right ..
