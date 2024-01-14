@@ -1,5 +1,6 @@
 import EulerProducts.LSeries
 import EulerProducts.Logarithm
+import EulerProducts.DirichletLSeries
 
 /-!
 ### Auxiliary stuff
@@ -41,14 +42,28 @@ open Complex
 
 local notation (name := rzeta) "ζ" => riemannZeta
 
-lemma summable_neg_log_one_sub_prime_cpow {s : ℂ} (hs : 1 < s.re) :
-    Summable fun p : Nat.Primes ↦ -log (1 - (p : ℂ) ^ (-s)) := by
+lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
+    (hs : 1 < s.re) :
+    Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
+  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re
+  · rw [norm_mul, norm_ofNat_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
+    calc ‖χ p‖ * (p : ℝ) ^ (-s).re
+      _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
+      _ = _ := one_mul _
   refine Summable.neg_log_one_sub <| Summable.of_norm ?_
-  conv => enter [1, a]; rw [norm_ofNat_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) this ?_
   refine Nat.Primes.summable_rpow.mpr ?_
   simp only [neg_re, neg_lt_neg_iff, hs]
 
-lemma log_re_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
+lemma summable_neg_log_one_sub_prime_cpow {s : ℂ} (hs : 1 < s.re) :
+    Summable fun p : Nat.Primes ↦ -log (1 - (p : ℂ) ^ (-s)) := by
+  simpa [MulChar.one_apply ℂ <| isUnit_of_subsingleton _, one_mul]
+    using summable_neg_log_one_sub_char_mul_prime_cpow (1 : DirichletCharacter ℂ 1) hs
+
+/-- A technical lemma showing that a certain linear combination of real parts of logarithms
+is nonnegative. This is used to show non-vanishing of the Riemann zeta function and of
+Dirichlet L-series on the line `re s = 1`. -/
+lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
   have hac₀ : ‖(a : ℂ)‖ < 1
   · simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
@@ -76,29 +91,76 @@ lemma log_re_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
     by ring]
   positivity
 
-lemma log_re_comb_nonneg {n : ℕ} (hn : 2 ≤ n) {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
+/-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
+has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
+lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n)
+    {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
+    0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
+          4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
+          (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
+  by_cases hn' : IsUnit (n : ZMod N)
+  · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg_of_nonneg n.cast_nonneg _
+    have ha₁ : (n : ℝ) ^ (-x) < 1
+    · simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
+      Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff] using
+        Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
+    have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1
+    · rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
+      norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
+      simp [hy]
+    rw [MulChar.one_apply _ hn', one_mul]
+    convert re_log_comb_nonneg' ha₀ ha₁ hz using 6
+    · congr 2
+      exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
+    · congr 2
+      rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
+        ofReal_cpow n.cast_nonneg (-x), ofReal_nat_cast]
+      ring
+    · rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
+        ofReal_cpow n.cast_nonneg (-x), ofReal_nat_cast,
+        show -(2 * I * y) = (2 : ℕ) * (-I * y) by ring, cpow_nat_mul]
+      ring_nf
+  · simp [MulChar.map_nonunit _ hn']
+
+/-- The logarithm of an Euler factor of the product `ζ(x)^3 * ζ(x+I*y)^4 * ζ(x+2*I*y)`
+has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
+lemma re_log_comb_nonneg_zeta {n : ℕ} (hn : 2 ≤ n) {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
     0 ≤ 3 * (-log (1 - n ^ (-x : ℂ))).re + 4 * (-log (1 - n ^ (-(x + I * y)))).re +
           (-log (1 - n ^ (-(x + 2 * I * y)))).re := by
-  have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg_of_nonneg n.cast_nonneg _
-  have ha₁ : (n : ℝ) ^ (-x) < 1
-  · simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
-    Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff] using
-      Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
-  have hz : ‖(n : ℂ) ^ (-(I * y))‖ = 1
-  · rw [norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
-    simp [hy]
-  convert log_re_comb_nonneg' ha₀ ha₁ hz using 6
-  · congr 2
-    exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
-  · congr 2
-    rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg]
-    congr 1
-    exact (ofReal_cpow n.cast_nonneg (-x)).symm
-  · rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg]
-    congr 1
-    · exact (ofReal_cpow n.cast_nonneg (-x)).symm
-    · rw [mul_assoc, ← mul_neg, show (2 : ℂ) = (2 : ℕ) from rfl, cpow_nat_mul]
+  simpa [MulChar.one_apply ℂ <| isUnit_of_subsingleton _, one_pow, one_mul]
+    using re_log_comb_nonneg_dirichlet (1 : DirichletCharacter ℂ 1) hn hx hy
 
+
+open Nat.ArithmeticFunction in
+lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 1 < x)
+    (hy : y ≠ 0) :
+    ‖LSeries (1 : DirichletCharacter ℂ N) x ^ 3 * LSeries χ (x + I * y) ^ 4 *
+      LSeries (χ ^ 2 :) (x + 2 * I * y)‖ ≥ 1 := by
+  have h₀ : 1 < (x : ℂ).re
+  · simp only [ofReal_re, hx]
+  have h₁ : 1 < (x + I * y).re
+  · simp [hx]
+  have h₂ : 1 < (x + 2 * I * y).re
+  · simp [hx]
+  have hsum₀ :=
+    (summable_re <|
+      summable_neg_log_one_sub_char_mul_prime_cpow (1 : DirichletCharacter ℂ N) h₀).mul_left 3
+  have hsum₁ := (summable_re <| summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).mul_left 4
+  have hsum₂ := summable_re <| summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂
+  rw [← LSeries_dirichlet_eulerProduct' _ h₀, ← LSeries_dirichlet_eulerProduct' χ h₁,
+    ← LSeries_dirichlet_eulerProduct' (χ ^ 2) h₂]
+  rw [← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add, norm_eq_abs, abs_exp]
+  simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
+    Real.one_le_exp_iff]
+  rw [re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₀,
+    re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₁,
+    re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
+    ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
+  convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le hx hy
+    with p
+  rw [sq, sq, MulChar.mul_apply]
+
+open Nat.ArithmeticFunction in
 lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
     ‖ζ x ^ 3 * ζ (x + I * y) ^ 4 * ζ (x + 2 * I * y)‖ ≥ 1 := by
   have h₀ : 1 < (x : ℂ).re
@@ -107,18 +169,9 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
   · simp [hx]
   have h₂ : 1 < (x + 2 * I * y).re
   · simp [hx]
-  have hsum₀ := (summable_re <| summable_neg_log_one_sub_prime_cpow h₀).mul_left 3
-  have hsum₁ := (summable_re <| summable_neg_log_one_sub_prime_cpow h₁).mul_left 4
-  have hsum₂ := summable_re <| summable_neg_log_one_sub_prime_cpow h₂
-  repeat rw [← riemannZeta_eulerProduct' <| by assumption]
-  rw [← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add, norm_eq_abs, abs_exp]
-  simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
-    Real.one_le_exp_iff]
-  rw [re_tsum <| summable_neg_log_one_sub_prime_cpow h₀,
-    re_tsum <| summable_neg_log_one_sub_prime_cpow h₁,
-    re_tsum <| summable_neg_log_one_sub_prime_cpow h₂, ← tsum_mul_left, ← tsum_mul_left,
-    ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
-  exact tsum_nonneg fun p ↦ log_re_comb_nonneg p.prop.two_le hx hy
+  have := norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
+  simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
+    using norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
 
 lemma riemannZeta_bounded_near_one : ∃ ε > 0, ∀ w, ‖w‖ < ε → ‖ζ (1 + w) * w‖ ≤ 2 := by
   have := riemannZeta_residue_one

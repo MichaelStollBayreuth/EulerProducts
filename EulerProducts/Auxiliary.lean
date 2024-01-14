@@ -1,6 +1,7 @@
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.NumberTheory.DirichletCharacter.Basic
+import Mathlib.Analysis.PSeries
 
 /-!
 ### Auxiliary lemmas
@@ -47,8 +48,39 @@ lemma log_ofNat_le_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
     log n ≤ ε⁻¹ * n ^ ε :=
   log_le_rpow n.cast_nonneg hε
 
+lemma not_summable_indicator_one_div_nat_cast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
+    ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
+  have : NeZero m := { out := hm }
+  suffices : ¬ Summable fun n : ℕ ↦ (1 / (m * n + k.val) : ℝ)
+  · set f : ℕ → ℝ := Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)
+    contrapose! this
+    let g : ℕ → ℕ := fun n ↦ m * n + k.val
+    have hg : Function.Injective g
+    · intro m n hmn
+      simpa [g, hm] using hmn
+    have hg' : ∀ n ∉ Set.range g, f n = 0
+    · intro n hn
+      contrapose! hn
+      convert Set.mem_of_indicator_ne_zero hn
+      ext n
+      simp only [Set.mem_range, Set.mem_setOf_eq, ZMod.nat_coe_zmod_eq_iff]
+      conv => enter [1, 1, y]; rw [add_comm, eq_comm]
+    convert (Function.Injective.summable_iff hg hg').mpr this with n
+    simp [g]
+  by_contra! h
+  refine not_summable_one_div_nat_cast <| (summable_nat_add_iff 2).mp <|
+    (summable_mul_left_iff (one_div_ne_zero <| Nat.cast_ne_zero.mpr hm)).mp <|
+    Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_) <| (summable_nat_add_iff 1).mpr h
+  field_simp
+  rw [← ZMod.nat_cast_val k]
+  gcongr
+  norm_cast
+  linarith only [ZMod.val_le k]
+
 end Real
 
+example (f : ℕ → ℂ) (m : ℕ) (hf : Summable fun n ↦ f (n + m)) : Summable f := by
+  exact (summable_nat_add_iff m).mp hf
 
 namespace Complex
 
@@ -170,5 +202,9 @@ def toMonoidWithZeroHom  {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZe
       map_one' := χ.map_one'
       map_mul' := χ.map_mul'
 
+lemma one_apply {R : Type*} [CommMonoid R] (R' : Type*) [CommMonoidWithZero R'] {x : R}
+    (hx : IsUnit x) : (1 : MulChar R R') x = 1 := by
+  rw [show (1 : MulChar R R') = trivial R R' from rfl]
+  simp only [trivial_apply, hx, ite_true]
 
 end MulChar
