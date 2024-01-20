@@ -83,8 +83,8 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
   · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg n.cast_nonneg _
     have ha₁ : (n : ℝ) ^ (-x) < 1
     · simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
-      Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff] using
-        Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
+        Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff]
+        using Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
     have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1
     · rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
       norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
