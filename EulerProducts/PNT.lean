@@ -87,7 +87,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
         using Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
     have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1
     · rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
-      norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
+        norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
       simp [hy]
     rw [MulChar.one_apply _ hn', one_mul]
     convert re_log_comb_nonneg' ha₀ ha₁ hz using 6
