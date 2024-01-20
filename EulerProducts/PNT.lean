@@ -250,21 +250,16 @@ lemma ζ₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) : ζ₁ z = ζ z * (z - 1) 
 
 lemma ζ₁_differentiable : Differentiable ℂ ζ₁ := by
   rw [← differentiableOn_univ,
-    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem]
-  refine ⟨?_, ?_⟩
-  · simp only [ζ₁]
-    refine DifferentiableOn.congr (f := fun z ↦ ζ z * (z - 1)) ?_ ?_
-    · intros z hz
-      refine DifferentiableAt.differentiableWithinAt ?_
-      simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
-      exact (differentiableAt_riemannZeta hz).mul <| (differentiableAt_id').sub <|
-        differentiableAt_const 1
-    · intros z hz
-      simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
-      simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
-  · refine continuousWithinAt_compl_self.mp ?_
-    simp only [ζ₁]
-    conv in (_ * _) => rw [mul_comm]
+    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem, ζ₁]
+  refine ⟨DifferentiableOn.congr (f := fun z ↦ ζ z * (z - 1))
+    (fun _ hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
+    continuousWithinAt_compl_self.mp ?_⟩
+  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
+    exact (differentiableAt_riemannZeta hz).mul <| (differentiableAt_id').sub <|
+      differentiableAt_const 1
+  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
+    simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
+  · conv in (_ * _) => rw [mul_comm]
     simp only [continuousWithinAt_compl_self, continuousAt_update_same]
     exact riemannZeta_residue_one
 
@@ -274,9 +269,8 @@ lemma deriv_ζ₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
   · refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
     simp only [ζ₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true, Function.update_noteq]
-  rw [H, deriv_mul (differentiableAt_riemannZeta hz) <|
-    DifferentiableAt.sub differentiableAt_id' <| differentiableAt_const 1,
-    deriv_sub_const, deriv_id'', mul_one]
+  rw [H, deriv_mul (differentiableAt_riemannZeta hz) <| differentiableAt_id'.sub <|
+    differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
 
 lemma neg_logDeriv_ζ₁_eq {z : ℂ} (hz₁ : z ≠ 1) (hz₂ : ζ z ≠ 0) :
     -deriv ζ₁ z / ζ₁ z = -deriv ζ z / ζ z - 1 / (z - 1) := by
@@ -287,18 +281,14 @@ lemma neg_logDeriv_ζ₁_eq {z : ℂ} (hz₁ : z ≠ 1) (hz₂ : ζ z ≠ 0) :
 lemma continuousOn_neg_logDeriv_ζ₁ :
     ContinuousOn (fun z ↦ -deriv ζ₁ z / ζ₁ z) {z | z = 1 ∨ ζ z ≠ 0} := by
   simp_rw [neg_div]
-  refine ContinuousOn.neg ?_
-  refine ContinuousOn.div ?_ ?_ ?_
-  · refine Continuous.continuousOn <| ContDiff.continuous_deriv ?_ le_rfl
-    exact Differentiable.contDiff ζ₁_differentiable
-  · exact Continuous.continuousOn <| Differentiable.continuous ζ₁_differentiable
-  · intro w hw
-    rcases eq_or_ne w 1 with rfl | hw'
-    · simp only [ζ₁, Function.update_same, ne_eq, one_ne_zero, not_false_eq_true]
-    · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
-      simp only [ζ₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
-        false_or]
-      exact sub_ne_zero.mpr hw'
+  refine ((ζ₁_differentiable.contDiff.continuous_deriv le_rfl).continuousOn.div
+    ζ₁_differentiable.continuous.continuousOn fun w hw ↦ ?_).neg
+  rcases eq_or_ne w 1 with rfl | hw'
+  · simp only [ζ₁, Function.update_same, ne_eq, one_ne_zero, not_false_eq_true]
+  · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
+    simp only [ζ₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
+      false_or]
+    exact sub_ne_zero.mpr hw'
 
 /-!
 ### Derivation of the Prime Number Theorem from the Wiener-Ikehara Theorem
