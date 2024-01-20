@@ -383,6 +383,7 @@ lemma LSeries.differentiableOn {f : ArithmeticFunction ℂ} :
 ### Multiplication of L-series
 -/
 
+open Set in
 /-- The L-series of the convolution product `f * g` of two arithmetic functions `f` and `g`
 equals the product of their L-series, assuming both L-series converge. -/
 lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
@@ -399,14 +400,14 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
             congrArg Finset.toSet divisorsAntidiagonal_zero]
       simp only [Finset.coe_sort_coe, tsum_empty, zero_div]
     · -- the right hand sum is over the union below, but in each term, one factor is always zero
-      have hS : m ⁻¹' {0} = {0} ×ˢ Set.univ ∪ (Set.univ \ {0}) ×ˢ {0}
+      have hS : m ⁻¹' {0} = {0} ×ˢ univ ∪ (univ \ {0}) ×ˢ {0}
       · ext
-        simp only [m, Set.mem_preimage, Set.mem_singleton_iff, _root_.mul_eq_zero, Set.mem_union,
-          Set.mem_prod, Set.mem_univ, Set.mem_diff]
+        simp only [m, mem_preimage, mem_singleton_iff, _root_.mul_eq_zero, mem_union, mem_prod,
+          mem_univ, mem_diff]
         tauto
       let h : ℕ × ℕ → ℂ := fun x ↦ f x.1 / x.1 ^ s * (g x.2 / x.2 ^ s)
       rw [tsum_congr_set_coe h hS,
-        tsum_union_disjoint (Set.Disjoint.set_prod_left Set.disjoint_sdiff_right ..)
+        tsum_union_disjoint (Disjoint.set_prod_left disjoint_sdiff_right ..)
           (hsum.subtype _) (hsum.subtype _),
         tsum_setProd_singleton_left 0 _ h, tsum_setProd_singleton_right _ 0 h]
       simp only [map_zero, zero_div, zero_mul, tsum_zero, mul_zero, add_zero]
@@ -414,15 +415,14 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
   have H : n.divisorsAntidiagonal = m ⁻¹' {n}
   · ext x
     replace hn := hn.ne' -- for `tauto` below
-    simp only [Finset.mem_coe, mem_divisorsAntidiagonal, m, Set.mem_preimage,
-      Set.mem_singleton_iff]
+    simp only [Finset.mem_coe, mem_divisorsAntidiagonal, m, mem_preimage, mem_singleton_iff]
     tauto
   rw [tsum_congr_set_coe (fun x ↦ f x.1 * g x.2) H, ← tsum_div_const]
   refine tsum_congr (fun x ↦ ?_)
   -- `rw [...]` does not work directly on the goal ("motive not type correct")
   conv =>
     enter [1, 2]
-    rw [← Set.mem_singleton_iff.mp <| Set.mem_preimage.mp x.prop]
+    rw [← mem_singleton_iff.mp <| mem_preimage.mp x.prop]
     simp only [m, Nat.cast_mul, mul_cpow_ofNat]
   field_simp
 
