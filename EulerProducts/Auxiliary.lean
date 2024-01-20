@@ -1,11 +1,11 @@
 import Mathlib.Analysis.PSeries
 import Mathlib.Topology.CompletelyRegular
+import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.NumberTheory.LegendreSymbol.MulCharacter
 import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Topology.Homeomorph
 
 /-!
 ### Auxiliary lemmas
@@ -83,8 +83,6 @@ lemma not_summable_indicator_one_div_nat_cast {m : ℕ} (hm : m ≠ 0) (k : ZMod
 
 end Real
 
-example (f : ℕ → ℂ) (m : ℕ) (hf : Summable fun n ↦ f (n + m)) : Summable f := by
-  exact (summable_nat_add_iff m).mp hf
 
 namespace Complex
 
@@ -259,5 +257,17 @@ lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
     _ = _ := by simp only [norm_one, mul_one]
+
+open Topology in
+lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    Continuous.tendsto Complex.continuous_ofReal x
+
+open Topology in
+lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
 
 end Topology

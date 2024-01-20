@@ -3,37 +3,6 @@ import EulerProducts.Logarithm
 import EulerProducts.DirichletLSeries
 
 /-!
-### Auxiliary stuff
--/
-
-lemma DifferentiableAt.bounded_near_root {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
-    (hz : f z = 0) :
-    ∃ ε > 0, ∃ C > 0, ∀ w : ℂ, ‖w‖ < ε → ‖f (z + w)‖ ≤ C * ‖w‖ := by
-  have H := hz ▸ hf.isBigO_sub
-  rw [Asymptotics.isBigO_iff'] at H
-  obtain ⟨C, hC, H⟩ := H
-  rw [Metric.eventually_nhds_iff] at H
-  obtain ⟨ε, hε, H⟩ := H
-  refine ⟨ε, hε, C, hC, fun w hw ↦ ?_⟩
-  convert H (y := z + w) ?_ using 2
-  · exact (sub_zero _).symm
-  · simp only [add_sub_cancel']
-  · simp only [dist_self_add_left, hw]
-
-open Topology in
-lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
-  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
-    Continuous.tendsto Complex.continuous_ofReal x
-
-open Topology in
-lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
-  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
-    ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
-
-
-/-!
 ### Statement of a version of the Wiener-Ikehara Theorem
 -/
 
