@@ -1,9 +1,10 @@
-import Mathlib.Topology.MetricSpace.Polish
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.Analysis.PSeries
-import Mathlib
-
+import Mathlib.Topology.CompletelyRegular
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.NumberTheory.LegendreSymbol.MulCharacter
+import Mathlib.Topology.EMetricSpace.Paracompact
+import Mathlib.Topology.MetricSpace.Polish
+import Mathlib.Analysis.Calculus.Deriv.Shift
 /-!
 ### Auxiliary lemmas
 -/
@@ -276,3 +277,5 @@ lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
     _ = _ := by simp only [norm_one, mul_one]
+
+#minimize_imports
