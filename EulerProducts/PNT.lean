@@ -6,7 +6,7 @@ import EulerProducts.DirichletLSeries
 ### Statement of a version of the Wiener-Ikehara Theorem
 -/
 
-open Filter Nat ArithmeticFunction in
+open Filter Topology Nat ArithmeticFunction in
 /-- A version of the *Wiener-Ikehara Tauberian Theorem*: If `f` is a nonnegative arithmetic
 function whose L-series has a simple pole at `s = 1` with residue `A` and otherwise extends
 continuously to the closed half-plane `re s ≥ 1`, then `∑ n < N, f n` is asymptotic to `A*N`. -/
@@ -14,7 +14,7 @@ def WienerIkeharaTheorem : Prop :=
   ∀ {f : ArithmeticFunction ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
     Set.EqOn F (fun s ↦ LSeries f s - A / (s - 1)) {s | 1 < s.re} →
     ContinuousOn F {s | 1 ≤ s.re} →
-    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (nhds A)
+    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
 /-!
 ### The Riemann Zeta Function does not vanish on Re(s) = 1
@@ -32,9 +32,8 @@ lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletChar
     calc ‖χ p‖ * (p : ℝ) ^ (-s).re
       _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
       _ = _ := one_mul _
-  refine Summable.neg_log_one_sub <| Summable.of_norm ?_
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) this ?_
-  refine Nat.Primes.summable_rpow.mpr ?_
+  refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
+    |>.of_norm.neg_log_one_sub
   simp only [neg_re, neg_lt_neg_iff, hs]
 
 lemma summable_neg_log_one_sub_prime_cpow {s : ℂ} (hs : 1 < s.re) :
@@ -66,11 +65,11 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
   · rw [← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz, one_pow, one_pow]
   field_simp
   refine div_nonneg ?_ n.cast_nonneg
-  rw [mul_comm 3, ← mul_assoc, mul_comm 4, mul_assoc, ← mul_add, ← mul_add]
-  refine mul_nonneg (pow_nonneg ha₀ n) ?_
-  rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, Hz]
-  rw [show 3 + 4 * (z ^ n).re + ((z ^ n).re ^ 2 - (1 - (z ^ n).re ^ 2)) = 2 * ((z ^ n).re + 1) ^ 2
-    by ring]
+  have Hz' : ((z ^ 2) ^ n).re = 2 * (z ^ n).re ^ 2 - 1
+  · rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, Hz]
+    ring
+  rw [Hz', show 3 * a ^ n + 4 * (a ^ n * (z ^ n).re) + a ^ n * (2 * (z ^ n).re ^ 2 - 1)
+              = 2 * a ^ n * ((z ^ n).re + 1) ^ 2 by ring]
   positivity
 
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
