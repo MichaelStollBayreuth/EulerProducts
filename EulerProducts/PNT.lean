@@ -63,13 +63,10 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
   · simp
   field_simp
   refine div_nonneg ?_ n.cast_nonneg
-  have Hz : ((z ^ 2) ^ n).re = 2 * (z ^ n).re ^ 2 - 1
-  · rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow,
-      hz, one_pow, one_pow]
-    ring
-  rw [Hz, show 3 * a ^ n + 4 * (a ^ n * (z ^ n).re) + a ^ n * (2 * (z ^ n).re ^ 2 - 1)
-              = 2 * a ^ n * ((z ^ n).re + 1) ^ 2 by ring]
-  positivity
+  rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz]
+  calc
+    0 ≤ 2 * a ^ n * ((z ^ n).re + 1) ^ 2 := by positivity
+    _ = _  := by ring
 
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
 has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
