@@ -187,7 +187,7 @@ lemma riemannZeta_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0) :
 
 lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (1 + I * y) = 0) :
     (fun x : ℝ ↦ ζ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
-  conv => enter [2, x]; rw [show 1 + x + I * y = x + (1 + I * y) by ring]
+  conv => enter [2, x]; rw [add_comm 1, add_assoc]
   exact (isBigO_comp_ofReal <| (differentiableAt_riemannZeta <|
     one_add_I_mul_ne_one hy).isBigO_of_eq_zero h).mono nhdsWithin_le_nhds
 
