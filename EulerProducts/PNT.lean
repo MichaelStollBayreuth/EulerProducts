@@ -112,17 +112,22 @@ lemma re_log_comb_nonneg_zeta {n : ℕ} (hn : 2 ≤ n) {x y : ℝ} (hx : 1 < x) 
   simpa [MulChar.one_apply ℂ <| isUnit_of_subsingleton _, one_pow, one_mul]
     using re_log_comb_nonneg_dirichlet (1 : DirichletCharacter ℂ 1) hn hx hy
 
+-- A helper lemma used in the next two proofs
 lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
     1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
 
 open Nat.ArithmeticFunction in
+/-- For positive `x` and nonzero `y` we have that
+$|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
 lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 0 < x)
     (hy : y ≠ 0) :
     ‖LSeries (1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * LSeries χ (1 + x + I * y) ^ 4 *
       LSeries (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
+  have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re -- kills three goals of the `convert` below
+  · simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
     (summable_re <|
       summable_neg_log_one_sub_char_mul_prime_cpow (1 : DirichletCharacter ℂ N) h₀).mul_left 3
@@ -138,13 +143,11 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
     re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
     ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
   convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le h₀ hy
-    using 3 with p
-  simp only [neg_add_rev, neg_re, mul_neg, add_re, one_re, ofReal_re, ofReal_add, ofReal_one,
-    add_right_inj, neg_inj]
-  congr
   rw [sq, sq, MulChar.mul_apply]
 
 open Nat.ArithmeticFunction in
+/-- For positive `x` and nonzero `y` we have that
+$|\zeta(x)^3 \cdot \zeta(x+iy)^4 \cdot \zeta(x+2iy)| \ge 1$. -/
 lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
     ‖ζ (1 + x) ^ 3 * ζ (1 + x + I * y) ^ 4 * ζ (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
@@ -152,25 +155,18 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
     using norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
 
 open Filter Topology Homeomorph in
-lemma riemannZeta_isBigO_near_one : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
-  have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1)
-  · convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1
-    · ext w
-      simp only [Function.comp_apply, add_sub_cancel']
-    · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
-      convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;> simp
-  exact ((Asymptotics.isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
-    Tendsto.isBigO_one ℂ H).trans <| Asymptotics.isBigO_refl ..
-
-open Filter Topology in
 lemma riemannZeta_isBigO_near_one_horizontal :
-    (fun x : ℝ ↦ ζ (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) :=
-  (isBigO_comp_ofReal_nhds_ne riemannZeta_isBigO_near_one).mono <| nhds_right'_le_nhds_ne 0
-
-open Topology in
-lemma riemannZeta_isBigO_of_ne_one {z : ℂ} (hz : z ≠ 1) :
-    (fun w ↦ ζ (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) :=
-  (differentiableAt_riemannZeta hz).continuousAt.isBigO
+    (fun x : ℝ ↦ ζ (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
+  have : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·)
+  · have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1)
+    · convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1
+      · ext w
+        simp only [Function.comp_apply, add_sub_cancel']
+      · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
+        convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;> simp
+    exact ((Asymptotics.isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
+      Tendsto.isBigO_one ℂ H).trans <| Asymptotics.isBigO_refl ..
+  exact (isBigO_comp_ofReal_nhds_ne this).mono <| nhds_right'_le_nhds_ne 0
 
 open Topology in
 lemma riemannZeta_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0) :
@@ -179,7 +175,7 @@ lemma riemannZeta_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0) :
   have hz : 1 + I * y ≠ 1
   · simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
       not_false_eq_true]
-  convert isBigO_comp_ofReal (riemannZeta_isBigO_of_ne_one hz) using 3 with x
+  convert isBigO_comp_ofReal (differentiableAt_riemannZeta hz).continuousAt.isBigO using 3 with x
   ring
 
 open Topology in
@@ -191,13 +187,6 @@ lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (
   conv => enter [2, x]; rw [show 1 + x + I * y = x + (1 + I * y) by ring]
   exact (isBigO_comp_ofReal <| (differentiableAt_riemannZeta hz).isBigO_of_eq_zero h).mono
     nhdsWithin_le_nhds
-
-open Filter Topology Asymptotics in
-lemma not_isLittleO_const :
-     ¬(fun _ : ℝ ↦ (1 : ℝ)) =o[𝓝[>] 0] fun _ : ℝ ↦ (1 : ℝ) := by
-  refine isLittleO_irrefl ?_
-  simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
-  exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
 open Filter Topology Asymptotics in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
@@ -235,7 +224,11 @@ lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) 
     enter [2, x]; rw [show 1 + x + I * ↑(2 * z.im) = 1 + x + 2 * I * z.im by simp; ring]
   replace H := IsBigO.norm_right <| H₀.trans H
   simp only [norm_eq_abs, abs_ofReal] at H
-  exact not_isLittleO_const <| H.of_abs_right.trans_isLittleO <| isLittleO_id (Set.Ioi 0)
+  have : ¬(fun _ : ℝ ↦ (1 : ℝ)) =o[𝓝[>] 0] fun _ : ℝ ↦ (1 : ℝ)
+  · refine isLittleO_irrefl ?_
+    simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
+    exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
+  exact this <| H.of_abs_right.trans_isLittleO <| isLittleO_id (Set.Ioi 0)
 
 /-!
 ### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
