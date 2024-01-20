@@ -2,6 +2,7 @@ import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.Analysis.PSeries
+import Mathlib
 
 /-!
 ### Auxiliary lemmas
@@ -208,3 +209,70 @@ lemma one_apply {R : Type*} [CommMonoid R] (R' : Type*) [CommMonoidWithZero R'] 
   simp only [trivial_apply, hx, ite_true]
 
 end MulChar
+
+section Topology
+
+-- from #9166
+
+open Topology Homeomorph Filter Set
+
+@[to_additive (attr := simp)]
+lemma Homeomorph.coe_inv {G : Type*} [TopologicalSpace G] [InvolutiveInv G] [ContinuousInv G]
+    (a : G) : Homeomorph.inv G a = a⁻¹ := rfl
+
+variable {X Y} [TopologicalSpace X] [TopologicalSpace Y]
+
+lemma image_compl (h : X ≃ₜ Y) (s : Set X) : h '' (sᶜ) = (h '' s)ᶜ :=
+  h.toEquiv.image_compl s
+
+@[simp]
+theorem map_punctured_nhds_eq (h : X ≃ₜ Y) (x : X) : map h (𝓝[≠] x) = 𝓝[≠] (h x) := by
+  convert h.embedding.map_nhdsWithin_eq ({x}ᶜ) x
+  rw [Set.image_compl_eq h.bijective, Set.image_singleton]
+
+end Topology
+
+namespace Asymptotics
+
+open Filter in
+lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
+    (hf : ∀ᶠ x in l, f x ≠ 0) :
+    (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
+  rw [isBigO_iff', isBigO_iff']
+  refine ⟨fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩, fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩⟩ <;>
+  { refine H.congr <| Eventually.mp hf <| eventually_of_forall fun x hx ↦ ?_
+    rw [norm_mul, norm_div, ← mul_div_assoc, mul_comm]
+    have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
+    rw [le_div_iff hx', mul_comm] }
+
+open Topology Filter in
+lemma isLittleO_id (s : Set ℝ) : (id : ℝ → ℝ) =o[nhdsWithin 0 s] (fun _ ↦ (1 : ℝ)) :=
+  ((isLittleO_one_iff ℝ).mpr tendsto_id).mono nhdsWithin_le_nhds
+
+end Asymptotics
+
+
+open Topology Asymptotics in
+lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
+    (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
+  rw [← zero_add z] at hf
+  have := (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
+  simp only [zero_add, hz, sub_zero] at this
+  exact this.trans <| isBigO_refl ..
+
+open Topology Asymptotics Filter in
+lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
+    (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
+  rw [isBigO_iff']
+  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0
+  · convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
+    · simp
+    · simp [Function.comp_def, hf]
+  simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
+  specialize hf 1 zero_lt_one
+  refine ⟨‖f z‖ + 1, by positivity, ?_⟩
+  refine Eventually.mp hf <| eventually_of_forall fun w hw ↦ le_of_lt ?_
+  calc ‖f (w + z)‖
+    _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
+    _ < ‖f z‖ + 1 := add_lt_add_left hw _
+    _ = _ := by simp only [norm_one, mul_one]
