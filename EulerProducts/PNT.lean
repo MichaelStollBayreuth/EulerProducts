@@ -117,7 +117,10 @@ lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
 
-open Nat.ArithmeticFunction in
+section
+
+open Nat ArithmeticFunction
+
 /-- For positive `x` and nonzero `y` we have that
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
 lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 0 < x)
@@ -144,7 +147,6 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
   convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le h₀ hy
   rw [sq, sq, MulChar.mul_apply]
 
-open Nat.ArithmeticFunction in
 /-- For positive `x` and nonzero `y` we have that
 $|\zeta(x)^3 \cdot \zeta(x+iy)^4 \cdot \zeta(x+2iy)| \ge 1$. -/
 lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
@@ -153,7 +155,12 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
   simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
     using norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
 
-open Filter Topology Homeomorph in
+end
+
+section
+
+open Filter Topology Homeomorph Asymptotics
+
 lemma riemannZeta_isBigO_near_one_horizontal :
     (fun x : ℝ ↦ ζ (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
   have : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·)
@@ -163,31 +170,27 @@ lemma riemannZeta_isBigO_near_one_horizontal :
         simp only [Function.comp_apply, add_sub_cancel']
       · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
         convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;> simp
-    exact ((Asymptotics.isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
-      Tendsto.isBigO_one ℂ H).trans <| Asymptotics.isBigO_refl ..
+    exact ((isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
+      Tendsto.isBigO_one ℂ H).trans <| isBigO_refl ..
   exact (isBigO_comp_ofReal_nhds_ne this).mono <| nhds_right'_le_nhds_ne 0
 
-open Topology in
+lemma one_add_I_mul_ne_one {y : ℝ} (hy : y ≠ 0) : 1 + I * y ≠ 1 := by
+  simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
+    not_false_eq_true]
+
 lemma riemannZeta_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0) :
     (fun x : ℝ ↦ ζ (1 + x + I * y)) =O[𝓝[>] 0] (fun _ ↦ (1 : ℂ)) := by
   refine Asymptotics.IsBigO.mono ?_ nhdsWithin_le_nhds
-  have hz : 1 + I * y ≠ 1
-  · simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
-      not_false_eq_true]
-  convert isBigO_comp_ofReal (differentiableAt_riemannZeta hz).continuousAt.isBigO using 3 with x
+  convert isBigO_comp_ofReal
+    (differentiableAt_riemannZeta <| one_add_I_mul_ne_one hy).continuousAt.isBigO using 3 with x
   ring
 
-open Topology in
 lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (1 + I * y) = 0) :
     (fun x : ℝ ↦ ζ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
-  have hz : 1 + I * y ≠ 1
-  · simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
-      not_false_eq_true]
   conv => enter [2, x]; rw [show 1 + x + I * y = x + (1 + I * y) by ring]
-  exact (isBigO_comp_ofReal <| (differentiableAt_riemannZeta hz).isBigO_of_eq_zero h).mono
-    nhdsWithin_le_nhds
+  exact (isBigO_comp_ofReal <| (differentiableAt_riemannZeta <|
+    one_add_I_mul_ne_one hy).isBigO_of_eq_zero h).mono nhdsWithin_le_nhds
 
-open Filter Topology Asymptotics in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
   refine hz'.eq_or_lt.elim (fun h H ↦ ?_) riemannZeta_ne_zero
@@ -208,10 +211,9 @@ lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) 
   · refine IsBigO.of_bound' <| eventually_nhdsWithin_of_forall fun x hx ↦ ?_
     convert (norm_zeta_product_ge_one hx hz₀).le
     exact norm_one
-  have H₁ := riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ H)
-  have H₂ := riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
-  have H₃ := riemannZeta_isBigO_near_one_horizontal
-  have H := IsBigO.mul (IsBigO.mul (IsBigO.pow H₃ 3) (IsBigO.pow H₁ 4)) H₂
+  have H := (riemannZeta_isBigO_near_one_horizontal.pow 3).mul
+    ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ H)).pow 4)|>.mul <|
+    riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x
   · rcases eq_or_ne x 0 with rfl | h
     · simp only [ofReal_zero, div_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow',
@@ -221,13 +223,15 @@ lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) 
   conv at H => enter [3, x]; rw [help]
   conv at H =>
     enter [2, x]; rw [show 1 + x + I * ↑(2 * z.im) = 1 + x + 2 * I * z.im by simp; ring]
-  replace H := IsBigO.norm_right <| H₀.trans H
+  replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
   have : ¬(fun _ : ℝ ↦ (1 : ℝ)) =o[𝓝[>] 0] fun _ : ℝ ↦ (1 : ℝ)
   · refine isLittleO_irrefl ?_
     simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
     exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
   exact this <| H.of_abs_right.trans_isLittleO <| isLittleO_id (Set.Ioi 0)
+
+end
 
 /-!
 ### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
