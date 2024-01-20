@@ -19,7 +19,7 @@ namespace Nat.ArithmeticFunction
 open Complex
 
 /-- Coerce an arithmetic function with values in `ℝ` to one with values in `ℂ`.
-We cannot inline this in `intCoe` because it gets unfolded too much. -/
+We cannot inline this in `realCoe` because it gets unfolded too much. -/
 @[coe] def ofReal (f : ArithmeticFunction ℝ) : ArithmeticFunction ℂ where
   toFun n := f n
   map_zero' := by simp only [map_zero, ofReal_zero]
@@ -172,7 +172,7 @@ lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s
   obtain ⟨y, hy, hys⟩ := hs
   exact hy.of_re_le_re <| ofReal_re y ▸ hys.le
 
-lemma LSeriesSummable_re_lt_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
+lemma LSeriesSummable_lt_re_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
     (hs : abscissaOfAbsConv f < s.re) :
     ∃ x : ℝ, x < s.re ∧ LSeriesSummable f x := by
   obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_coe_real hs
@@ -204,12 +204,8 @@ lemma abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' {f : ArithmeticFunction
   · refine le_of_eq <| sInf_eq_bot.mpr fun y hy ↦ ?_
     induction' y using EReal.rec with z
     · simp only [gt_iff_lt, lt_self_iff_false] at hy
-    · refine ⟨z - 1, ?_, by norm_cast; exact sub_one_lt z⟩
-      simp only [Set.mem_image, Set.mem_setOf_eq]
-      exact ⟨z-1, h (z - 1) <| EReal.bot_lt_coe _, rfl⟩
-    · refine ⟨0, ?_, EReal.zero_lt_top⟩
-      simp only [Set.mem_image, Set.mem_setOf_eq]
-      refine ⟨0, h 0 <| EReal.bot_lt_coe 0, rfl⟩
+    · exact ⟨z - 1,  ⟨z-1, h (z - 1) <| EReal.bot_lt_coe _, rfl⟩, by norm_cast; exact sub_one_lt z⟩
+    · exact ⟨0, ⟨0, h 0 <| EReal.bot_lt_coe 0, rfl⟩, EReal.zero_lt_top⟩
   · exact abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable <| by exact_mod_cast h
   · exact le_top
 
@@ -222,8 +218,7 @@ lemma LSeriesSummable.le_const_mul_rpow {f : ArithmeticFunction ℂ} {s : ℂ}
   · refine n.eq_zero_or_pos.resolve_left ?_
     rintro rfl
     rw [map_zero, norm_zero, Nat.cast_zero, mul_neg_iff] at hn
-    have hsre := Real.rpow_nonneg (le_refl 0) s.re
-    replace hn := hn.resolve_left <| fun hh ↦ hh.2.not_le hsre
+    replace hn := hn.resolve_left <| fun hh ↦ hh.2.not_le <| Real.rpow_nonneg (le_refl 0) s.re
     exact hn.1.not_le <| tsum_nonneg (fun _ ↦ norm_nonneg _)
   have := le_tsum h n fun _ _ ↦ norm_nonneg _
   rw [LSeriesTerm_norm_eq, div_le_iff <| Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn₀) _] at this
@@ -249,12 +244,11 @@ lemma LSeriesSummable_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x : ℝ
       simp only [norm_ofNat_cpow_of_pos hn, add_re, sub_re, neg_re, ofReal_re, one_re]
       convert le_refl ?_ using 2
       ring
-  refine Summable.of_norm <| Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hsum
+  refine Summable.of_norm <| hsum.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
   rcases n.eq_zero_or_pos with rfl | hn
   · simp only [map_zero, zero_div, norm_zero, norm_nonneg]
   have hn' : 0 < (n : ℝ) ^ s.re := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
-  simp_rw [norm_div, norm_ofNat_cpow_of_pos hn,
-    div_le_iff hn', add_re, sub_re, one_re, ofReal_re,
+  simp_rw [norm_div, norm_ofNat_cpow_of_pos hn, div_le_iff hn', add_re, sub_re, one_re, ofReal_re,
     Real.rpow_add <| Nat.cast_pos.mpr hn, div_eq_mul_inv, mul_inv]
   rw [mul_assoc, mul_comm _ ((n : ℝ) ^ s.re), ← mul_assoc ((n : ℝ) ^ s.re), mul_inv_cancel hn'.ne',
     ← Real.rpow_neg n.cast_nonneg, norm_eq_abs (C : ℂ), abs_ofReal, _root_.abs_of_nonneg hC₀,
@@ -337,11 +331,11 @@ lemma LSeriesTerm_deriv (f : ArithmeticFunction ℂ) (n : ℕ) (s : ℂ) :
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then the L-series
 of `f` is differentiable with derivative the negative of the L-series of the point-wise
-prodict of `log` with `f`. -/
+product of `log` with `f`. -/
 lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
     HasDerivAt (LSeries f) (- LSeries (pmul log f) z) z := by
   -- The L-series of `f` is summable at some real `x < re z`.
-  obtain ⟨x, h', hf⟩ := LSeriesSummable_re_lt_of_abscissaOfAbsConv_lt_re h
+  obtain ⟨x, h', hf⟩ := LSeriesSummable_lt_re_of_abscissaOfAbsConv_lt_re h
   change HasDerivAt (fun s ↦ LSeries f s) ..
   simp only [LSeries, pmul_apply, realCoe_apply, log_apply, ← tsum_neg]
   -- We work in the right half-plane `re s > (x + re z)/2`.
@@ -352,7 +346,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   · simp only [Set.mem_setOf_eq]
     linarith only [h']
   -- To get a uniform summable bound for the derivative series, we use that we
-  -- have summability of the L-series of `pmul log f` at some `(x + z)/2`.
+  -- have summability of the L-series of `pmul log f` at `(x + z)/2`.
   have hx : (x : ℂ).re < ((x + z) / 2).re
   · simp only [add_re, ofReal_re, div_ofNat_re, sub_re]
     linarith only [h']
@@ -363,16 +357,15 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
       ∀ s ∈ S, HasDerivAt (fun z ↦ f n / n ^ z) (-(↑(Real.log n) * f n / n ^ s)) s
   · exact fun s _ ↦ LSeriesTerm_deriv f n s
   refine hasDerivAt_tsum_of_isPreconnected (F := ℂ) hf' hop hpr hderiv
-    (fun n s hs ↦ ?_) hmem ?_ hmem
-  · -- Show that the derivative series is uniformly bounded term-wise.
-    rcases n.eq_zero_or_pos with rfl | hn
-    · simp
-    simp only [norm_neg, norm_div, norm_mul, pmul_apply, realCoe_apply, log_apply]
-    refine div_le_div_of_le_left (mul_nonneg (norm_nonneg _) (norm_nonneg _)) ?_ ?_
-    · exact norm_ofNat_cpow_pos_of_pos hn _
-    · refine norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos hn <| le_of_lt ?_
-      simpa only [add_re, ofReal_re, div_ofNat_re, sub_re] using hs
-  · exact hf.of_re_le_re <| ofReal_re x ▸ h'.le
+    (fun n s hs ↦ ?_) hmem (hf.of_re_le_re <| ofReal_re x ▸ h'.le) hmem
+  -- Show that the derivative series is uniformly bounded term-wise.
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  simp only [norm_neg, norm_div, norm_mul, pmul_apply, realCoe_apply, log_apply]
+  refine div_le_div_of_le_left (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+    (norm_ofNat_cpow_pos_of_pos hn _) <|
+    norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos hn <| le_of_lt ?_
+  simpa only [add_re, ofReal_re, div_ofNat_re, sub_re] using hs
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
 the derivative of this L-series is the negative of the L-series of `pmul log f`. -/
