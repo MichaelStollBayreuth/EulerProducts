@@ -176,7 +176,7 @@ def prod_singleton_right {α β : Type*} (s : Set α) (b : β) : ↑(s ×ˢ {b})
 end Equiv.Set
 
 
-lemma HasSum.tsum_fibers {β γ : Type*} {f : β → ℂ} (g : β → γ) {a : ℂ} (hf : HasSum f a) :
+lemma HasSum.tsum_fiberwise {β γ : Type*} {f : β → ℂ} (g : β → γ) {a : ℂ} (hf : HasSum f a) :
     HasSum (fun c : γ ↦ ∑' b : g ⁻¹' {c}, f b) a :=
   HasSum.sigma ((Equiv.hasSum_iff <| Equiv.sigmaFiberEquiv g).mpr hf) <|
     fun _ ↦ (Summable.hasSum_iff <| Summable.subtype hf.summable _).mpr rfl
