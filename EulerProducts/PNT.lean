@@ -193,7 +193,7 @@ lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (
 
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
-  refine hz'.eq_or_lt.elim (fun h H ↦ ?_) riemannZeta_ne_zero
+  refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero
   -- We assume that `ζ z = 0` and `z.re = 1` and derive a contradiction.
   have hz₀ : z.im ≠ 0
   · rw [← re_add_im z, ← h, ofReal_one] at hz
@@ -212,7 +212,7 @@ lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) 
     convert (norm_zeta_product_ge_one hx hz₀).le
     exact norm_one
   have H := (riemannZeta_isBigO_near_one_horizontal.pow 3).mul
-    ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ H)).pow 4)|>.mul <|
+    ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ Hz)).pow 4)|>.mul <|
     riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x
   · rcases eq_or_ne x 0 with rfl | h
