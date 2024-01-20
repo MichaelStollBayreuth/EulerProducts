@@ -112,7 +112,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
   by_cases hn' : IsUnit (n : ZMod N)
-  · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg_of_nonneg n.cast_nonneg _
+  · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg n.cast_nonneg _
     have ha₁ : (n : ℝ) ^ (-x) < 1
     · simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
       Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff] using
@@ -182,7 +182,7 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
   simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
     using norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
 
-open Filter Topology in
+open Filter Topology Homeomorph in
 lemma riemannZeta_isBigO_near_one : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
   have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1)
   · convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1

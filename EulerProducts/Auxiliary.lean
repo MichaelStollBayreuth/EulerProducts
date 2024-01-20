@@ -5,6 +5,8 @@ import Mathlib.NumberTheory.LegendreSymbol.MulCharacter
 import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Topology.Homeomorph
+
 /-!
 ### Auxiliary lemmas
 -/
@@ -213,26 +215,6 @@ end MulChar
 
 section Topology
 
--- from #9166
-
-open Topology Homeomorph Filter Set
-
-@[to_additive (attr := simp)]
-lemma Homeomorph.coe_inv {G : Type*} [TopologicalSpace G] [InvolutiveInv G] [ContinuousInv G]
-    (a : G) : Homeomorph.inv G a = a⁻¹ := rfl
-
-variable {X Y} [TopologicalSpace X] [TopologicalSpace Y]
-
-lemma image_compl (h : X ≃ₜ Y) (s : Set X) : h '' (sᶜ) = (h '' s)ᶜ :=
-  h.toEquiv.image_compl s
-
-@[simp]
-theorem map_punctured_nhds_eq (h : X ≃ₜ Y) (x : X) : map h (𝓝[≠] x) = 𝓝[≠] (h x) := by
-  convert h.embedding.map_nhdsWithin_eq ({x}ᶜ) x
-  rw [Set.image_compl_eq h.bijective, Set.image_singleton]
-
-end Topology
-
 namespace Asymptotics
 
 open Filter in
@@ -278,4 +260,4 @@ lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
     _ = _ := by simp only [norm_one, mul_one]
 
-#minimize_imports
+end Topology

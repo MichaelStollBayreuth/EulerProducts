@@ -222,7 +222,7 @@ lemma LSeriesSummable.le_const_mul_rpow {f : ArithmeticFunction ℂ} {s : ℂ}
   · refine n.eq_zero_or_pos.resolve_left ?_
     rintro rfl
     rw [map_zero, norm_zero, Nat.cast_zero, mul_neg_iff] at hn
-    have hsre := Real.rpow_nonneg_of_nonneg (le_refl 0) s.re
+    have hsre := Real.rpow_nonneg (le_refl 0) s.re
     replace hn := hn.resolve_left <| fun hh ↦ hh.2.not_le hsre
     exact hn.1.not_le <| tsum_nonneg (fun _ ↦ norm_nonneg _)
   have := le_tsum h n fun _ _ ↦ norm_nonneg _
