@@ -94,14 +94,6 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
       ring_nf
   · simp [MulChar.map_nonunit _ hn']
 
-/-- The logarithm of an Euler factor of the product `ζ(x)^3 * ζ(x+I*y)^4 * ζ(x+2*I*y)`
-has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
-lemma re_log_comb_nonneg_zeta {n : ℕ} (hn : 2 ≤ n) {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
-    0 ≤ 3 * (-log (1 - n ^ (-x : ℂ))).re + 4 * (-log (1 - n ^ (-(x + I * y)))).re +
-          (-log (1 - n ^ (-(x + 2 * I * y)))).re := by
-  simpa [MulChar.one_apply ℂ <| isUnit_of_subsingleton _, one_pow, one_mul]
-    using re_log_comb_nonneg_dirichlet (1 : DirichletCharacter ℂ 1) hn hx hy
-
 -- A helper lemma used in the next two proofs
 lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
     1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
