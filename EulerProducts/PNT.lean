@@ -36,11 +36,6 @@ lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletChar
     |>.of_norm.neg_log_one_sub
   simp only [neg_re, neg_lt_neg_iff, hs]
 
-lemma summable_neg_log_one_sub_prime_cpow {s : ℂ} (hs : 1 < s.re) :
-    Summable fun p : Nat.Primes ↦ -log (1 - (p : ℂ) ^ (-s)) := by
-  simpa [MulChar.one_apply ℂ <| isUnit_of_subsingleton _, one_mul]
-    using summable_neg_log_one_sub_char_mul_prime_cpow (1 : DirichletCharacter ℂ 1) hs
-
 /-- A technical lemma showing that a certain linear combination of real parts of logarithms
 is nonnegative. This is used to show non-vanishing of the Riemann zeta function and of
 Dirichlet L-series on the line `re s = 1`. -/
