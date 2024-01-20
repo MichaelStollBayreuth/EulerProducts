@@ -57,18 +57,17 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
   have H₂ := Complex.hasSum_re <| hasSum_taylorSeries_neg_log hac₂
   rw [← ((H₀.add H₁).add H₂).tsum_eq]; clear H₀ H₁ H₂
   refine tsum_nonneg fun n ↦ ?_
-  simp_rw [mul_pow, ← ofReal_pow]
-  simp only [div_nat_cast_re, ofReal_re, mul_re, ofReal_im, zero_mul, sub_zero]
+  simp only [mul_pow, ← ofReal_pow, div_nat_cast_re, ofReal_re, mul_re, ofReal_im, zero_mul,
+    sub_zero]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
-  have Hz : (z ^ n).im ^ 2 = 1 - (z ^ n).re ^ 2
-  · rw [← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz, one_pow, one_pow]
   field_simp
   refine div_nonneg ?_ n.cast_nonneg
-  have Hz' : ((z ^ 2) ^ n).re = 2 * (z ^ n).re ^ 2 - 1
-  · rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, Hz]
+  have Hz : ((z ^ 2) ^ n).re = 2 * (z ^ n).re ^ 2 - 1
+  · rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow,
+      hz, one_pow, one_pow]
     ring
-  rw [Hz', show 3 * a ^ n + 4 * (a ^ n * (z ^ n).re) + a ^ n * (2 * (z ^ n).re ^ 2 - 1)
+  rw [Hz, show 3 * a ^ n + 4 * (a ^ n * (z ^ n).re) + a ^ n * (2 * (z ^ n).re ^ 2 - 1)
               = 2 * a ^ n * ((z ^ n).re + 1) ^ 2 by ring]
   positivity
 
