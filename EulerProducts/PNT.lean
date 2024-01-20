@@ -225,11 +225,9 @@ lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) 
     enter [2, x]; rw [show 1 + x + I * ↑(2 * z.im) = 1 + x + 2 * I * z.im by simp; ring]
   replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
-  have : ¬(fun _ : ℝ ↦ (1 : ℝ)) =o[𝓝[>] 0] fun _ : ℝ ↦ (1 : ℝ)
-  · refine isLittleO_irrefl ?_
-    simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
-    exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
-  exact this <| H.of_abs_right.trans_isLittleO <| isLittleO_id (Set.Ioi 0)
+  refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <| isLittleO_id (Set.Ioi 0)
+  simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
+  exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
 end
 
