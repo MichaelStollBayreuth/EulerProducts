@@ -185,7 +185,8 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
     L (1 : DirichletCharacter ℂ N) s = ζ s * ∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
   have Hζ := (riemannZeta_eulerProduct hs).mul_const (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))
   have HL := dirichletLSeries_eulerProduct (1 : DirichletCharacter ℂ N) hs
-  have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) * (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))) =ᶠ[Filter.atTop]
+  have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) *
+    (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))) =ᶠ[Filter.atTop]
     (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹)
   · refine Filter.eventuallyEq_of_mem (s := {n | N < n}) ?_
       fun _ ↦ prod_primesBelow_mul_eq_prod_primesBelow hN hs
