@@ -242,10 +242,9 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
   -- The key step: the vanishing assumption implies that the zeta product below
   -- also vanishes at `z`. We only need the right-hand limit keeping the imaginary part fixed.
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
-      (fun x ↦ ζ (1 + x) ^ 3 * ζ (1 + x + I * z.im) ^ 4 * ζ (1 + x + 2 * I * z.im))
-  · refine IsBigO.of_bound' <| eventually_nhdsWithin_of_forall fun x hx ↦ ?_
-    convert (norm_zeta_product_ge_one hx hz₀).le
-    exact norm_one
+      (fun x ↦ ζ (1 + x) ^ 3 * ζ (1 + x + I * z.im) ^ 4 * ζ (1 + x + 2 * I * z.im)) :=
+    IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
+      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_zeta_product_ge_one hx hz₀).le
   have H := (riemannZeta_isBigO_near_one_horizontal.pow 3).mul
     ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ Hz)).pow 4)|>.mul <|
     riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
