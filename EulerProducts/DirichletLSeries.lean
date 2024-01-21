@@ -86,6 +86,8 @@ open Complex
 ### L-series of Dirichlet characters
 -/
 
+scoped notation (name := Lseries) "L" => LSeries
+
 local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
 
 open DirichletCharacter in
@@ -161,7 +163,7 @@ open EulerProduct in
 /-- A variant of the Euler product for Dirichlet L-series. -/
 theorem LSeries_dirichlet_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - χ p * p ^ (-s))) = LSeries χ s := by
+    exp (∑' p : Nat.Primes, -Complex.log (1 - χ p * p ^ (-s))) = L χ s := by
   rw [LSeries]
   convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
     summable_dirichletSummand χ hs with _ n -- bug: should just be `... with n`
@@ -178,7 +180,7 @@ theorem LSeries_dirichlet_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N
 
 /-- The L-series of the arithmetic function `1` (taking the value `1` at `1` and zero else)
 is the constant function `1`. -/
-lemma LSeries.one : LSeries 1 = 1 := by
+lemma LSeries.one : L 1 = 1 := by
   ext s
   simp only [LSeries, one_apply]
   have H (n : ℕ) : (if n = 1 then 1 / (n : ℂ) ^ s else 0) = if n = 1 then 1 else 0 :=
@@ -230,7 +232,7 @@ lemma LSeriesSummable.smul {N : ℕ} (χ : DirichletCharacter ℂ N) {f : Arithm
 
 open DirichletCharacter in
 lemma LSeries.dirichlet_mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
-    (hs : 1 < s.re) : LSeries χ s * LSeries (χ • μ) s = 1 := by
+    (hs : 1 < s.re) : L χ s * L (χ • μ) s = 1 := by
   rcases eq_or_ne N 0 with rfl | hN
   · rw [dirichletCharModZero_eq_one, LSeries.one, Pi.one_apply, one_mul,
       dirichletCharModZero_hsmul ?h]
@@ -245,7 +247,7 @@ lemma LSeries.dirichlet_mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) 
   exact congrFun LSeries.one s
 
 lemma LSeries.dirichlet_ne_zero {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
-    LSeries χ s ≠ 0 :=
+    L χ s ≠ 0 :=
   fun h ↦ by simpa [h] using LSeries.dirichlet_mul_mu_eq_one χ hs
 
 /-!
@@ -259,7 +261,7 @@ lemma abscissaOfAbsConv_zeta : abscissaOfAbsConv ζ = 1 :=
 /-- The L-series of the arithmetic function `ζ` equals the Riemann Zeta Function on its
 domain of convergence `1 < re s`. -/
 lemma LSeries.zeta_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) :
-    LSeries ζ s = riemannZeta s := by
+    L ζ s = riemannZeta s := by
   simp only [LSeries, natCoe_apply, zeta_apply, cast_ite, CharP.cast_eq_zero, cast_one]
   rw [zeta_eq_tsum_one_div_nat_cpow hs]
   refine tsum_congr fun n ↦ ?_
@@ -273,7 +275,7 @@ lemma LSeriesHasSum_zeta {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum ζ s (riemann
 open EulerProduct in
 /-- A variant of the Euler product for the L-series of `ζ`. -/
 theorem LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = LSeries ζ s := by
+    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L ζ s := by
   convert trivialDirichletCharModOne_eq_zeta ▸ LSeries_dirichlet_eulerProduct' χ₁ hs using 7
   rw [MulChar.one_apply _ <| isUnit_of_subsingleton _, one_mul]
 
@@ -285,13 +287,13 @@ theorem _root_.riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
 
 -- Rename `zeta_LSeriesSummable_iff_one_lt_re` → `zeta_LSeriesSummable_iff`
 
-lemma LSeries.zeta_mul_mu_eq_one {s : ℂ} (hs : 1 < s.re) : LSeries ζ s * LSeries μ s = 1 := by
+lemma LSeries.zeta_mul_mu_eq_one {s : ℂ} (hs : 1 < s.re) : L ζ s * L μ s = 1 := by
   rw [← LSeries_mul (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
           (moebius_LSeriesSummable_iff.mpr hs),
     coe_zeta_mul_coe_moebius]
   exact congrFun LSeries.one s
 
-lemma LSeries.zeta_ne_zero {s : ℂ} (hs : 1 < s.re) : LSeries ζ s ≠ 0 :=
+lemma LSeries.zeta_ne_zero {s : ℂ} (hs : 1 < s.re) : L ζ s ≠ 0 :=
   fun h ↦ by simpa [h] using LSeries.zeta_mul_mu_eq_one hs
 
 /-- The Riemann Zeta Function does not vanish on the half-plane `re s > 1`. -/
@@ -321,7 +323,7 @@ lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable Λ
 /-- The L-series of the von Mangoldt function `Λ` equals the negative logarithmic derivative
 of the L-series of the arithmetic function `ζ` on its domain of convergence `1 < re s`. -/
 lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) :
-    LSeries Λ s = - deriv (LSeries ζ) s / LSeries ζ s := by
+    L Λ s = - deriv (L ζ) s / L ζ s := by
   have hs' : abscissaOfAbsConv ζ < s.re
   · rwa [abscissaOfAbsConv_zeta, ← EReal.coe_one, EReal.coe_lt_coe_iff]
   rw [eq_div_iff <| LSeries.zeta_ne_zero hs,
@@ -334,7 +336,7 @@ lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) :
 /-- The L-series of the von Mangoldt function `Λ` equals the negative logarithmic derivative
 of the Riemann zeta function on its domain of convergence `1 < re s`. -/
 lemma LSeries_vonMangoldt_eq_deriv_riemannZeta_div {s : ℂ} (hs : 1 < s.re) :
-    LSeries Λ s = - deriv riemannZeta s / riemannZeta s := by
+    L Λ s = - deriv riemannZeta s / riemannZeta s := by
   convert LSeries_vonMangoldt_eq hs using 2
   · refine neg_inj.mpr <| Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{z | 1 < z.re}, (isOpen_lt continuous_const continuous_re).mem_nhds hs, ?_⟩

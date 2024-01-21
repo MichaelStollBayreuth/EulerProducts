@@ -12,7 +12,7 @@ function whose L-series has a simple pole at `s = 1` with residue `A` and otherw
 continuously to the closed half-plane `re s ≥ 1`, then `∑ n < N, f n` is asymptotic to `A*N`. -/
 def WienerIkeharaTheorem : Prop :=
   ∀ {f : ArithmeticFunction ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
-    Set.EqOn F (fun s ↦ LSeries f s - A / (s - 1)) {s | 1 < s.re} →
+    Set.EqOn F (fun s ↦ L f s - A / (s - 1)) {s | 1 < s.re} →
     ContinuousOn F {s | 1 ≤ s.re} →
     Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
@@ -110,8 +110,8 @@ open Nat ArithmeticFunction
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
 lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 0 < x)
     (hy : y ≠ 0) :
-    ‖LSeries (1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * LSeries χ (1 + x + I * y) ^ 4 *
-      LSeries (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
+    ‖L (1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L χ (1 + x + I * y) ^ 4 *
+      L (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re -- kills three goals of the `convert` below
   · simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
