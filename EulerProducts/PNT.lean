@@ -24,6 +24,8 @@ open Complex
 
 local notation (name := rzeta) "ζ" => riemannZeta
 
+local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
+
 lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     (hs : 1 < s.re) :
     Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
@@ -136,7 +138,7 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
     ‖ζ (1 + x) ^ 3 * ζ (1 + x + I * y) ^ 4 * ζ (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
-    using norm_dirichlet_product_ge_one (1 : DirichletCharacter ℂ 1) hx hy
+    using norm_dirichlet_product_ge_one χ₁ hx hy
 
 end
 

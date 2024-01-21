@@ -128,11 +128,3 @@ theorem exp_sum_primes_log_eq_tsum {f : ℕ →*₀ ℂ} (hsum : Summable (‖f 
     exact fun h ↦ (norm_one (α := ℂ) ▸ h.symm ▸ hs (Nat.prime_of_mem_primesBelow hp).one_lt).false
   simp_rw [help] at H
   exact tendsto_nhds_unique H <| eulerProduct_completely_multiplicative hsum
-
-/-- A variant of the Euler product for the Riemann zeta function. -/
-theorem _root_.riemannZeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -log (1 - p ^ (-s))) = riemannZeta s := by
-  rw [zeta_eq_tsum_one_div_nat_cpow hs]
-  convert exp_sum_primes_log_eq_tsum (f := riemannZetaSummandHom <| ne_zero_of_one_lt_re hs) <|
-    summable_riemannZetaSummand hs with _ n -- bug: should just be `... with n`
-  simp only [one_div, riemannZetaSummandHom, cpow_neg, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
