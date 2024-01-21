@@ -79,36 +79,36 @@ lemma dirichletCharModOne_eq_zeta {R : Type*} [CommSemiring R] {χ : DirichletCh
 lemma trivialDirichletCharModOne_eq_zeta : χ₁ = (ζ : ArithmeticFunction ℂ) :=
   dirichletCharModOne_eq_zeta
 
-lemma not_LSeriesSummable_dirichlet_at_one {n : ℕ} (hn : n ≠ 0) (χ : DirichletCharacter ℂ n) :
+lemma not_LSeriesSummable_dirichlet_at_one {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) :
     ¬ LSeriesSummable χ 1 := by
   by_contra! h
-  refine (Real.not_summable_indicator_one_div_nat_cast hn 1) ?_
+  refine (Real.not_summable_indicator_one_div_nat_cast hN 1) ?_
   refine Summable.of_nonneg_of_le (fun m ↦ Set.indicator_apply_nonneg (fun _ ↦ by positivity))
-    (fun m ↦ ?_) h.norm
+    (fun n ↦ ?_) h.norm
   rw [norm_div, cpow_one, norm_nat]
-  by_cases hm : m ∈ {(m : ℕ) | (m : ZMod n) = 1}
-  · rw [Set.indicator_of_mem hm]
-    rcases eq_or_ne m 0 with rfl | hm₀
+  by_cases hn : n ∈ {(m : ℕ) | (m : ZMod N) = 1}
+  · rw [Set.indicator_of_mem hn]
+    rcases eq_or_ne n 0 with rfl | hn₀
     · simp
     gcongr
-    rw [χ.toArithmeticFunction_apply_of_ne_zero hm₀, hm]
+    rw [χ.toArithmeticFunction_apply_of_ne_zero hn₀, hn]
     simp only [map_one, norm_one, le_refl]
-  · rw [Set.indicator_of_not_mem hm]
+  · rw [Set.indicator_of_not_mem hn]
     positivity
 
-lemma LSeriesSummable_dirichlet_iff {n : ℕ} (hn : n ≠ 0) (χ : DirichletCharacter ℂ n) {s : ℂ} :
+lemma LSeriesSummable_dirichlet_iff {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) {s : ℂ} :
     LSeriesSummable χ s ↔ 1 < s.re := by
-  refine ⟨fun H ↦? _, LSeriesSummable_of_bounded_of_one_lt_re (m := 1) fun m ↦ ?_⟩
+  refine ⟨fun H ↦? _, LSeriesSummable_of_bounded_of_one_lt_re (m := 1) fun n ↦ ?_⟩
   · by_contra! h
     have h' : s.re ≤ (1 : ℂ).re := by simp only [one_re, h]
-    exact not_LSeriesSummable_dirichlet_at_one hn χ <| LSeriesSummable.of_re_le_re h' H
+    exact not_LSeriesSummable_dirichlet_at_one hN χ <| LSeriesSummable.of_re_le_re h' H
   · rw [← norm_eq_abs]
-    rcases eq_or_ne m 0 with rfl | hm
+    rcases eq_or_ne n 0 with rfl | hn
     · simp
-    rw [χ.toArithmeticFunction_apply_of_ne_zero hm]
+    rw [χ.toArithmeticFunction_apply_of_ne_zero hn]
     exact χ.norm_le_one _
 
-lemma abscissaOfAbsConv_dirichlet {n : ℕ} (hn : n ≠ 0) (χ : DirichletCharacter ℂ n) :
+lemma abscissaOfAbsConv_dirichlet {N : ℕ} (hn : N ≠ 0) (χ : DirichletCharacter ℂ N) :
     abscissaOfAbsConv χ = 1 := by
   simpa only [abscissaOfAbsConv, LSeriesSummable_dirichlet_iff hn χ, ofReal_re, Set.Ioi_def,
     EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
@@ -127,6 +127,8 @@ theorem LSeries_dirichlet_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N
   rcases eq_or_ne n 0 with rfl | hn
   · exact .inr ⟨rfl, ne_zero_of_one_lt_re hs⟩
   · exact .inl <| DirichletCharacter.toArithmeticFunction_apply_of_ne_zero χ hn
+
+-- lemma LSeriesSummable_smul_iff
 
 /-!
 ### L-series of specific arithmetic functions
