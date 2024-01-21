@@ -1,6 +1,7 @@
 import EulerProducts.LSeries
 import EulerProducts.Logarithm
 import EulerProducts.DirichletLSeries
+import Mathlib.Tactic.RewriteSearch
 
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
@@ -139,6 +140,66 @@ lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
     using norm_dirichlet_product_ge_one χ₁ hx hy
+
+open BigOperators in
+lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re)
+    {n : ℕ} (hn : N < n) :
+    (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) * (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s))) =
+        ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹ := by
+  letI ε : DirichletCharacter ℂ N := 1
+  rw [mul_comm]
+  have hd : Disjoint N.primeFactors (n.primesBelow.filter (· ∉ N.primeFactors))
+  · convert Finset.disjoint_filter_filter_neg N.primeFactors n.primesBelow (· ∈ N.primeFactors)
+    rw [Finset.filter_mem_eq_inter, Finset.inter_self]
+  have hdeq : Finset.disjUnion _ _ hd = primesBelow n
+  · simp only [Finset.disjUnion_eq_union]
+    ext p
+    simp only [Finset.mem_union, Finset.mem_filter]
+    refine ⟨fun H ↦ ?_, fun H ↦ ?_⟩
+    · rcases H with H | H
+      · exact mem_primesBelow.mpr
+          ⟨(le_of_mem_primeFactors H).trans_lt hn, prime_of_mem_primeFactors H⟩
+      · exact H.1
+    · by_cases H' : p ∈ N.primeFactors
+      · exact .inl H'
+      · exact .inr ⟨H, H'⟩
+  have H₁ := hdeq ▸ Finset.prod_disjUnion (f := fun p : ℕ ↦ (1 - ε p * (p : ℂ) ^ (-s))⁻¹) hd
+  have H₂ : ∏ p in N.primeFactors, (1 - ε p * (p : ℂ) ^ (-s))⁻¹ = 1
+  · refine Finset.prod_eq_one fun p hp ↦ ?_
+    rw [MulChar.map_nonunit _ <| ZMod.not_isUnit_of_mem_primeFactors hp, zero_mul, sub_zero,
+      inv_one]
+  have H₃ := hdeq ▸ Finset.prod_disjUnion (f := fun p : ℕ ↦ (1 - (p : ℂ) ^ (-s))⁻¹) hd
+  rw [H₁, H₂, one_mul, H₃, ← mul_assoc, ← Finset.prod_mul_distrib]; clear H₁ H₂ H₃
+  conv => enter [2]; rw [← one_mul (∏ p in (n.primesBelow.filter _), _)]
+  congr 1
+  · exact Finset.prod_eq_one fun p hp ↦
+      mul_inv_cancel <| one_sub_prime_cpow_ne_zero (prime_of_mem_primeFactors hp) hs
+  · refine Finset.prod_congr rfl fun p hp ↦ ?_
+    simp only [mem_primeFactors, ne_eq, hN, not_false_eq_true, and_true, not_and,
+      Finset.mem_filter] at hp
+    have hp₁ := (mem_primesBelow.mp hp.1).2
+    rw [MulChar.one_apply _ <| ZMod.isUnit_prime_of_not_dvd hp₁ <| hp.2 hp₁, one_mul]
+
+open BigOperators in
+lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re) :
+    L (1 : DirichletCharacter ℂ N) s = ζ s * ∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
+  have Hζ := (riemannZeta_eulerProduct hs).mul_const (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))
+  have HL := dirichletLSeries_eulerProduct (1 : DirichletCharacter ℂ N) hs
+  have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) * (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))) =ᶠ[Filter.atTop]
+    (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹)
+  · refine Filter.eventuallyEq_of_mem (s := {n | N < n}) ?_
+      fun _ ↦ prod_primesBelow_mul_eq_prod_primesBelow hN hs
+    simp only [Filter.mem_atTop_sets, Set.mem_setOf_eq]
+    exact ⟨N + 1, fun _ hm ↦ hm⟩
+  convert (tendsto_nhds_unique (Filter.Tendsto.congr' Hev Hζ) HL).symm using 1
+  rw [LSeries]
+  congr
+  funext n
+  simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [ArithmeticFunction.map_zero, CharP.cast_eq_zero, ne_eq, ne_zero_of_one_lt_re hs,
+      not_false_eq_true, zero_cpow, div_zero, cast_zero, neg_eq_zero, mul_zero]
+  rw [DirichletCharacter.toArithmeticFunction_apply_of_ne_zero _ hn, div_eq_mul_inv, cpow_neg]
 
 end
 
