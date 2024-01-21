@@ -35,6 +35,15 @@ lemma pow_injective_on_primes {p q m n : ℕ} (hp : p.Prime) (hq : q.Prime)
 end Nat
 
 
+namespace ZMod
+
+lemma eq_one_of_isUnit_natCast {n : ℕ} (h : IsUnit (n : ZMod 0)) : n = 1 := by
+  have := Int.isUnit_iff.mp h
+  norm_cast at this
+  exact this.resolve_right not_false
+
+end ZMod
+
 namespace Real
 
 lemma log_le_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) :
