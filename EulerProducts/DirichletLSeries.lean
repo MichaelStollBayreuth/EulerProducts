@@ -295,7 +295,7 @@ lemma LSeries.zeta_ne_zero {s : ℂ} (hs : 1 < s.re) : LSeries ζ s ≠ 0 :=
   fun h ↦ by simpa [h] using LSeries.zeta_mul_mu_eq_one hs
 
 /-- The Riemann Zeta Function does not vanish on the half-plane `re s > 1`. -/
-lemma _root_.riemannZeta_ne_zero {s : ℂ} (hs : 1 < s.re) : riemannZeta s ≠ 0 :=
+lemma _root_.riemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) : riemannZeta s ≠ 0 :=
   LSeries.zeta_eq_riemannZeta hs ▸ LSeries.zeta_ne_zero hs
 
 /-!

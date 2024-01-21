@@ -177,8 +177,8 @@ lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (
     one_add_I_mul_ne_one hy).isBigO_of_eq_zero h).mono nhdsWithin_le_nhds
 
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
-lemma zeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
-  refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero
+lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
+  refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero_of_one_lt_re
   -- We assume that `ζ z = 0` and `z.re = 1` and derive a contradiction.
   have hz₀ : z.im ≠ 0
   · rw [← re_add_im z, ← h, ofReal_one] at hz
@@ -282,7 +282,7 @@ open Filter Nat ArithmeticFunction in
 `ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
 theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
     Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (nhds 1) := by
-  have hnv := zeta_ne_zero_of_one_le_re
+  have hnv := riemannZeta_ne_zero_of_one_le_re
   refine WIT (F := fun z ↦ -deriv ζ₁ z / ζ₁ z) (fun _ ↦ vonMangoldt_nonneg) (fun s hs ↦ ?_) ?_
   · have hs₁ : s ≠ 1
     · rintro rfl
