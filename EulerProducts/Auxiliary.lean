@@ -417,6 +417,67 @@ theorem hasSum_iteratedFDeriv [CharZero 𝕜] {y : E} (hy : y ∈ EMetric.ball 0
 end HasFPowerSeriesOnBall
 
 
+namespace deriv
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+open ContinuousLinearMap in
+lemma comp_neg (f : 𝕜 → F) (a : 𝕜) : deriv (fun x ↦ f (-x)) a = -deriv f (-a) := by
+  by_cases h : DifferentiableAt 𝕜 f (-a)
+  · simp_rw [← fderiv_deriv]
+    change (fderiv 𝕜 (f ∘ fun x ↦ -x) a) 1 = _
+    rw [fderiv.comp _ h differentiable_neg.differentiableAt, show @Neg.neg 𝕜 _ = (- ·) from rfl,
+      coe_comp', Function.comp_apply, fderiv_neg, fderiv_id', neg_apply, coe_id', id_eq, map_neg]
+  · have H : ¬ DifferentiableAt 𝕜 (fun x ↦ f (-x)) a
+    · contrapose! h
+      rw [← neg_neg a] at h
+      convert h.comp (-a) differentiable_neg.differentiableAt
+      ext
+      simp only [Function.comp_apply, neg_neg]
+    rw [deriv_zero_of_not_differentiableAt h, deriv_zero_of_not_differentiableAt H, neg_zero]
+
+/-- A variant of `deriv_const_smul` without differentiability assumption when the scalar
+multiplication is by field elements. -/
+lemma const_smul {f : 𝕜 → F} {x : 𝕜} {R : Type*} [Field R] [Module R F] [SMulCommClass 𝕜 R F]
+    [ContinuousConstSMul R F] (c : R) :
+    deriv (fun y ↦ c • f y) x = c • deriv f x := by
+  by_cases hf : DifferentiableAt 𝕜 f x
+  · exact deriv_const_smul c hf
+  · rcases eq_or_ne c 0 with rfl | hc
+    · simp only [zero_smul, deriv_const']
+    · have H : ¬DifferentiableAt 𝕜 (fun y ↦ c • f y) x
+      · contrapose! hf
+        change DifferentiableAt 𝕜 (fun y ↦ f y) x
+        conv => enter [2, y]; rw [← inv_smul_smul₀ hc (f y)]
+        exact DifferentiableAt.const_smul hf c⁻¹
+      rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt H, smul_zero]
+
+end deriv
+
+
+namespace iteratedDeriv
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+lemma neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
+    iteratedDeriv n (fun x ↦ -(f x)) a = -(iteratedDeriv n f a) := by
+  induction' n with n ih generalizing a
+  · simp only [Nat.zero_eq, iteratedDeriv_zero]
+  · have ih' : iteratedDeriv n (fun x ↦ -f x) = fun x ↦ -iteratedDeriv n f x := funext ih
+    rw [iteratedDeriv_succ, iteratedDeriv_succ, ih', deriv.neg]
+
+lemma comp_neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
+    iteratedDeriv n (fun x ↦ f (-x)) a = (-1 : 𝕜) ^ n • iteratedDeriv n f (-a) := by
+  induction' n with n ih generalizing a
+  · simp only [Nat.zero_eq, iteratedDeriv_zero, pow_zero, one_smul]
+  · have ih' : iteratedDeriv n (fun x ↦ f (-x)) = fun x ↦ (-1 : 𝕜) ^ n • iteratedDeriv n f (-x) :=
+      funext ih
+    rw [iteratedDeriv_succ, iteratedDeriv_succ, ih', pow_succ, neg_mul, one_mul,
+      deriv.comp_neg (f := fun x ↦ (-1 : 𝕜) ^ n • iteratedDeriv n f x), deriv.const_smul, neg_smul]
+
+end iteratedDeriv
+
+
 namespace Complex
 
 open BigOperators Nat
@@ -500,5 +561,17 @@ theorem at_zero_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
       ext w
       exact deriv_sub_const (f 0)
   exact sub_nonneg.mp <| nonneg_of_iteratedDeriv_nonneg (hf.sub_const (f 0)) h' hz
+
+/-- An entire function whose iterated derivatives at zero are all real with alternating signs
+(except possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonpositive
+real axis. -/
+theorem at_zero_le_of_iteratedDeriv_alternating {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n ≠ 0, 0 ≤ (-1) ^ n * iteratedDeriv n f 0) {z : ℂ} (hz : z ≤ 0) : f 0 ≤ f z := by
+  let F : ℂ → ℂ := fun z ↦ f (-z)
+  convert at_zero_le_of_iteratedDeriv_nonneg (f := F) (hf.comp <| differentiable_neg)
+    (fun n hn ↦ ?_) (neg_nonneg.mpr hz) using 1
+  · simp only [neg_zero]
+  · simp only [neg_neg]
+  · simpa only [iteratedDeriv.comp_neg, neg_zero] using h n hn
 
 end Complex
