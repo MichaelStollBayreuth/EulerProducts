@@ -1,3 +1,4 @@
+import Mathlib
 import Mathlib.Analysis.PSeries
 import Mathlib.Topology.CompletelyRegular
 import Mathlib.Analysis.Complex.RealDeriv
@@ -33,6 +34,27 @@ lemma pow_injective_on_primes {p q m n : ℕ} (hp : p.Prime) (hq : q.Prime)
   exact ⟨H, succ_inj'.mp <| Nat.pow_right_injective hq.two_le (H ▸ h)⟩
 
 end Nat
+
+namespace Fin
+
+lemma snoc_zero {α : Type*} (p : Fin 0 → α) (x : α) :
+    Fin.snoc p x = fun _ ↦ x := by
+  ext y
+  have : Subsingleton (Fin (0 + 1)) := Fin.subsingleton_one
+  simp only [Subsingleton.elim y (Fin.last 0), snoc_last]
+
+end Fin
+
+
+namespace Finset
+
+lemma piecewise_same {α : Type*} {δ : α → Sort*} (s : Finset α)
+    (f : (i : α) → δ i) [(j : α) → Decidable (j ∈ s)] :
+    s.piecewise f f = f := by
+  ext i
+  by_cases h : i ∈ s <;> simp [h]
+
+end Finset
 
 
 namespace ZMod
@@ -310,3 +332,173 @@ lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O
     ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
 
 end Topology
+
+
+namespace FormalMultilinearSeries
+
+universe u v
+
+variable {𝕜 : Type*} {E : Type u} {F : Type v} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  (p : FormalMultilinearSeries 𝕜 E F)
+
+/-- This series appears in `HasFPowerSeriesOnBall.fderiv` -/
+noncomputable
+def derivSeries : FormalMultilinearSeries 𝕜 E (E →L[𝕜] F) :=
+  (continuousMultilinearCurryFin1 𝕜 E F : (E[×1]→L[𝕜] F) →L[𝕜] E →L[𝕜] F)
+    |>.compFormalMultilinearSeries (p.changeOriginSeries 1)
+
+open Fintype ContinuousLinearMap in
+theorem derivSeries_apply_diag (n : ℕ) (x : E) :
+    derivSeries p n (fun _ ↦ x) x = (n + 1) • p (n + 1) fun _ ↦ x := by
+  simp only [derivSeries, strongUniformity_topology_eq, compFormalMultilinearSeries_apply,
+    changeOriginSeries, compContinuousMultilinearMap_coe, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_coe, Function.comp_apply, ContinuousMultilinearMap.sum_apply, map_sum,
+    coe_sum', Finset.sum_apply, continuousMultilinearCurryFin1_apply, Matrix.zero_empty]
+  convert Finset.sum_const _
+  · rw [Fin.snoc_zero, changeOriginSeriesTerm_apply, Finset.piecewise_same, add_comm]
+  · erw [← card, card_subtype, ← Finset.powersetCard_eq_filter, Finset.card_powersetCard, ← card,
+      card_fin, eq_comm, add_comm, Nat.choose_succ_self_right]
+
+end FormalMultilinearSeries
+
+namespace HasFPowerSeriesOnBall
+
+universe u v
+
+open FormalMultilinearSeries ENNReal Nat
+
+variable {𝕜 : Type*} {E : Type u} {F : Type v} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {p : FormalMultilinearSeries 𝕜 E F} {f : E → F} {x : E} {r : ℝ≥0∞}
+  (h : HasFPowerSeriesOnBall f p x r) (y : E)
+-- assumption h could be replaced by HasFPowerSeriesAt
+
+theorem iteratedFDeriv_zero_apply_diag :
+    iteratedFDeriv 𝕜 0 f x (fun _ ↦ y) = p 0 (fun _ ↦ y) := by
+  convert (h.hasSum <| EMetric.mem_ball_self h.r_pos).tsum_eq.symm
+  · rw [iteratedFDeriv_zero_apply, add_zero]
+  · rw [tsum_eq_single 0 <| fun n hn ↦ by haveI := NeZero.mk hn; exact (p n).map_zero]
+    exact congr(p 0 $(Subsingleton.elim _ _))
+
+private theorem factorial_smul' : ∀ {F : Type max u v} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [CompleteSpace F] {p : FormalMultilinearSeries 𝕜 E F}
+    {f : E → F}, HasFPowerSeriesOnBall f p x r →
+    n ! • p n (fun _ ↦ y) = iteratedFDeriv 𝕜 n f x (fun _ ↦ y) := by
+  induction' n with n ih <;> intro F _ _ _ p f h
+  · rw [factorial_zero, one_smul, h.iteratedFDeriv_zero_apply_diag]
+  · rw [factorial_succ, mul_comm, mul_smul, ← derivSeries_apply_diag,
+      ← ContinuousLinearMap.smul_apply, derivSeries, ih h.fderiv,
+      iteratedFDeriv_succ_apply_right]
+    rfl
+
+variable [CompleteSpace F]
+
+theorem factorial_smul (n : ℕ) :
+    n ! • p n (fun _ ↦ y) = iteratedFDeriv 𝕜 n f x (fun _ ↦ y) := by
+  cases n
+  · rw [factorial_zero, one_smul, h.iteratedFDeriv_zero_apply_diag]
+  · erw [factorial_succ, mul_comm, mul_smul, ← derivSeries_apply_diag,
+      ← ContinuousLinearMap.smul_apply, factorial_smul'.{_,u,v} _ h.fderiv,
+      iteratedFDeriv_succ_apply_right]
+    rfl
+
+theorem hasSum_iteratedFDeriv [CharZero 𝕜] {y : E} (hy : y ∈ EMetric.ball 0 r) :
+    HasSum (fun n ↦ (1 / n ! : 𝕜) • iteratedFDeriv 𝕜 n f x fun _ ↦ y) (f (x + y)) := by
+  convert h.hasSum hy with n
+  rw [← h.factorial_smul y n, smul_comm, ← smul_assoc, nsmul_eq_mul,
+    mul_one_div_cancel <| cast_ne_zero.mpr n.factorial_ne_zero, one_smul]
+
+/- We can't quite show
+  `HasFPowerSeriesOnBall f (fun n ↦ (1 / n !) • iteratedFDeriv 𝕜 n f x) x r`
+  because `r_le` requires bounding the norm of a multilinear map using values on
+  the diagonal, so some polarization identity would be required. -/
+
+end HasFPowerSeriesOnBall
+
+
+namespace Complex
+
+open BigOperators Nat
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+
+/-- A function that is complex differentiable on the closed ball of radius `r` around `c`
+is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
+lemma taylorSeries_on_ball {f : ℂ → E} {r : NNReal} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
+    ∑' n : ℕ, (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c = f z := by
+  have hz' : z - c ∈ EMetric.ball 0 r
+  · rw [Metric.emetric_ball_nnreal]
+    exact mem_ball_zero_iff.mpr hz
+  have H := ((hf.hasFPowerSeriesOnBall hr).hasSum_iteratedFDeriv hz').tsum_eq
+  simp only [add_sub_cancel'_right] at H
+  convert H using 4 with n
+  simpa only [iteratedDeriv_eq_iteratedFDeriv, smul_eq_mul, mul_one, Finset.prod_const,
+    Finset.card_fin]
+    using ((iteratedFDeriv ℂ n f c).map_smul_univ (fun _ ↦ z - c) (fun _ ↦ 1)).symm
+
+/-- A function that is complex differentiable on the closed ball of radius `r` around `c`
+is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
+lemma taylorSeries_on_ball'  {f : ℂ → ℂ} {r : NNReal} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
+    ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
+  convert taylorSeries_on_ball hr hf hz using 3 with n
+  rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
+
+/-- A function that is complex differentiable on the complex plane is given by evaluating
+its Taylor series at any point `c`. -/
+lemma taylorSeries_of_entire {f : ℂ → E} (hf : Differentiable ℂ f) (c z : ℂ) :
+    ∑' n : ℕ, (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c = f z := by
+  have hR := lt_add_of_pos_of_le zero_lt_one <| zero_le (⟨‖z - c‖, norm_nonneg _⟩ : NNReal)
+  refine taylorSeries_on_ball hR hf.differentiableOn ?_
+  rw [mem_ball_iff_norm, NNReal.coe_add, NNReal.coe_one, NNReal.coe_mk, lt_add_iff_pos_left]
+  exact zero_lt_one
+
+/-- A function that is complex differentiable on the complex plane is given by evaluating
+its Taylor series at any point `c`. -/
+lemma taylorSeries_of_entire' {f : ℂ → ℂ} (hf : Differentiable ℂ f) (c z : ℂ) :
+    ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
+  convert taylorSeries_of_entire hf c z using 3 with n
+  rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
+
+
+open scoped ComplexOrder
+
+/-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
+real values for nonnegative real arguments. -/
+theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) {z : ℂ} (hz : 0 ≤ z) : 0 ≤ f z := by
+  have H := taylorSeries_of_entire' hf 0 z
+  have hz' := eq_re_of_ofReal_le hz
+  rw [hz'] at hz H ⊢
+  obtain ⟨D, hD⟩ : ∃ D : ℕ → ℝ, ∀ n, 0 ≤ D n ∧ iteratedDeriv n f 0 = D n
+  · refine ⟨fun n ↦ (iteratedDeriv n f 0).re, fun n ↦ ⟨?_, ?_⟩⟩
+    · have := eq_re_of_ofReal_le (h n) ▸ h n
+      norm_cast at this
+    · rw [eq_re_of_ofReal_le (h n)]
+  simp_rw [← H, hD, ← ofReal_nat_cast, sub_zero, ← ofReal_pow, ← ofReal_one, ← ofReal_div,
+    ← ofReal_mul, ← ofReal_tsum]
+  norm_cast
+  refine tsum_nonneg fun n ↦ ?_
+  norm_cast at hz
+  have := (hD n).1
+  positivity
+
+/-- An entire function whose iterated derivatives at zero are all nonnegative real (except
+possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonnegative
+real axis. -/
+theorem at_zero_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n ≠ 0, 0 ≤ iteratedDeriv n f 0) {z : ℂ} (hz : 0 ≤ z) : f 0 ≤ f z := by
+  have h' (n : ℕ) : 0 ≤ iteratedDeriv n (f · - f 0) 0
+  · cases n with
+  | zero => simp only [iteratedDeriv_zero, sub_self, le_refl]
+  | succ n =>
+      specialize h n.succ <| succ_ne_zero n
+      rw [iteratedDeriv_succ'] at h ⊢
+      convert h using 2
+      ext w
+      exact deriv_sub_const (f 0)
+  exact sub_nonneg.mp <| nonneg_of_iteratedDeriv_nonneg (hf.sub_const (f 0)) h' hz
+
+end Complex
