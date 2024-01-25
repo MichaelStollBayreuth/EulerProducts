@@ -564,32 +564,37 @@ open BigOperators Nat
 
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-/-- A function that is complex differentiable on the closed ball of radius `r` around `c`
-is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
-lemma hasSum_taylorSeries_on_ball {f : ℂ → E} {r : NNReal} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
+/-- A function that is complex differentiable on the open ball of radius `r` around `c`
+is given by evaluating its Taylor series at `c` on this open ball. -/
+lemma hasSum_taylorSeries_on_ball {f : ℂ → E} ⦃r : NNReal⦄ (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
     HasSum (fun n : ℕ ↦ (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c) (f z) := by
-  have hz' : z - c ∈ EMetric.ball 0 r
+  obtain ⟨r', hr', hr'₀, hzr'⟩ : ∃ r' < r, 0 < r' ∧ z ∈ Metric.ball c r'
+  · obtain ⟨r', h₁, h₂⟩ := exists_between (Metric.mem_ball'.mp hz)
+    lift r' to NNReal using dist_nonneg.trans h₁.le
+    exact ⟨r', h₂, pos_of_gt h₁, Metric.mem_ball'.mpr h₁⟩
+  have hz' : z - c ∈ EMetric.ball 0 r'
   · rw [Metric.emetric_ball_nnreal]
-    exact mem_ball_zero_iff.mpr hz
-  have H := (hf.hasFPowerSeriesOnBall hr).hasSum_iteratedFDeriv hz'
+    exact mem_ball_zero_iff.mpr hzr'
+  have H := (hf.mono <| Metric.closedBall_subset_ball hr').hasFPowerSeriesOnBall hr'₀
+      |>.hasSum_iteratedFDeriv hz'
   simp only [add_sub_cancel'_right] at H
   convert H using 4 with n
   simpa only [iteratedDeriv_eq_iteratedFDeriv, smul_eq_mul, mul_one, Finset.prod_const,
     Finset.card_fin]
     using ((iteratedFDeriv ℂ n f c).map_smul_univ (fun _ ↦ z - c) (fun _ ↦ 1)).symm
 
-/-- A function that is complex differentiable on the closed ball of radius `r` around `c`
-is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
-lemma taylorSeries_eq_on_ball {f : ℂ → E} {r : NNReal} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
+/-- A function that is complex differentiable on the open ball of radius `r` around `c`
+is given by evaluating its Taylor series at `c` on theis open ball. -/
+lemma taylorSeries_eq_on_ball {f : ℂ → E} ⦃r : NNReal⦄ (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
     ∑' n : ℕ, (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c = f z :=
   (hasSum_taylorSeries_on_ball hr hf hz).tsum_eq
 
-/-- A function that is complex differentiable on the closed ball of radius `r` around `c`
-is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
-lemma taylorSeries_eq_on_ball' {f : ℂ → ℂ} {r : NNReal} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
+/-- A function that is complex differentiable on the open ball of radius `r` around `c`
+is given by evaluating its Taylor series at `c` on this open ball. -/
+lemma taylorSeries_eq_on_ball' {f : ℂ → ℂ} ⦃r : NNReal⦄ (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
     ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
   convert taylorSeries_eq_on_ball hr hf hz using 3 with n
   rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
@@ -619,24 +624,42 @@ lemma taylorSeries_eq_of_entire' {f : ℂ → ℂ} (hf : Differentiable ℂ f) (
 /-- A function that is complex differentiable on the closed ball of radius `r` around `c`,
 where `c` is real, and all whose iterated derivatives at `c` are real can be give by a real
 differentiable function on the real open interval from `c-r` to `c+r`. -/
-lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} {r : NNReal} {c : ℝ} (hr : 0 < r)
-    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {D : ℕ → ℝ}
+lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : NNReal⦄ (hr : 0 < r) {c : ℝ}
+    (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃D : ℕ → ℝ⦄
     (hd : ∀ n, iteratedDeriv n f c = D n) :
     ∃ F : ℝ → ℝ, DifferentiableOn ℝ F (Set.Ioo (c - r) (c + r)) ∧
       Set.EqOn (f ∘ ofReal') (ofReal' ∘ F) (Set.Ioo (c - r) (c + r)) := by
-  sorry
+  have Hz : ∀ x ∈ Set.Ioo (c - r) (c + r), (x : ℂ) ∈ Metric.ball (c : ℂ) r
+  · intro x hx
+    refine Metric.mem_ball.mpr ?_
+    rw [dist_eq, ← ofReal_sub, abs_ofReal, abs_sub_lt_iff, sub_lt_iff_lt_add', sub_lt_comm]
+    exact and_comm.mpr hx
+  have H := taylorSeries_eq_on_ball' hr hf
+  refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · have Hx := Hz _ hx
+    refine DifferentiableAt.differentiableWithinAt ?_
+    replace hf := ((hf x Hx).congr (fun _ hz ↦ H hz) (H Hx)).differentiableAt
+      (Metric.isOpen_ball.mem_nhds Hx) |>.comp_ofReal
+    simp_rw [hd, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_one, ← ofReal_div, ← ofReal_pow,
+      ← ofReal_mul, ← ofReal_tsum] at hf
+    exact DifferentiableAt.ofReal_comp_iff.mp hf
+  · simp only [Function.comp_apply, ← H (Hz _ hx), hd, ofReal_tsum]
+    push_cast
+    rfl
 
 /-- A function that is complex differentiable on the complex plane and all whose iterated
 derivatives at a real point `c` are real can be given by a real differentiable function
 on the real line. -/
-lemma realValued_of_iteratedDeriv_real' {f : ℂ → ℂ} (hf : Differentiable ℂ f) {c : ℝ} {D : ℕ → ℝ}
+lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable ℂ f) {c : ℝ} {D : ℕ → ℝ}
     (hd : ∀ n, iteratedDeriv n f c = D n) :
     ∃ F : ℝ → ℝ, Differentiable ℝ F ∧ (f ∘ ofReal') = (ofReal' ∘ F) := by
   have H := taylorSeries_eq_of_entire' hf c
   simp_rw [hd] at H
   refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, ?_, ?_⟩
   · have := hf.comp_ofReal
-    sorry
+    simp_rw [← H, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_one, ← ofReal_div, ← ofReal_pow,
+      ← ofReal_mul, ← ofReal_tsum] at this
+    exact Differentiable.ofReal_comp_iff.mp this
   · ext x
     simp only [Function.comp_apply, ofReal_eq_coe, ← H, ofReal_tsum]
     push_cast
@@ -651,7 +674,7 @@ lemma monotone_ofReal : Monotone ofReal := by
 /-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
 real values for nonnegative real arguments. -/
 theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) {z : ℂ} (hz : 0 ≤ z) : 0 ≤ f z := by
+    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) ⦃z : ℂ⦄ (hz : 0 ≤ z) : 0 ≤ f z := by
   have H := taylorSeries_eq_of_entire' hf 0 z
   have hz' := eq_re_of_ofReal_le hz
   rw [hz'] at hz H ⊢
@@ -670,19 +693,31 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real is
 monotonic on the nonnegative real axis. -/
-theorem monotoneOn_of_iteratedDeriv_nonneg  {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal) (Set.Ici (0 : ℝ)) := by
-  obtain ⟨F, hF⟩ : ∃ F : ℝ → ℝ, f ∘ ofReal = ofReal ∘ F
-  · sorry
+theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal') (Set.Ici (0 : ℝ)) := by
+  let D : ℕ → ℝ := fun n ↦ (iteratedDeriv n f 0).re
+  have hD (n : ℕ) : iteratedDeriv n f 0 = D n
+  · refine Complex.ext rfl ?_
+    simp only [ofReal_im]
+    exact (le_def.mp (h n)).2.symm
+  obtain ⟨F, hFd, hF⟩ := realValued_of_iteratedDeriv_real hf hD
   rw [hF]
-  refine Monotone.comp_monotoneOn monotone_ofReal <| Convex.monotoneOn_of_deriv_nonneg ?_ ?_ ?_ ?_
-  · exact convex_Ici 0
-  · refine Continuous.continuousOn ?_
-    sorry
-  · refine Differentiable.differentiableOn ?_
-    sorry
+  refine Monotone.comp_monotoneOn monotone_ofReal <| Convex.monotoneOn_of_deriv_nonneg
+    (convex_Ici 0) hFd.continuous.continuousOn hFd.differentiableOn fun x hx ↦ ?_
+  have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0
+  · rw [← iteratedDeriv_succ']
+    exact h (n + 1)
+  have hf' := (contDiff_succ_iff_deriv.mp <| hf.contDiff (n := 2)).2.differentiable rfl.le
+  have hx : (0 : ℂ) ≤ x
+  · norm_cast
+    simp only [Set.nonempty_Iio, interior_Ici', Set.mem_Ioi] at hx
+    exact hx.le
+  have H := nonneg_of_iteratedDeriv_nonneg hf' hD' hx
+  rw [← deriv.comp_ofReal hf.differentiableAt] at H
+  change 0 ≤ deriv (f ∘ ofReal') x at H
+  erw [hF, deriv.ofReal_comp] at H
+  norm_cast at H
 
-  sorry
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real (except
 possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonnegative
