@@ -480,6 +480,26 @@ end iteratedDeriv
 
 namespace Complex
 
+lemma hasDerivAt_ofReal (x : ℝ) : HasDerivAt ofReal' 1 x :=
+  HasDerivAt.ofReal_comp <| hasDerivAt_id x
+
+lemma differentiableAt_ofReal (x : ℝ) : DifferentiableAt ℝ ofReal' x :=
+  (hasDerivAt_ofReal x).differentiableAt
+
+lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
+  fun x ↦ ⟨_, (hasDerivAt_ofReal x).hasFDerivAt⟩
+
+section OrderInstance
+
+open scoped ComplexOrder
+
+instance : OrderClosedTopology ℂ where
+  isClosed_le' := by
+    simp_rw [le_def, Set.setOf_and]
+    refine IsClosed.inter (isClosed_le ?_ ?_) (isClosed_eq ?_ ?_) <;> continuity
+
+end OrderInstance
+
 open BigOperators Nat
 
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
@@ -523,8 +543,37 @@ lemma taylorSeries_of_entire' {f : ℂ → ℂ} (hf : Differentiable ℂ f) (c z
   convert taylorSeries_of_entire hf c z using 3 with n
   rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
 
+/-- A function that is complex differentiable on the closed ball of radius `r` around `c`,
+where `c` is real, and all whose iterated derivatives at `c` are real can be give by a real
+differentiable function on the real open interval from `c-r` to `c+r`. -/
+lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} {r : NNReal} {c : ℝ} (hr : 0 < r)
+    (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {D : ℕ → ℝ}
+    (hd : ∀ n, iteratedDeriv n f c = D n) :
+    ∃ F : ℝ → ℝ, DifferentiableOn ℝ F (Set.Ioo (c - r) (c + r)) ∧
+      Set.EqOn (f ∘ ofReal') (ofReal' ∘ F) (Set.Ioo (c - r) (c + r)) := by
+  sorry
+
+/-- A function that is complex differentiable on the complex plane and all whose iterated
+derivatives at a real point `c` are real can be given by a real differentiable function
+on the real line. -/
+lemma realValued_of_iteratedDeriv_real' {f : ℂ → ℂ} (hf : Differentiable ℂ f) {c : ℝ} {D : ℕ → ℝ}
+    (hd : ∀ n, iteratedDeriv n f c = D n) :
+    ∃ F : ℝ → ℝ, Differentiable ℝ F ∧ (f ∘ ofReal') = (ofReal' ∘ F) := by
+  have H := taylorSeries_of_entire' hf c
+  simp_rw [hd] at H
+  refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, ?_, ?_⟩
+  ·
+    sorry
+  · ext x
+    simp only [Function.comp_apply, ofReal_eq_coe, ← H, ofReal_tsum]
+    push_cast
+    rfl
 
 open scoped ComplexOrder
+
+lemma monotone_ofReal : Monotone ofReal := by
+  intro x y hxy
+  simp only [ofReal_eq_coe, real_le_real, hxy]
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
 real values for nonnegative real arguments. -/
@@ -545,6 +594,22 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
   norm_cast at hz
   have := (hD n).1
   positivity
+
+/-- An entire function whose iterated derivatives at zero are all nonnegative real is
+monotonic on the nonnegative real axis. -/
+theorem monotoneOn_of_iteratedDeriv_nonneg  {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal) (Set.Ici (0 : ℝ)) := by
+  obtain ⟨F, hF⟩ : ∃ F : ℝ → ℝ, f ∘ ofReal = ofReal ∘ F
+  · sorry
+  rw [hF]
+  refine Monotone.comp_monotoneOn monotone_ofReal <| Convex.monotoneOn_of_deriv_nonneg ?_ ?_ ?_ ?_
+  · exact convex_Ici 0
+  · refine Continuous.continuousOn ?_
+    sorry
+  · refine Differentiable.differentiableOn ?_
+    sorry
+
+  sorry
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real (except
 possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonnegative
