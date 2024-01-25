@@ -702,8 +702,8 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
     exact (le_def.mp (h n)).2.symm
   obtain ⟨F, hFd, hF⟩ := realValued_of_iteratedDeriv_real hf hD
   rw [hF]
-  refine Monotone.comp_monotoneOn monotone_ofReal <| Convex.monotoneOn_of_deriv_nonneg
-    (convex_Ici 0) hFd.continuous.continuousOn hFd.differentiableOn fun x hx ↦ ?_
+  refine monotone_ofReal.comp_monotoneOn <| (convex_Ici 0).monotoneOn_of_deriv_nonneg
+    hFd.continuous.continuousOn hFd.differentiableOn fun x hx ↦ ?_
   have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0
   · rw [← iteratedDeriv_succ']
     exact h (n + 1)
@@ -717,7 +717,6 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
   change 0 ≤ deriv (f ∘ ofReal') x at H
   erw [hF, deriv.ofReal_comp] at H
   norm_cast at H
-
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real (except
 possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonnegative
