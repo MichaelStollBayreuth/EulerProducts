@@ -521,10 +521,9 @@ lemma HasDerivAt.of_hasDerivAt_ofReal_comp {z : ℝ} {f : ℝ → ℝ} {u : ℂ}
     (hf : HasDerivAt (fun y ↦ (f y : ℂ)) u z) :
     ∃ u' : ℝ, u = u' ∧ HasDerivAt f u' z := by
   lift u to ℝ
-  · have H := (imClm.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt
-    simp only [Function.comp_def, imClm_apply, ofReal_im] at H
-    replace H := H.deriv
-    rwa [eq_comm, deriv_const, comp_apply, imClm_apply, smulRight_apply, one_apply, one_smul] at H
+  · have H := (imClm.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt.deriv
+    simp only [Function.comp_def, imClm_apply, ofReal_im, deriv_const] at H
+    rwa [eq_comm, comp_apply, imClm_apply, smulRight_apply, one_apply, one_smul] at H
   refine ⟨u, rfl, ?_⟩
   convert (reClm.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt
   rw [comp_apply, smulRight_apply, one_apply, one_smul, reClm_apply, ofReal_re]
