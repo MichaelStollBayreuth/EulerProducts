@@ -491,6 +491,26 @@ lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
   Complex.ofRealClm.differentiable
   -- fun x ↦ ⟨_, (hasDerivAt_ofReal x).hasFDerivAt⟩
 
+end Complex
+
+lemma DifferentiableAt.comp_ofReal {e : ℂ → ℂ} {z : ℝ} (hf : DifferentiableAt ℂ e ↑z) :
+    DifferentiableAt ℝ (fun x : ℝ ↦ e x) z :=
+  hf.hasDerivAt.comp_ofReal.differentiableAt
+
+lemma Differentiable.comp_ofReal {e : ℂ → ℂ} (h : Differentiable ℂ e) :
+    Differentiable ℝ (fun x : ℝ ↦ e x) :=
+  fun _ ↦ h.differentiableAt.comp_ofReal
+
+lemma DifferentiableAt.ofReal_comp {z : ℝ} {f : ℝ → ℝ} (hf : DifferentiableAt ℝ f z) :
+    DifferentiableAt ℝ (fun (y : ℝ) => (f y : ℂ)) z :=
+  hf.hasDerivAt.ofReal_comp.differentiableAt
+
+lemma Differentiable.ofReal_comp {f : ℝ → ℝ} (hf : Differentiable ℝ f) :
+    Differentiable ℝ (fun (y : ℝ) => (f y : ℂ)) :=
+  fun _ ↦ hf.differentiableAt.ofReal_comp
+
+namespace Complex
+
 section OrderInstance
 
 open scoped ComplexOrder
@@ -530,7 +550,7 @@ lemma taylorSeries_eq_on_ball {f : ℂ → E} {r : NNReal} (hr : 0 < r)
 
 /-- A function that is complex differentiable on the closed ball of radius `r` around `c`
 is given by evaluating its Taylor series at `c` on the open ball of radius `r` around `c`. -/
-lemma taylorSeries_eq_on_ball'  {f : ℂ → ℂ} {r : NNReal} (hr : 0 < r)
+lemma taylorSeries_eq_on_ball' {f : ℂ → ℂ} {r : NNReal} (hr : 0 < r)
     (hf : DifferentiableOn ℂ f (Metric.closedBall c r)) {z : ℂ} (hz : z ∈ Metric.ball c r) :
     ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
   convert taylorSeries_eq_on_ball hr hf hz using 3 with n
@@ -577,7 +597,7 @@ lemma realValued_of_iteratedDeriv_real' {f : ℂ → ℂ} (hf : Differentiable �
   have H := taylorSeries_eq_of_entire' hf c
   simp_rw [hd] at H
   refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, ?_, ?_⟩
-  ·
+  · have := hf.comp_ofReal
     sorry
   · ext x
     simp only [Function.comp_apply, ofReal_eq_coe, ← H, ofReal_tsum]
