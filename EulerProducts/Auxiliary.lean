@@ -194,10 +194,10 @@ lemma norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos {n : ℕ} (hn : 0 < n) {w z : �
 --
 
 lemma summable_re {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).re :=
-  HasSum.summable <| Complex.hasSum_re h.hasSum
+  (Complex.hasSum_re h.hasSum).summable
 
 lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).im :=
-  HasSum.summable <| Complex.hasSum_im h.hasSum
+  (Complex.hasSum_im h.hasSum).summable
 
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 

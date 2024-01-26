@@ -50,9 +50,9 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
   · rwa [norm_mul, hz, mul_one]
   have hac₂ : ‖a * z ^ 2‖ < 1
   · rwa [norm_mul, norm_pow, hz, one_pow, mul_one]
-  have H₀ := (Complex.hasSum_re <| hasSum_taylorSeries_neg_log hac₀).mul_left 3
-  have H₁ := (Complex.hasSum_re <| hasSum_taylorSeries_neg_log hac₁).mul_left 4
-  have H₂ := Complex.hasSum_re <| hasSum_taylorSeries_neg_log hac₂
+  have H₀ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₀).mul_left 3
+  have H₁ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₁).mul_left 4
+  have H₂ := hasSum_re <| hasSum_taylorSeries_neg_log hac₂
   rw [← ((H₀.add H₁).add H₂).tsum_eq]; clear H₀ H₁ H₂
   refine tsum_nonneg fun n ↦ ?_
   simp only [mul_pow, ← ofReal_pow, div_nat_cast_re, ofReal_re, mul_re, ofReal_im, zero_mul,
@@ -113,14 +113,16 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
     (hy : y ≠ 0) :
     ‖L (1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L χ (1 + x + I * y) ^ 4 *
       L (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
+  let χ₀ := (1 : DirichletCharacter ℂ N)
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re -- kills three goals of the `convert` below
   · simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
-    (summable_re <|
-      summable_neg_log_one_sub_char_mul_prime_cpow (1 : DirichletCharacter ℂ N) h₀).mul_left 3
-  have hsum₁ := (summable_re <| summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).mul_left 4
-  have hsum₂ := summable_re <| summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂
+    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ₀ h₀).hasSum).summable.mul_left 3
+  have hsum₁ :=
+    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
+  have hsum₂ :=
+    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
   rw [← LSeries_dirichlet_eulerProduct' _ h₀, ← LSeries_dirichlet_eulerProduct' χ h₁,
     ← LSeries_dirichlet_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add,
     ← exp_add, norm_eq_abs, abs_exp]
