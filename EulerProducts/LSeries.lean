@@ -392,7 +392,7 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
   simp only [LSeriesHasSum, mul_apply, sum_eq_tsum_indicator, ← tsum_subtype]
   let m : ℕ × ℕ → ℕ := fun (n₁, n₂) ↦ n₁ * n₂
   have hsum := summable_mul_of_summable_norm hf.summable.norm hg.summable.norm
-  convert HasSum.tsum_fiberwise m (HasSum.mul hf hg hsum) with n
+  convert (HasSum.mul hf hg hsum).tsum_fiberwise m with n
   rcases n.eq_zero_or_pos with rfl | hn
   · trans 0 -- show that both sides vanish when `n = 0`
     · -- by definition, the left hand sum is over the empty set

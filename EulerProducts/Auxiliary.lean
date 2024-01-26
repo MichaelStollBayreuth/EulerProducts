@@ -214,8 +214,8 @@ end Complex
 
 namespace Equiv.Set
 
-lemma prod_symm_apply {α β : Type*} (s : Set α) (t : Set β) (x : s × t) :
-    (Set.prod s t).symm x = (x.1.val, x.2.val) := rfl
+/- lemma prod_symm_apply {α β : Type*} (s : Set α) (t : Set β) (x : s × t) :
+    (Set.prod s t).symm x = (x.1.val, x.2.val) := rfl -/
 
 /-- The canonical equivalence between `{a} ×ˢ t` and `t`, considered as types. -/
 def prod_singleton_left {α β : Type*} (a : α) (t : Set β) : ↑({a} ×ˢ t) ≃ ↑t where
@@ -233,29 +233,36 @@ def prod_singleton_right {α β : Type*} (s : Set α) (b : β) : ↑(s ×ˢ {b})
 
 end Equiv.Set
 
+-- #10038
 
-lemma HasSum.tsum_fiberwise {β γ : Type*} {f : β → ℂ} (g : β → γ) {a : ℂ} (hf : HasSum f a) :
+lemma HasSum.tsum_fiberwise {α β γ : Type*} [AddCommGroup α] [UniformSpace α] [UniformAddGroup α]
+    [T2Space α] [RegularSpace α] [CompleteSpace α] {f : β → α}
+    {a : α} (hf : HasSum f a) (g : β → γ) :
     HasSum (fun c : γ ↦ ∑' b : g ⁻¹' {c}, f b) a :=
-  HasSum.sigma ((Equiv.hasSum_iff <| Equiv.sigmaFiberEquiv g).mpr hf) <|
-    fun _ ↦ (Summable.hasSum_iff <| Summable.subtype hf.summable _).mpr rfl
+  (((Equiv.sigmaFiberEquiv g).hasSum_iff).mpr hf).sigma <|
+    fun _ ↦ ((hf.summable.subtype _).hasSum_iff).mpr rfl
 
-lemma tsum_setProd_eq_tsum_prod {α β : Type*} (s : Set α) (t : Set β) (f : α × β → ℂ) :
+/- lemma tsum_setProd_eq_tsum_prod {α β : Type*} (s : Set α) (t : Set β) (f : α × β → ℂ) :
     (∑' x : s ×ˢ t, f x) = ∑' x : s × t, f ((Equiv.Set.prod s t).symm x) :=
-  ((Equiv.Set.prod s t).symm.tsum_eq <| (s ×ˢ t).restrict f).symm
+  ((Equiv.Set.prod s t).symm.tsum_eq <| (s ×ˢ t).restrict f).symm -/
 
-lemma tsum_setProd_singleton_left {α β : Type*} (a : α) (t : Set β) (f : α × β → ℂ) :
+lemma tsum_setProd_singleton_left {α β γ : Type*} [AddCommMonoid γ] [TopologicalSpace γ] [T2Space γ]
+    (a : α) (t : Set β) (f : α × β → γ) :
     (∑' x : {a} ×ˢ t, f x) = ∑' b : t, f (a, b) :=
   (Equiv.Set.prod_singleton_left a t |>.symm.tsum_eq <| ({a} ×ˢ t).restrict f).symm
 
-lemma tsum_setProd_singleton_right {α β : Type*} (s : Set α) (b : β) (f : α × β → ℂ) :
+lemma tsum_setProd_singleton_right {α β γ : Type*} [AddCommMonoid γ] [TopologicalSpace γ] [T2Space γ]
+    (s : Set α) (b : β) (f : α × β → γ) :
     (∑' x : s ×ˢ {b}, f x) = ∑' a : s, f (a, b) :=
   (Equiv.Set.prod_singleton_right s b |>.symm.tsum_eq <| (s ×ˢ {b}).restrict f).symm
 
 
 namespace MulChar
 
+-- #10039
+
 @[coe]
-def toMonoidWithZeroHom  {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZero R']
+def toMonoidWithZeroHom {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZero R']
     [Nontrivial R] (χ : MulChar R R') : R →*₀ R' where
       toFun := χ.toFun
       map_zero' := χ.map_zero
@@ -263,17 +270,17 @@ def toMonoidWithZeroHom  {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZe
       map_mul' := χ.map_mul'
 
 lemma one_apply {R : Type*} [CommMonoid R] (R' : Type*) [CommMonoidWithZero R'] {x : R}
-    (hx : IsUnit x) : (1 : MulChar R R') x = 1 := by
-  rw [show (1 : MulChar R R') = trivial R R' from rfl]
-  simp only [trivial_apply, hx, ite_true]
+    (hx : IsUnit x) : (1 : MulChar R R') x = 1 :=  one_apply_coe hx.unit
 
 end MulChar
+
 
 section Topology
 
 namespace Asymptotics
 
-open Filter in
+open Filter
+
 lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
     (hf : ∀ᶠ x in l, f x ≠ 0) :
     (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
@@ -284,9 +291,9 @@ lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {
     have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
     rw [le_div_iff hx', mul_comm] }
 
-open Topology Filter in
-lemma isLittleO_id (s : Set ℝ) : (id : ℝ → ℝ) =o[nhdsWithin 0 s] (fun _ ↦ (1 : ℝ)) :=
-  ((isLittleO_one_iff ℝ).mpr tendsto_id).mono nhdsWithin_le_nhds
+lemma isLittleO_id {F : Type*} [NormedField F] (s : Set F) :
+    (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
+  ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
 
 end Asymptotics
 
