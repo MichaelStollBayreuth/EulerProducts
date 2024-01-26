@@ -217,14 +217,15 @@ lemma riemannZeta_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0) :
     (fun x : ℝ ↦ ζ (1 + x + I * y)) =O[𝓝[>] 0] (fun _ ↦ (1 : ℂ)) := by
   refine Asymptotics.IsBigO.mono ?_ nhdsWithin_le_nhds
   convert isBigO_comp_ofReal
-    (differentiableAt_riemannZeta <| one_add_I_mul_ne_one hy).continuousAt.isBigO using 3 with x
+    (differentiableAt_riemannZeta <| add_I_mul_ne_self hy).continuousAt.isBigO using 3 with x
+  rw [ofReal_one] -- not necessary with `one_add_I_mul_ne_one`
   ring
 
 lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (1 + I * y) = 0) :
     (fun x : ℝ ↦ ζ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
   conv => enter [2, x]; rw [add_comm 1, add_assoc]
   exact (isBigO_comp_ofReal <| (differentiableAt_riemannZeta <|
-    one_add_I_mul_ne_one hy).isBigO_of_eq_zero h).mono nhdsWithin_le_nhds
+    add_I_mul_ne_self hy).isBigO_of_eq_zero h).mono nhdsWithin_le_nhds
 
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by

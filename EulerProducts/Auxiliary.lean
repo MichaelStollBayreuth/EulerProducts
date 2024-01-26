@@ -141,6 +141,10 @@ lemma one_add_I_mul_ne_one {y : ℝ} (hy : y ≠ 0) : 1 + I * y ≠ 1 := by
   simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
     not_false_eq_true]
 
+lemma add_I_mul_ne_self {x y : ℝ} (hy : y ≠ 0) : x + I * y ≠ x := by
+  simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
+    not_false_eq_true]
+
 -- #10034
 
 @[simp, norm_cast]
