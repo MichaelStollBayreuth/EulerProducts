@@ -498,6 +498,9 @@ lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
   Complex.ofRealCLM.differentiable
   -- fun x ↦ ⟨_, (hasDerivAt_ofReal x).hasFDerivAt⟩
 
+-- #find_home hasDerivAt_ofReal -- [Mathlib.Analysis.SpecialFunctions.NonIntegrable]
+-- Mathlib.Analysis.Complex.RealDeriv ?
+
 end Complex
 
 lemma DifferentiableAt.comp_ofReal {e : ℂ → ℂ} {z : ℝ} (hf : DifferentiableAt ℂ e z) :
@@ -561,6 +564,10 @@ instance : OrderClosedTopology ℂ where
   isClosed_le' := by
     simp_rw [le_def, Set.setOf_and]
     refine IsClosed.inter (isClosed_le ?_ ?_) (isClosed_eq ?_ ?_) <;> continuity
+
+lemma monotone_ofReal : Monotone ofReal' := by
+  intro x y hxy
+  simp only [ofReal_eq_coe, real_le_real, hxy]
 
 end OrderInstance
 
@@ -670,10 +677,6 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
     rfl
 
 open scoped ComplexOrder
-
-lemma monotone_ofReal : Monotone ofReal := by
-  intro x y hxy
-  simp only [ofReal_eq_coe, real_le_real, hxy]
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
 real values for nonnegative real arguments. -/

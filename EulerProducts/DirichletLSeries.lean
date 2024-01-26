@@ -37,43 +37,43 @@ instance {R : Type*} [CommSemiring R] {N : ℕ} :
     HSMul (DirichletCharacter R N) (ArithmeticFunction R) (ArithmeticFunction R) where
       hSMul := fun χ f ↦ pmul χ f
 
-lemma hsmul_arithmeticFunction_def {R : Type*} [CommSemiring R] {N : ℕ}
+lemma hSMul_arithmeticFunction_def {R : Type*} [CommSemiring R] {N : ℕ}
     (χ : DirichletCharacter R N) (f : ArithmeticFunction R) : χ • f = pmul χ f := rfl
 
 @[simp]
-lemma hsmul_arithmeticFunction_apply {R : Type*} [CommSemiring R] {N : ℕ}
+lemma hSMul_arithmeticFunction_apply {R : Type*} [CommSemiring R] {N : ℕ}
     (χ : DirichletCharacter R N) (f : ArithmeticFunction R) (n : ℕ) : (χ • f) n = χ n * f n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp only [ArithmeticFunction.map_zero, cast_zero, mul_zero]
-  · simp only [hsmul_arithmeticFunction_def, pmul_apply, ne_eq, hn, not_false_eq_true,
+  · simp only [hSMul_arithmeticFunction_def, pmul_apply, ne_eq, hn, not_false_eq_true,
       toArithmeticFunction_apply_of_ne_zero]
 
-lemma hsmul_arithmeticFunction_mul_distrib {R : Type*} [CommSemiring R] {N : ℕ}
+lemma hSMul_arithmeticFunction_mul_distrib {R : Type*} [CommSemiring R] {N : ℕ}
     (χ : DirichletCharacter R N) (f g : ArithmeticFunction R) :
     χ • (f * g) = (χ • f) * (χ • g) := by
   ext
-  simp only [hsmul_arithmeticFunction_apply, mul_apply, Finset.mul_sum]
+  simp only [hSMul_arithmeticFunction_apply, mul_apply, Finset.mul_sum]
   refine Finset.sum_congr rfl fun km hkm ↦ ?_
   rw [mul_mul_mul_comm, ← map_mul, ← Nat.cast_mul, (mem_divisorsAntidiagonal.mp hkm).1]
 
-lemma hsmul_arithmeticFunction_mul_assoc {R : Type*} [CommSemiring R] {N : ℕ}
+lemma hSMul_arithmeticFunction_mul_assoc {R : Type*} [CommSemiring R] {N : ℕ}
     (χ ψ : DirichletCharacter R N) (f : ArithmeticFunction R) :
     χ • (ψ • f) = (χ * ψ) • f := by
   ext
-  simp only [hsmul_arithmeticFunction_apply, MulChar.coeToFun_mul, Pi.mul_apply, mul_assoc]
+  simp only [hSMul_arithmeticFunction_apply, MulChar.coeToFun_mul, Pi.mul_apply, mul_assoc]
 
-lemma hsmul_zeta_eq_self {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
+lemma hSMul_zeta_eq_self {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
     χ • (ζ : ArithmeticFunction R) = χ := by
   ext n
   rw [toArithmeticFunction_apply χ n]
-  simp only [hsmul_arithmeticFunction_apply, natCoe_apply, zeta_apply, cast_ite, cast_zero,
+  simp only [hSMul_arithmeticFunction_apply, natCoe_apply, zeta_apply, cast_ite, cast_zero,
     cast_one, mul_ite, mul_zero, mul_one]
 
-lemma hsmul_one {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
+lemma hSMul_one {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
     χ • (1 : ArithmeticFunction R) = 1 := by
   ext
   simp (config := { contextual := true })
-    only [hsmul_arithmeticFunction_apply, one_apply, mul_ite, mul_one, mul_zero, cast_one, map_one]
+    only [hSMul_arithmeticFunction_apply, one_apply, mul_ite, mul_one, mul_zero, cast_one, map_one]
 
 end DirichletCharacter
 
@@ -106,10 +106,10 @@ lemma dirichletCharModZero_eq_one {R : Type*} [CommSemiring R] {χ : DirichletCh
     MulChar.map_nonunit χ this, hn', one_apply_ne]
 
 open DirichletCharacter in
-lemma dirichletCharModZero_hsmul {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 0}
+lemma dirichletCharModZero_hSMul {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 0}
     {f : ArithmeticFunction R} (hf : f 1 = 1) : χ • f = 1 := by
   ext n
-  simp only [hsmul_arithmeticFunction_apply, one_apply]
+  simp only [hSMul_arithmeticFunction_apply, one_apply]
   rcases eq_or_ne n 1 with rfl | hn
   · simp only [cast_one, map_one, hf, mul_one, ite_true]
   · simp only [MulChar.map_nonunit χ <| ZMod.eq_one_of_isUnit_natCast.mt hn, zero_mul, hn,
@@ -225,7 +225,7 @@ lemma LSeriesSummable.smul {N : ℕ} (χ : DirichletCharacter ℂ N) {f : Arithm
     (h : LSeriesSummable f s) :
     LSeriesSummable (χ • f) s := by
   refine Summable.of_norm <| h.norm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  simp only [DirichletCharacter.hsmul_arithmeticFunction_apply, norm_div, norm_mul]
+  simp only [DirichletCharacter.hSMul_arithmeticFunction_apply, norm_div, norm_mul]
   rw [← one_mul (‖_‖ / _), mul_div_assoc]
   gcongr
   exact DirichletCharacter.norm_le_one ..
@@ -235,15 +235,15 @@ lemma LSeries.dirichlet_mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) 
     (hs : 1 < s.re) : L χ s * L (χ • μ) s = 1 := by
   rcases eq_or_ne N 0 with rfl | hN
   · rw [dirichletCharModZero_eq_one, LSeries.one, Pi.one_apply, one_mul,
-      dirichletCharModZero_hsmul ?h]
+      dirichletCharModZero_hSMul ?h]
     exact congrFun LSeries.one s
     case h =>
       simp only [intCoe_apply, isUnit_one, IsUnit.squarefree, moebius_apply_of_squarefree,
         cardFactors_one, _root_.pow_zero, Int.cast_one]
   rw [← LSeries_mul ((LSeriesSummable_dirichlet_iff hN χ).mpr hs)
           <| (moebius_LSeriesSummable_iff.mpr hs).smul ..,
-    ← hsmul_zeta_eq_self, ← hsmul_arithmeticFunction_mul_distrib, coe_zeta_mul_coe_moebius,
-    hsmul_one]
+    ← hSMul_zeta_eq_self, ← hSMul_arithmeticFunction_mul_distrib, coe_zeta_mul_coe_moebius,
+    hSMul_one]
   exact congrFun LSeries.one s
 
 lemma LSeries.dirichlet_ne_zero {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
