@@ -145,7 +145,7 @@ lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : Nat.ArithmeticFunction ℂ) {
     ‖log n * f n / n ^ z‖ ≤ (z.re - w.re)⁻¹ * ‖f n / n ^ w‖ := by
   have hwz : 0 < z.re - w.re := sub_pos.mpr h
   rw [mul_div_assoc, norm_mul, log_apply, ofReal_log n.cast_nonneg]
-  refine mul_le_mul_of_nonneg_right (norm_log_ofNat_le_rpow n hwz) (norm_nonneg _) |>.trans ?_
+  refine mul_le_mul_of_nonneg_right (norm_log_ofNat_le_mul_rpow n hwz) (norm_nonneg _) |>.trans ?_
   rw [mul_assoc]
   refine mul_le_mul_of_nonneg_left ?_ <| inv_nonneg.mpr hwz.le
   rcases n.eq_zero_or_pos with rfl | hn
