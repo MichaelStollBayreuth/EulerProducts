@@ -195,7 +195,7 @@ lemma LSeries.one : L 1 = 1 := by
 lemma not_LSeriesSummable_moebius_at_one : ¬ LSeriesSummable μ 1 := by
   by_contra! h
   refine not_summable_one_div_on_primes <| summable_ofReal.mp <| Summable.of_neg ?_
-  simp only [← Pi.neg_def, indicator_ofReal, ofReal_inv, ofReal_nat_cast]
+  simp only [← Pi.neg_def, Set.indicator_comp_of_zero ofReal_zero, ofReal_inv, ofReal_nat_cast]
   convert h.indicator {n | n.Prime} using 1
   ext n
   by_cases hn : n ∈ {p | p.Prime}
