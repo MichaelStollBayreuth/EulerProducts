@@ -137,14 +137,14 @@ end Real
 
 namespace Complex
 
-lemma one_add_I_mul_ne_one {y : ℝ} (hy : y ≠ 0) : 1 + I * y ≠ 1 := by
-  simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
-    not_false_eq_true]
+/- lemma one_add_I_mul_ne_one {y : ℝ} (hy : y ≠ 0) : 1 + I * y ≠ 1 := by
+  simp [hy]
+  -- simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
+  --   not_false_eq_true]
 
-lemma add_I_mul_ne_self {x y : ℝ} (hy : y ≠ 0) : x + I * y ≠ x := by
-  simp only [ne_eq, add_right_eq_self, mul_eq_zero, I_ne_zero, ofReal_eq_zero, hy, or_self,
-    not_false_eq_true]
-
+lemma add_I_mul_ne_self {x y : ℝ} (hy : y ≠ 0) : x + I * y ≠ x :=
+  mt add_right_eq_self.mp fun H ↦ ofReal_ne_zero.mpr hy <| (mul_eq_zero.mp H).resolve_left I_ne_zero
+ -/
 -- #10034
 
 @[simp, norm_cast]
