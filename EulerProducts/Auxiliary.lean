@@ -491,7 +491,7 @@ lemma differentiableAt_ofReal (x : ℝ) : DifferentiableAt ℝ ofReal' x :=
   (hasDerivAt_ofReal x).differentiableAt
 
 lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
-  Complex.ofRealClm.differentiable
+  Complex.ofRealCLM.differentiable
   -- fun x ↦ ⟨_, (hasDerivAt_ofReal x).hasFDerivAt⟩
 
 end Complex
@@ -521,12 +521,12 @@ lemma HasDerivAt.of_hasDerivAt_ofReal_comp {z : ℝ} {f : ℝ → ℝ} {u : ℂ}
     (hf : HasDerivAt (fun y ↦ (f y : ℂ)) u z) :
     ∃ u' : ℝ, u = u' ∧ HasDerivAt f u' z := by
   lift u to ℝ
-  · have H := (imClm.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt.deriv
-    simp only [Function.comp_def, imClm_apply, ofReal_im, deriv_const] at H
-    rwa [eq_comm, comp_apply, imClm_apply, smulRight_apply, one_apply, one_smul] at H
+  · have H := (imCLM.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt.deriv
+    simp only [Function.comp_def, imCLM_apply, ofReal_im, deriv_const] at H
+    rwa [eq_comm, comp_apply, imCLM_apply, smulRight_apply, one_apply, one_smul] at H
   refine ⟨u, rfl, ?_⟩
-  convert (reClm.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt
-  rw [comp_apply, smulRight_apply, one_apply, one_smul, reClm_apply, ofReal_re]
+  convert (reCLM.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt
+  rw [comp_apply, smulRight_apply, one_apply, one_smul, reCLM_apply, ofReal_re]
 
 lemma DifferentiableAt.ofReal_comp_iff {z : ℝ} {f : ℝ → ℝ} :
     DifferentiableAt ℝ (fun (y : ℝ) => (f y : ℂ)) z ↔ DifferentiableAt ℝ f z := by
