@@ -212,51 +212,6 @@ lemma norm_log_ofNat_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n�
 end Complex
 
 
-namespace Equiv.Set
-
-/- lemma prod_symm_apply {α β : Type*} (s : Set α) (t : Set β) (x : s × t) :
-    (Set.prod s t).symm x = (x.1.val, x.2.val) := rfl -/
-
-/-- The canonical equivalence between `{a} ×ˢ t` and `t`, considered as types. -/
-def prod_singleton_left {α β : Type*} (a : α) (t : Set β) : ↑({a} ×ˢ t) ≃ ↑t where
-  toFun := fun x ↦ ⟨x.val.snd, (Set.mem_prod.mp x.prop).2⟩
-  invFun := fun b ↦ ⟨(a, b.val), Set.mem_prod.mpr ⟨Set.mem_singleton a, Subtype.mem b⟩⟩
-  left_inv := by simp [Function.LeftInverse]
-  right_inv := by simp [Function.RightInverse, Function.LeftInverse]
-
-/-- The canonical equivalence between `s ×ˢ {b}` and `s`, considered as types. -/
-def prod_singleton_right {α β : Type*} (s : Set α) (b : β) : ↑(s ×ˢ {b}) ≃ ↑s where
-  toFun := fun x ↦ ⟨x.val.fst, (Set.mem_prod.mp x.prop).1⟩
-  invFun := fun a ↦ ⟨(a.val, b), Set.mem_prod.mpr ⟨Subtype.mem a, Set.mem_singleton b⟩⟩
-  left_inv := by simp [Function.LeftInverse]
-  right_inv := by simp [Function.RightInverse, Function.LeftInverse]
-
-end Equiv.Set
-
--- #10038
-
-lemma HasSum.tsum_fiberwise {α β γ : Type*} [AddCommGroup α] [UniformSpace α] [UniformAddGroup α]
-    [T2Space α] [RegularSpace α] [CompleteSpace α] {f : β → α}
-    {a : α} (hf : HasSum f a) (g : β → γ) :
-    HasSum (fun c : γ ↦ ∑' b : g ⁻¹' {c}, f b) a :=
-  (((Equiv.sigmaFiberEquiv g).hasSum_iff).mpr hf).sigma <|
-    fun _ ↦ ((hf.summable.subtype _).hasSum_iff).mpr rfl
-
-/- lemma tsum_setProd_eq_tsum_prod {α β : Type*} (s : Set α) (t : Set β) (f : α × β → ℂ) :
-    (∑' x : s ×ˢ t, f x) = ∑' x : s × t, f ((Equiv.Set.prod s t).symm x) :=
-  ((Equiv.Set.prod s t).symm.tsum_eq <| (s ×ˢ t).restrict f).symm -/
-
-lemma tsum_setProd_singleton_left {α β γ : Type*} [AddCommMonoid γ] [TopologicalSpace γ] [T2Space γ]
-    (a : α) (t : Set β) (f : α × β → γ) :
-    (∑' x : {a} ×ˢ t, f x) = ∑' b : t, f (a, b) :=
-  (Equiv.Set.prod_singleton_left a t |>.symm.tsum_eq <| ({a} ×ˢ t).restrict f).symm
-
-lemma tsum_setProd_singleton_right {α β γ : Type*} [AddCommMonoid γ] [TopologicalSpace γ] [T2Space γ]
-    (s : Set α) (b : β) (f : α × β → γ) :
-    (∑' x : s ×ˢ {b}, f x) = ∑' a : s, f (a, b) :=
-  (Equiv.Set.prod_singleton_right s b |>.symm.tsum_eq <| (s ×ˢ {b}).restrict f).symm
-
-
 namespace MulChar
 
 -- #10039
