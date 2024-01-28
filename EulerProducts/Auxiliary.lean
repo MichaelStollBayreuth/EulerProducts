@@ -288,7 +288,7 @@ lemma piecewise_same {α : Type*} {δ : α → Sort*} (s : Finset α)
     (f : (i : α) → δ i) [(j : α) → Decidable (j ∈ s)] :
     s.piecewise f f = f := by
   ext i
-  by_cases h : i ∈ s <;> simp? [h]
+  by_cases h : i ∈ s <;> simp [h]
 
 end Finset
 
