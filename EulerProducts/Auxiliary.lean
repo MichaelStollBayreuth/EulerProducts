@@ -146,10 +146,10 @@ lemma ofNat_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_l
 lemma ofNat_arg {n : ℕ} : arg n = 0 :=
   ofReal_nat_cast n ▸ arg_ofReal_of_nonneg n.cast_nonneg
 
-lemma mul_cpow_ofNat (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
+lemma ofNat_mul_ofNat_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
   ofReal_nat_cast m ▸ ofReal_nat_cast n ▸ mul_cpow_ofReal_nonneg m.cast_nonneg n.cast_nonneg s
 
-lemma ofNat_cpow_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
+lemma ofNat_cpow_ofNat_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
   rw [cpow_mul]
   · rw [cpow_nat_cast]
   all_goals

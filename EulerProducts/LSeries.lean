@@ -423,7 +423,7 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
   conv =>
     enter [1, 2]
     rw [← mem_singleton_iff.mp <| mem_preimage.mp x.prop]
-    simp only [m, Nat.cast_mul, mul_cpow_ofNat]
+    simp only [m, Nat.cast_mul, ofNat_mul_ofNat_cpow]
   field_simp
 
 /-- The L-series of the convolution product `f * g` of two arithmetic functions `f` and `g`
