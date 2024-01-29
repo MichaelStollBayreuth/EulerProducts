@@ -359,10 +359,10 @@ theorem factorial_smul (n : ℕ) :
     rfl
 
 theorem hasSum_iteratedFDeriv [CharZero 𝕜] {y : E} (hy : y ∈ EMetric.ball 0 r) :
-    HasSum (fun n ↦ (1 / n ! : 𝕜) • iteratedFDeriv 𝕜 n f x fun _ ↦ y) (f (x + y)) := by
+    HasSum (fun n ↦ (n ! : 𝕜)⁻¹ • iteratedFDeriv 𝕜 n f x fun _ ↦ y) (f (x + y)) := by
   convert h.hasSum hy with n
   rw [← h.factorial_smul y n, smul_comm, ← smul_assoc, nsmul_eq_mul,
-    mul_one_div_cancel <| cast_ne_zero.mpr n.factorial_ne_zero, one_smul]
+    mul_inv_cancel <| cast_ne_zero.mpr n.factorial_ne_zero, one_smul]
 
 /- We can't quite show
   `HasFPowerSeriesOnBall f (fun n ↦ (1 / n !) • iteratedFDeriv 𝕜 n f x) x r`
@@ -382,7 +382,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace 
 is given by evaluating its Taylor series at `c` on this open ball. -/
 lemma hasSum_taylorSeries_on_ball {f : ℂ → E} ⦃r : NNReal⦄
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
-    HasSum (fun n : ℕ ↦ (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c) (f z) := by
+    HasSum (fun n : ℕ ↦ (n ! : ℂ)⁻¹ • (z - c) ^ n • iteratedDeriv n f c) (f z) := by
   obtain ⟨r', hr', hr'₀, hzr'⟩ : ∃ r' < r, 0 < r' ∧ z ∈ Metric.ball c r'
   · obtain ⟨r', h₁, h₂⟩ := exists_between (Metric.mem_ball'.mp hz)
     lift r' to NNReal using dist_nonneg.trans h₁.le
@@ -404,21 +404,21 @@ lemma hasSum_taylorSeries_on_ball {f : ℂ → E} ⦃r : NNReal⦄
 is given by evaluating its Taylor series at `c` on theis open ball. -/
 lemma taylorSeries_eq_on_ball {f : ℂ → E} ⦃r : NNReal⦄
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
-    ∑' n : ℕ, (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c = f z :=
+    ∑' n : ℕ, (n ! : ℂ)⁻¹ • (z - c) ^ n • iteratedDeriv n f c = f z :=
   (hasSum_taylorSeries_on_ball hf hz).tsum_eq
 
 /-- A function that is complex differentiable on the open ball of radius `r` around `c`
 is given by evaluating its Taylor series at `c` on this open ball. -/
 lemma taylorSeries_eq_on_ball' {f : ℂ → ℂ} ⦃r : NNReal⦄
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) ⦃z : ℂ⦄ (hz : z ∈ Metric.ball c r) :
-    ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
+    ∑' n : ℕ, (n ! : ℂ)⁻¹ * iteratedDeriv n f c * (z - c) ^ n = f z := by
   convert taylorSeries_eq_on_ball hf hz using 3 with n
   rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
 
 /-- A function that is complex differentiable on the complex plane is given by evaluating
 its Taylor series at any point `c`. -/
 lemma hasSum_taylorSeries_of_entire {f : ℂ → E} (hf : Differentiable ℂ f) (c z : ℂ) :
-    HasSum (fun n : ℕ ↦ (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c) (f z) := by
+    HasSum (fun n : ℕ ↦ (n ! : ℂ)⁻¹ • (z - c) ^ n • iteratedDeriv n f c) (f z) := by
   have hf' : DifferentiableOn ℂ f
       (Metric.ball c (⟨1 + ‖z - c‖, add_nonneg zero_le_one <| norm_nonneg _⟩ : NNReal)) :=
     hf.differentiableOn
@@ -429,13 +429,13 @@ lemma hasSum_taylorSeries_of_entire {f : ℂ → E} (hf : Differentiable ℂ f) 
 /-- A function that is complex differentiable on the complex plane is given by evaluating
 its Taylor series at any point `c`. -/
 lemma taylorSeries_eq_of_entire {f : ℂ → E} (hf : Differentiable ℂ f) (c z : ℂ) :
-    ∑' n : ℕ, (1 / n ! : ℂ) • (z - c) ^ n • iteratedDeriv n f c = f z :=
+    ∑' n : ℕ, (n ! : ℂ)⁻¹ • (z - c) ^ n • iteratedDeriv n f c = f z :=
   (hasSum_taylorSeries_of_entire hf c z).tsum_eq
 
 /-- A function that is complex differentiable on the complex plane is given by evaluating
 its Taylor series at any point `c`. -/
 lemma taylorSeries_eq_of_entire' {f : ℂ → ℂ} (hf : Differentiable ℂ f) (c z : ℂ) :
-    ∑' n : ℕ, (1 / n ! : ℂ) * iteratedDeriv n f c * (z - c) ^ n = f z := by
+    ∑' n : ℕ, (n ! : ℂ)⁻¹ * iteratedDeriv n f c * (z - c) ^ n = f z := by
   convert taylorSeries_eq_of_entire hf c z using 3 with n
   rw [mul_right_comm, smul_eq_mul, smul_eq_mul, mul_assoc]
 
@@ -610,13 +610,13 @@ lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : NNReal�
     rw [dist_eq, ← ofReal_sub, abs_ofReal, abs_sub_lt_iff, sub_lt_iff_lt_add', sub_lt_comm]
     exact and_comm.mpr hx
   have H := taylorSeries_eq_on_ball' hf
-  refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  refine ⟨fun x ↦ ∑' (n : ℕ), (↑n !)⁻¹ * (D n) * (x - c) ^ n, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
   · have Hx := Hz _ hx
     refine DifferentiableAt.differentiableWithinAt ?_
     replace hf := ((hf x Hx).congr (fun _ hz ↦ H hz) (H Hx)).differentiableAt
       (Metric.isOpen_ball.mem_nhds Hx) |>.comp_ofReal
-    simp_rw [hd, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_one, ← ofReal_div, ← ofReal_pow,
-      ← ofReal_mul, ← ofReal_tsum] at hf
+    simp_rw [hd, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
+      ← ofReal_tsum] at hf
     exact DifferentiableAt.ofReal_comp_iff.mp hf
   · simp only [Function.comp_apply, ← H (Hz _ hx), hd, ofReal_tsum]
     push_cast
@@ -630,10 +630,10 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
     ∃ F : ℝ → ℝ, Differentiable ℝ F ∧ (f ∘ ofReal') = (ofReal' ∘ F) := by
   have H := taylorSeries_eq_of_entire' hf c
   simp_rw [hd] at H
-  refine ⟨fun x ↦ ∑' (n : ℕ), 1 / ↑n ! * (D n) * (x - c) ^ n, ?_, ?_⟩
+  refine ⟨fun x ↦ ∑' (n : ℕ), (↑n !)⁻¹ * (D n) * (x - c) ^ n, ?_, ?_⟩
   · have := hf.comp_ofReal
-    simp_rw [← H, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_one, ← ofReal_div, ← ofReal_pow,
-      ← ofReal_mul, ← ofReal_tsum] at this
+    simp_rw [← H, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
+      ← ofReal_tsum] at this
     exact Differentiable.ofReal_comp_iff.mp this
   · ext x
     simp only [Function.comp_apply, ofReal_eq_coe, ← H, ofReal_tsum]
@@ -654,8 +654,8 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
     · have := eq_re_of_ofReal_le (h n) ▸ h n
       norm_cast at this
     · rw [eq_re_of_ofReal_le (h n)]
-  simp_rw [← H, hD, ← ofReal_nat_cast, sub_zero, ← ofReal_pow, ← ofReal_one, ← ofReal_div,
-    ← ofReal_mul, ← ofReal_tsum]
+  simp_rw [← H, hD, ← ofReal_nat_cast, sub_zero, ← ofReal_pow, ← ofReal_inv, ← ofReal_mul,
+    ← ofReal_tsum]
   norm_cast
   refine tsum_nonneg fun n ↦ ?_
   norm_cast at hz
