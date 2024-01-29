@@ -118,22 +118,19 @@ namespace Complex
 -- #10034
 
 @[simp, norm_cast]
-lemma ofNat_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
+lemma nat_cast_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
 
 @[simp, norm_cast]
-lemma ofNat_arg {n : ℕ} : arg n = 0 :=
+lemma nat_cast_arg {n : ℕ} : arg n = 0 :=
   ofReal_nat_cast n ▸ arg_ofReal_of_nonneg n.cast_nonneg
 
-lemma ofNat_mul_ofNat_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
+lemma nat_cast_mul_nat_cast_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
   ofReal_nat_cast m ▸ ofReal_nat_cast n ▸ mul_cpow_ofReal_nonneg m.cast_nonneg n.cast_nonneg s
 
-lemma ofNat_cpow_ofNat_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
-  rw [cpow_mul]
-  · rw [cpow_nat_cast]
-  all_goals
-    rw [← ofNat_log]
-    norm_cast
-    linarith [Real.pi_pos]
+lemma nat_cast_cpow_nat_cast_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
+  refine cpow_nat_mul' (x := n) (n := m) ?_ ?_ z
+  · simp only [nat_cast_arg, mul_zero, Left.neg_neg_iff, Real.pi_pos]
+  · simp only [nat_cast_arg, mul_zero, Real.pi_pos.le]
 
 -- #10029 for the following five
 
@@ -183,7 +180,7 @@ lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable f
 lemma norm_log_ofNat_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ ε⁻¹ * n ^ ε := by
   rcases n.eq_zero_or_pos with rfl | h
   · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', mul_zero]
-  rw [norm_eq_abs, ← ofNat_log, abs_ofReal,
+  rw [norm_eq_abs, ← nat_cast_log, abs_ofReal,
     _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
   exact Real.log_ofNat_le_mul_rpow n hε
 

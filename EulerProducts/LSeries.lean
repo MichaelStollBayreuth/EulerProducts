@@ -285,11 +285,11 @@ so is the L-series of `f`. -/
 lemma LSeriesSummable.of_LSeriesSummable_pmul_log  {f : ArithmeticFunction ℂ} {z : ℂ}
     (h : LSeriesSummable (pmul log f) z) : LSeriesSummable f z := by
   refine h.norm.of_norm_bounded_eventually_nat (fun n ↦ ‖(log n * f n / n ^ z : ℂ)‖) ?_
-  simp only [norm_div, log_apply, ofNat_log, norm_mul, Filter.eventually_atTop]
+  simp only [norm_div, log_apply, nat_cast_log, norm_mul, Filter.eventually_atTop]
   refine ⟨3, fun n hn ↦ ?_⟩
   conv => enter [1, 1]; rw [← one_mul (‖f n‖)]
   gcongr
-  rw [← ofNat_log, norm_eq_abs, abs_ofReal,
+  rw [← nat_cast_log, norm_eq_abs, abs_ofReal,
     _root_.abs_of_nonneg <| Real.log_nonneg <| by norm_cast; linarith]
   calc 1
     _ = Real.log (Real.exp 1) := by rw [Real.log_exp]
@@ -423,7 +423,7 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
   conv =>
     enter [1, 2]
     rw [← mem_singleton_iff.mp <| mem_preimage.mp x.prop]
-    simp only [m, Nat.cast_mul, ofNat_mul_ofNat_cpow]
+    simp only [m, Nat.cast_mul, nat_cast_mul_nat_cast_cpow]
   field_simp
 
 /-- The L-series of the convolution product `f * g` of two arithmetic functions `f` and `g`
