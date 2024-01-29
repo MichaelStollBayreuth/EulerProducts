@@ -10,11 +10,20 @@ import Mathlib.Analysis.Normed.Field.InfiniteSum
 # More results on L-series
 -/
 
+namespace Nat.ArithmeticFunction
+
+/-!
+### Some general results on arithmetic functions
+-/
+
+lemma pmul_assoc {R} [Semiring R] (f₁ f₂ f₃ : ArithmeticFunction R) :
+    pmul (pmul f₁ f₂) f₃ = pmul f₁ (pmul f₂ f₃) := by
+  ext
+  simp only [pmul_apply, mul_assoc]
+
 /-!
 ### Coercion from real-valued to complex-valued arithmetic functions
 -/
-
-namespace Nat.ArithmeticFunction
 
 open Complex
 
@@ -165,6 +174,10 @@ when `re s < x`. -/
 noncomputable def abscissaOfAbsConv (f : ArithmeticFunction ℂ) : EReal :=
   sInf <| Real.toEReal '' {x : ℝ | LSeriesSummable f x}
 
+/-- An open right half plane is open. -/
+lemma isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
+  isOpen_lt continuous_const <| EReal.continuous_coe_iff.mpr continuous_re
+
 lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
     (hs : abscissaOfAbsConv f < s.re) : LSeriesSummable f s := by
   simp only [abscissaOfAbsConv, sInf_lt_iff, Set.mem_image, Set.mem_setOf_eq,
@@ -314,20 +327,45 @@ lemma abscissaOfAbsConv_pmul_log {f : ArithmeticFunction ℂ} :
     · simp only [ofReal_re, hy]
     exact (LSeriesSummable_of_abscissaOfAbsConv_lt_re hy').of_LSeriesSummable_pmul_log
 
+/-- The abscissa of absolute convergence of the point-wise product of a power of `log` and `f`
+is the same as that of `f`. -/
+lemma absicssaOfAbsConv_pmul_ppow_log {f : ArithmeticFunction ℂ} {n : ℕ} :
+    abscissaOfAbsConv (pmul (ppow log n) f) = abscissaOfAbsConv f := by
+  induction' n with n ih
+  · simp only [zero_eq, ppow_zero, zeta_pmul]
+  · rwa [ppow_succ, pmul_assoc, abscissaOfAbsConv_pmul_log]
+
 /-!
 ### Differentiability and derivatives of L-series
 -/
 
 /-- The derivative of the terms of an L-series. -/
-lemma LSeriesTerm_deriv (f : ArithmeticFunction ℂ) (n : ℕ) (s : ℂ) :
+lemma LSeriesTerm_hasDerivAt (f : ArithmeticFunction ℂ) (n : ℕ) (s : ℂ) :
     HasDerivAt (fun z ↦ f n / n ^ z) (-(↑(Real.log n) * f n / n ^ s)) s := by
-    rcases n.eq_zero_or_pos with rfl | hn
-    · simp [hasDerivAt_const]
-    rw [← neg_div, ← neg_mul, mul_comm, mul_div_assoc]
-    simp_rw [div_eq_mul_inv, ← cpow_neg]
-    refine HasDerivAt.const_mul (f n) ?_
-    rw [mul_comm, ← mul_neg_one (Real.log n : ℂ), ← mul_assoc, ofReal_log n.cast_nonneg]
-    exact (hasDerivAt_neg' s).const_cpow (Or.inl <| Nat.cast_ne_zero.mpr hn.ne')
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [hasDerivAt_const]
+  rw [← neg_div, ← neg_mul, mul_comm, mul_div_assoc]
+  simp_rw [div_eq_mul_inv, ← cpow_neg]
+  refine HasDerivAt.const_mul (f n) ?_
+  rw [mul_comm, ← mul_neg_one (Real.log n : ℂ), ← mul_assoc, ofReal_log n.cast_nonneg]
+  exact (hasDerivAt_neg' s).const_cpow (Or.inl <| Nat.cast_ne_zero.mpr hn.ne')
+
+/-- The derivative of the terms of an L-series. -/
+lemma LSeriesTerm_deriv (f : ArithmeticFunction ℂ) (n : ℕ) (s : ℂ) :
+    deriv (fun z ↦ f n / n ^ z) s = -(↑(Real.log n) * f n / n ^ s) :=
+  (LSeriesTerm_hasDerivAt f n s).deriv
+
+/-- The higher derivatives of the terms of an L-series. -/
+lemma LSeriesTerm_iteratedDeriv (f : ArithmeticFunction ℂ) (m n : ℕ) (s : ℂ) :
+    iteratedDeriv m (fun z ↦ f n / n ^ z) s = (-(↑(Real.log n))) ^ m * f n / n ^ s := by
+  induction' m with m ih generalizing s
+  · simp only [zero_eq, iteratedDeriv_zero, nat_cast_log, _root_.pow_zero, one_mul]
+  · have ih' : iteratedDeriv m (fun z : ℂ ↦ f n / n ^ z) =
+        fun s ↦ (-(Real.log n)) ^ m * f n / n ^ s :=
+      funext ih
+    simp only [iteratedDeriv_succ, ih', nat_cast_log, mul_div_assoc, deriv_const_mul_field',
+      LSeriesTerm_deriv f n s, mul_neg, _root_.pow_succ, neg_mul]
+    ring
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then the L-series
 of `f` is differentiable with derivative the negative of the L-series of the point-wise
@@ -355,7 +393,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   -- Show that the terms have the correct derivative.
   have hderiv (n : ℕ) :
       ∀ s ∈ S, HasDerivAt (fun z ↦ f n / n ^ z) (-(↑(Real.log n) * f n / n ^ s)) s
-  · exact fun s _ ↦ LSeriesTerm_deriv f n s
+  · exact fun s _ ↦ LSeriesTerm_hasDerivAt f n s
   refine hasDerivAt_tsum_of_isPreconnected (F := ℂ) hf' hop hpr hderiv
     (fun n s hs ↦ ?_) hmem (hf.of_re_le_re <| ofReal_re x ▸ h'.le) hmem
   -- Show that the derivative series is uniformly bounded term-wise.
@@ -373,11 +411,38 @@ lemma LSeries_deriv {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAb
     deriv (LSeries f) z = - LSeries (pmul log f) z :=
   (LSeries.hasDerivAt h).deriv
 
+/-- The derivative of the L-series of `f` agrees with the negative of the L-series of
+`pmul log f` on the right half-plane of absolute convergence. -/
+lemma LSeries_deriv_eqOn {f : Nat.ArithmeticFunction ℂ} :
+    {z | abscissaOfAbsConv f < z.re}.EqOn (deriv (LSeries f)) (- LSeries (pmul log f)) :=
+  deriv_eqOn (isOpen_rightHalfPlane _) fun _ hz ↦ HasDerivAt.hasDerivWithinAt <|
+    LSeries.hasDerivAt hz
+
+/-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
+the `n`th derivative of this L-series is `(-1)^n` times the L-series of `pmul (ppow log n) f`. -/
+lemma LSeries_iteratedDeriv {f : Nat.ArithmeticFunction ℂ} (n : ℕ) {z : ℂ}
+    (h : abscissaOfAbsConv f < z.re) :
+    iteratedDeriv n (LSeries f) z = (-1) ^ n * LSeries (pmul (ppow log n) f) z := by
+  induction' n with n ih generalizing z
+  · simp only [zero_eq, iteratedDeriv_zero, _root_.pow_zero, ppow_zero, zeta_pmul, one_mul]
+  · have ih' : {z | abscissaOfAbsConv f < z.re}.EqOn (iteratedDeriv n (LSeries f))
+        ((-1) ^ n * LSeries (pmul (ppow (↑log) n) f))
+    · exact fun _ hs ↦ ih hs
+    rw [iteratedDeriv_succ]
+    have := derivWithin_congr ih' (ih h)
+    simp_rw [derivWithin_of_isOpen (isOpen_rightHalfPlane _) h] at this
+    rw [this]
+    change deriv (fun z ↦ (-1) ^ n * LSeries (pmul (ppow (↑log) n) f) z) z = _
+    rw [deriv_const_mul_field', _root_.pow_succ', mul_assoc, neg_one_mul]
+    simp only [LSeries_deriv <| absicssaOfAbsConv_pmul_ppow_log.symm ▸ h, ppow_succ, pmul_assoc]
+
 /-- The L-series of `f` is complex differentiable in its open half-plane of absolute
 convergence. -/
 lemma LSeries.differentiableOn {f : ArithmeticFunction ℂ} :
     DifferentiableOn ℂ (LSeries f) {z | abscissaOfAbsConv f < z.re} :=
   fun _ hz ↦ (LSeries.hasDerivAt hz).differentiableAt.differentiableWithinAt
+
+
 
 /-!
 ### Multiplication of L-series

@@ -463,6 +463,8 @@ lemma comp_neg (f : 𝕜 → F) (a : 𝕜) : deriv (fun x ↦ f (-x)) a = -deriv
       simp only [Function.comp_apply, neg_neg]
     rw [deriv_zero_of_not_differentiableAt h, deriv_zero_of_not_differentiableAt H, neg_zero]
 
+-- #find_home comp_neg -- [Mathlib.Analysis.Calculus.Deriv.Add]
+
 /-- A variant of `deriv_const_smul` without differentiability assumption when the scalar
 multiplication is by field elements. -/
 lemma const_smul {f : 𝕜 → F} {x : 𝕜} {R : Type*} [Field R] [Module R F] [SMulCommClass 𝕜 R F]
@@ -478,6 +480,8 @@ lemma const_smul {f : 𝕜 → F} {x : 𝕜} {R : Type*} [Field R] [Module R F] 
         conv => enter [2, y]; rw [← inv_smul_smul₀ hc (f y)]
         exact DifferentiableAt.const_smul hf c⁻¹
       rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt H, smul_zero]
+
+-- #find_home const_smul -- [Mathlib.Analysis.Calculus.Deriv.Mul]
 
 end deriv
 
@@ -518,8 +522,7 @@ lemma differentiableAt_ofReal (x : ℝ) : DifferentiableAt ℝ ofReal' x :=
   (hasDerivAt_ofReal x).differentiableAt
 
 lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
-  Complex.ofRealCLM.differentiable
-  -- fun x ↦ ⟨_, (hasDerivAt_ofReal x).hasFDerivAt⟩
+  ofRealCLM.differentiable
 
 -- #find_home hasDerivAt_ofReal -- [Mathlib.Analysis.SpecialFunctions.NonIntegrable]
 -- Mathlib.Analysis.Complex.RealDeriv ?
@@ -576,6 +579,7 @@ lemma deriv.ofReal_comp {z : ℝ} {f : ℝ → ℝ} :
     rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt hf',
       Complex.ofReal_zero]
 
+-- #10112
 
 namespace Complex
 
@@ -593,6 +597,9 @@ lemma monotone_ofReal : Monotone ofReal' := by
   simp only [ofReal_eq_coe, real_le_real, hxy]
 
 end OrderInstance
+
+--
+
 
 open Nat
 
