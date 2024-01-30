@@ -12,76 +12,22 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 ### Auxiliary lemmas
 -/
 
-namespace Nat
-
--- #10025
-
-lemma Prime.one_le {p : ℕ} (hp : p.Prime) : 1 ≤ p := hp.one_lt.le
-
-/- lemma pow_eq_one_iff {m n : ℕ} : m ^ n = 1 ↔ m = 1 ∨ n = 0 := by
-  refine ⟨fun H ↦ (eq_or_ne n 0).elim Or.inr fun h ↦ Or.inl ?_, fun H ↦ ?_⟩
-  · exact (_root_.pow_eq_one_iff h).mp H
-  · rcases H with rfl | rfl <;> simp -/
-
-lemma Prime.pow_injective {p q m n : ℕ} (hp : p.Prime) (hq : q.Prime)
-    (h : p ^ (m + 1) = q ^ (n + 1)) : p = q ∧ m = n := by
-  have H := dvd_antisymm (Prime.dvd_of_dvd_pow hp <| h ▸ dvd_pow_self p (succ_ne_zero m))
-    (Prime.dvd_of_dvd_pow hq <| h.symm ▸ dvd_pow_self q (succ_ne_zero n))
-  exact ⟨H, succ_inj'.mp <| Nat.pow_right_injective hq.two_le (H ▸ h)⟩
-
-end Nat
-
-
-namespace ZMod
-
--- #10028
-
-open Nat
-
-lemma eq_one_of_isUnit_natCast {n : ℕ} (h : IsUnit (n : ZMod 0)) : n = 1 := by
-  have := Int.isUnit_iff.mp h
-  norm_cast at this
-  exact this.resolve_right not_false
-
-lemma isUnit_iff_coprime (m n : ℕ) : IsUnit (m : ZMod n) ↔ m.Coprime n := by
-  refine ⟨fun H ↦ ?_, fun H ↦ (unitOfCoprime m H).isUnit⟩
-  have H' := val_coe_unit_coprime H.unit
-  rw [IsUnit.unit_spec, val_nat_cast m, coprime_iff_gcd_eq_one] at H'
-  rw [coprime_iff_gcd_eq_one, Nat.gcd_comm, ← H']
-  exact gcd_rec n m
-
-lemma isUnit_prime_of_not_dvd {n p : ℕ} (hp : p.Prime) (h : ¬ p ∣ n) : IsUnit (p : ZMod n) := by
-  rw [isUnit_iff_coprime]
-  exact (Nat.Prime.coprime_iff_not_dvd hp).mpr h
-
--- needs primeFactors
-lemma not_isUnit_of_mem_primeFactors {n p : ℕ} (h : p ∈ n.primeFactors) :
-    ¬ IsUnit (p : ZMod n) := by
-  rw [isUnit_iff_coprime]
-  exact (Prime.dvd_iff_not_coprime <| prime_of_mem_primeFactors h).mp <| dvd_of_mem_primeFactors h
-
-end ZMod
-
-
 namespace Real
 
 -- #10029
 
-lemma log_le_mul_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) : log x ≤ ε⁻¹ * x ^ ε := by
+lemma log_le_mul_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) : log x ≤ x ^ ε / ε := by
   rcases hx.eq_or_lt with rfl | h
-  · rw [log_zero, zero_rpow hε.ne', mul_zero]
-  suffices : ε * log x ≤ x ^ ε
-  · apply_fun (ε⁻¹ * ·) at this using monotone_mul_left_of_nonneg (inv_pos.mpr hε).le
-    simp only at this
-    rwa [← mul_assoc, inv_mul_cancel hε.ne', one_mul] at this
+  · rw [log_zero, zero_rpow hε.ne', zero_div]
+  rw [le_div_iff' hε]
   exact (log_rpow h ε).symm.trans_le <| (log_le_sub_one_of_pos <| rpow_pos_of_pos h ε).trans
     (sub_one_lt _).le
 
-lemma log_ofNat_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : log n ≤ ε⁻¹ * n ^ ε :=
+lemma log_natCast_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : log n ≤ n ^ ε / ε :=
   log_le_mul_rpow n.cast_nonneg hε
 
 -- This can be generalized to series of decreasing nonnegative terms
-lemma not_summable_indicator_one_div_nat_cast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
+lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
     ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
   have : NeZero m := { out := hm }
   suffices : ¬ Summable fun n : ℕ ↦ (1 / (m * n + k.val) : ℝ)
@@ -118,36 +64,36 @@ namespace Complex
 -- #10034
 
 @[simp, norm_cast]
-lemma nat_cast_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
+lemma natCast_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
 
 @[simp, norm_cast]
-lemma nat_cast_arg {n : ℕ} : arg n = 0 :=
+lemma natCast_arg {n : ℕ} : arg n = 0 :=
   ofReal_nat_cast n ▸ arg_ofReal_of_nonneg n.cast_nonneg
 
-lemma nat_cast_mul_nat_cast_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
+lemma natCast_mul_natCast_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
   ofReal_nat_cast m ▸ ofReal_nat_cast n ▸ mul_cpow_ofReal_nonneg m.cast_nonneg n.cast_nonneg s
 
-lemma nat_cast_cpow_nat_cast_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
+lemma natCast_cpow_natCast_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
   refine cpow_nat_mul' (x := n) (n := m) ?_ ?_ z
-  · simp only [nat_cast_arg, mul_zero, Left.neg_neg_iff, Real.pi_pos]
-  · simp only [nat_cast_arg, mul_zero, Real.pi_pos.le]
+  · simp only [natCast_arg, mul_zero, Left.neg_neg_iff, Real.pi_pos]
+  · simp only [natCast_arg, mul_zero, Real.pi_pos.le]
 
 -- #10029 for the following five
 
-lemma norm_ofNat_cpow_of_re_ne_zero (n : ℕ) {s : ℂ} (hs : s.re ≠ 0) :
+lemma norm_natCast_cpow_of_re_ne_zero (n : ℕ) {s : ℂ} (hs : s.re ≠ 0) :
     ‖(n : ℂ) ^ s‖ = (n : ℝ) ^ (s.re) := by
   rw [norm_eq_abs, ← ofReal_nat_cast, abs_cpow_eq_rpow_re_of_nonneg n.cast_nonneg hs]
 
-lemma norm_ofNat_cpow_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) :
+lemma norm_natCast_cpow_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) :
     ‖(n : ℂ) ^ s‖ = (n : ℝ) ^ (s.re) := by
   rw [norm_eq_abs, ← ofReal_nat_cast, abs_cpow_eq_rpow_re_of_pos (Nat.cast_pos.mpr hn) _]
 
 lemma norm_ofNat_cpow_pos_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) : 0 < ‖(n : ℂ) ^ s‖ :=
-  (norm_ofNat_cpow_of_pos hn _).symm ▸ Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
+  (norm_natCast_cpow_of_pos hn _).symm ▸ Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
 
 lemma norm_prime_cpow_le_one_half (p : Nat.Primes) {s : ℂ} (hs : 1 < s.re) :
     ‖(p : ℂ) ^ (-s)‖ ≤ 1 / 2 := by
-  rw [norm_ofNat_cpow_of_re_ne_zero p <| by rw [neg_re]; linarith only [hs]]
+  rw [norm_natCast_cpow_of_re_ne_zero p <| by rw [neg_re]; linarith only [hs]]
   refine (Real.rpow_le_rpow_of_nonpos zero_lt_two (Nat.cast_le.mpr p.prop.two_le) <|
     by rw [neg_re]; linarith only [hs]).trans ?_
   rw [one_div, ← Real.rpow_neg_one]
@@ -161,9 +107,10 @@ lemma one_sub_prime_cpow_ne_zero {p : ℕ} (hp : p.Prime) {s : ℂ} (hs : 1 < s.
   rw [← H, norm_one] at this
   norm_num at this
 
-lemma norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos {n : ℕ} (hn : 0 < n) {w z : ℂ} (h : w.re ≤ z.re) :
+lemma norm_natCast_cpow_le_norm_natCast_cpow_of_pos {n : ℕ} (hn : 0 < n) {w z : ℂ}
+    (h : w.re ≤ z.re) :
     ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖ := by
-  simp_rw [norm_ofNat_cpow_of_pos hn]
+  simp_rw [norm_natCast_cpow_of_pos hn]
   exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hn) h
 
 --
@@ -177,12 +124,12 @@ lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable f
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
 -- needs #10029
-lemma norm_log_ofNat_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ ε⁻¹ * n ^ ε := by
+lemma norm_log_natCast_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
   rcases n.eq_zero_or_pos with rfl | h
-  · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', mul_zero]
-  rw [norm_eq_abs, ← nat_cast_log, abs_ofReal,
+  · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', zero_div]
+  rw [norm_eq_abs, ← natCast_log, abs_ofReal,
     _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
-  exact Real.log_ofNat_le_mul_rpow n hε
+  exact Real.log_natCast_le_mul_rpow n hε
 
 end Complex
 

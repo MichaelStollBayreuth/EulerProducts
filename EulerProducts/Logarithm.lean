@@ -19,7 +19,7 @@ namespace Complex
 
 lemma norm_mul_ofNat_cpow_le {a s : ℂ} (n : ℕ) (ha : ‖a‖ ≤ 1) (hs : 1 < s.re) :
     ‖a * n ^ (-s)‖ ≤ (n : ℝ) ^ (-s.re) := by
-  rw [norm_mul, norm_ofNat_cpow_of_re_ne_zero n <| by rw [neg_re]; linarith only [hs]]
+  rw [norm_mul, norm_natCast_cpow_of_re_ne_zero n <| by rw [neg_re]; linarith only [hs]]
   conv => enter [2]; rw [← one_mul ((n : ℝ) ^ (-s.re))]
   gcongr
 

@@ -119,7 +119,7 @@ lemma LSeriesTerm_norm_eq (f : ArithmeticFunction ℂ) (s : ℂ) (n : ℕ) :
     ‖f n / n ^ s‖ = ‖f n‖ / n ^ s.re := by
   rcases n.eq_zero_or_pos with rfl | hn
   · simp only [map_zero, zero_div, norm_zero, zero_mul]
-  rw [norm_div, norm_ofNat_cpow_of_pos hn]
+  rw [norm_div, norm_natCast_cpow_of_pos hn]
 
 /-- This states that the L-series of the arithmetic function `f` converges at `s` to `a`. -/
 def LSeriesHasSum (f : ArithmeticFunction ℂ) (s a : ℂ) : Prop :=
@@ -146,20 +146,19 @@ lemma norm_LSeriesTerm_le_of_re_le_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ}
   suffices : ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖
   · exact div_le_div (norm_nonneg _) le_rfl hn' this
   refine (one_le_div hn').mp ?_
-  rw [← norm_div, ← cpow_sub _ _ <| Nat.cast_ne_zero.mpr hn.ne', norm_ofNat_cpow_of_pos hn]
+  rw [← norm_div, ← cpow_sub _ _ <| Nat.cast_ne_zero.mpr hn.ne', norm_natCast_cpow_of_pos hn]
   exact Real.one_le_rpow (one_le_cast.mpr hn) <| by simp only [sub_re, sub_nonneg, h]
 
 lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
     (h : w.re < z.re) (n : ℕ) :
-    ‖log n * f n / n ^ z‖ ≤ (z.re - w.re)⁻¹ * ‖f n / n ^ w‖ := by
+    ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
   have hwz : 0 < z.re - w.re := sub_pos.mpr h
   rw [mul_div_assoc, norm_mul, log_apply, ofReal_log n.cast_nonneg]
-  refine mul_le_mul_of_nonneg_right (norm_log_ofNat_le_mul_rpow n hwz) (norm_nonneg _) |>.trans ?_
-  rw [mul_assoc]
-  refine mul_le_mul_of_nonneg_left ?_ <| inv_nonneg.mpr hwz.le
+  refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_mul_rpow n hwz) (norm_nonneg _)|>.trans ?_
+  rw [mul_comm_div, mul_div, div_le_div_right hwz]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
-  simp_rw [norm_div, norm_ofNat_cpow_of_pos hn]
+  simp_rw [norm_div, norm_natCast_cpow_of_pos hn]
   rw [mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn, sub_sub_cancel_left,
     Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
 
@@ -254,15 +253,15 @@ lemma LSeriesSummable_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x : ℝ
     · simp [hsx]
     · simp only [neg_add_rev, neg_sub, norm_norm, Filter.eventually_atTop]
       refine ⟨1, fun n hn ↦ ?_⟩
-      simp only [norm_ofNat_cpow_of_pos hn, add_re, sub_re, neg_re, ofReal_re, one_re]
+      simp only [norm_natCast_cpow_of_pos hn, add_re, sub_re, neg_re, ofReal_re, one_re]
       convert le_refl ?_ using 2
       ring
   refine Summable.of_norm <| hsum.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
   rcases n.eq_zero_or_pos with rfl | hn
   · simp only [map_zero, zero_div, norm_zero, norm_nonneg]
   have hn' : 0 < (n : ℝ) ^ s.re := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
-  simp_rw [norm_div, norm_ofNat_cpow_of_pos hn, div_le_iff hn', add_re, sub_re, one_re, ofReal_re,
-    Real.rpow_add <| Nat.cast_pos.mpr hn, div_eq_mul_inv, mul_inv]
+  simp_rw [norm_div, norm_natCast_cpow_of_pos hn, div_le_iff hn', add_re, sub_re, one_re,
+    ofReal_re, Real.rpow_add <| Nat.cast_pos.mpr hn, div_eq_mul_inv, mul_inv]
   rw [mul_assoc, mul_comm _ ((n : ℝ) ^ s.re), ← mul_assoc ((n : ℝ) ^ s.re), mul_inv_cancel hn'.ne',
     ← Real.rpow_neg n.cast_nonneg, norm_eq_abs (C : ℂ), abs_ofReal, _root_.abs_of_nonneg hC₀,
     neg_sub, one_mul]
@@ -290,7 +289,7 @@ point-wise product of `log` with `f` is summable at `z`. -/
 lemma LSeriesSummable.log_pmul_of_re_lt_re {f : ArithmeticFunction ℂ} {w : ℂ} {z : ℂ}
     (h : w.re < z.re) (hf : LSeriesSummable f w) : LSeriesSummable (pmul log f) z := by
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
-  exact (hf.mul_left _).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
+  exact (hf.div_const _).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
     (norm_log_mul_LSeriesTerm_le_of_re_lt_re f h)
 
 /-- If the L-series of the point-wise product of `log` with `f` is summable at `z`, then
@@ -298,11 +297,11 @@ so is the L-series of `f`. -/
 lemma LSeriesSummable.of_LSeriesSummable_pmul_log  {f : ArithmeticFunction ℂ} {z : ℂ}
     (h : LSeriesSummable (pmul log f) z) : LSeriesSummable f z := by
   refine h.norm.of_norm_bounded_eventually_nat (fun n ↦ ‖(log n * f n / n ^ z : ℂ)‖) ?_
-  simp only [norm_div, log_apply, nat_cast_log, norm_mul, Filter.eventually_atTop]
+  simp only [norm_div, log_apply, natCast_log, norm_mul, Filter.eventually_atTop]
   refine ⟨3, fun n hn ↦ ?_⟩
   conv => enter [1, 1]; rw [← one_mul (‖f n‖)]
   gcongr
-  rw [← nat_cast_log, norm_eq_abs, abs_ofReal,
+  rw [← natCast_log, norm_eq_abs, abs_ofReal,
     _root_.abs_of_nonneg <| Real.log_nonneg <| by norm_cast; linarith]
   calc 1
     _ = Real.log (Real.exp 1) := by rw [Real.log_exp]
@@ -359,11 +358,11 @@ lemma LSeriesTerm_deriv (f : ArithmeticFunction ℂ) (n : ℕ) (s : ℂ) :
 lemma LSeriesTerm_iteratedDeriv (f : ArithmeticFunction ℂ) (m n : ℕ) (s : ℂ) :
     iteratedDeriv m (fun z ↦ f n / n ^ z) s = (-(↑(Real.log n))) ^ m * f n / n ^ s := by
   induction' m with m ih generalizing s
-  · simp only [zero_eq, iteratedDeriv_zero, nat_cast_log, _root_.pow_zero, one_mul]
+  · simp only [zero_eq, iteratedDeriv_zero, natCast_log, _root_.pow_zero, one_mul]
   · have ih' : iteratedDeriv m (fun z : ℂ ↦ f n / n ^ z) =
         fun s ↦ (-(Real.log n)) ^ m * f n / n ^ s :=
       funext ih
-    simp only [iteratedDeriv_succ, ih', nat_cast_log, mul_div_assoc, deriv_const_mul_field',
+    simp only [iteratedDeriv_succ, ih', natCast_log, mul_div_assoc, deriv_const_mul_field',
       LSeriesTerm_deriv f n s, mul_neg, _root_.pow_succ, neg_mul]
     ring
 
@@ -402,7 +401,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   simp only [norm_neg, norm_div, norm_mul, pmul_apply, realCoe_apply, log_apply]
   refine div_le_div_of_le_left (mul_nonneg (norm_nonneg _) (norm_nonneg _))
     (norm_ofNat_cpow_pos_of_pos hn _) <|
-    norm_ofNat_cpow_le_norm_ofNat_cpow_of_pos hn <| le_of_lt ?_
+    norm_natCast_cpow_le_norm_natCast_cpow_of_pos hn <| le_of_lt ?_
   simpa only [add_re, ofReal_re, div_ofNat_re, sub_re] using hs
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
@@ -488,7 +487,7 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
   conv =>
     enter [1, 2]
     rw [← mem_singleton_iff.mp <| mem_preimage.mp x.prop]
-    simp only [m, Nat.cast_mul, nat_cast_mul_nat_cast_cpow]
+    simp only [m, Nat.cast_mul, natCast_mul_natCast_cpow]
   field_simp
 
 /-- The L-series of the convolution product `f * g` of two arithmetic functions `f` and `g`
