@@ -131,7 +131,7 @@ lemma trivialDirichletCharModOne_eq_zeta : χ₁ = (ζ : ArithmeticFunction ℂ)
 lemma not_LSeriesSummable_dirichlet_at_one {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) :
     ¬ LSeriesSummable χ 1 := by
   by_contra! h
-  refine (Real.not_summable_indicator_one_div_nat_cast hN 1) ?_
+  refine (Real.not_summable_indicator_one_div_natCast hN 1) ?_
   refine Summable.of_nonneg_of_le (fun m ↦ Set.indicator_apply_nonneg (fun _ ↦ by positivity))
     (fun n ↦ ?_) h.norm
   rw [norm_div, cpow_one, norm_nat]

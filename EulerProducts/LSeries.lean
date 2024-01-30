@@ -141,7 +141,7 @@ lemma norm_LSeriesTerm_le_of_re_le_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ}
     (h : w.re ≤ z.re) (n : ℕ) : ‖f n / n ^ z‖ ≤ ‖f n / n ^ w‖ := by
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
-  have hn' := norm_ofNat_cpow_pos_of_pos hn w
+  have hn' := norm_natCast_cpow_pos_of_pos hn w
   simp_rw [norm_div]
   suffices : ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖
   · exact div_le_div (norm_nonneg _) le_rfl hn' this
@@ -154,7 +154,7 @@ lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : Nat.ArithmeticFunction ℂ) {
     ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
   have hwz : 0 < z.re - w.re := sub_pos.mpr h
   rw [mul_div_assoc, norm_mul, log_apply, ofReal_log n.cast_nonneg]
-  refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_mul_rpow n hwz) (norm_nonneg _)|>.trans ?_
+  refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_rpow_div n hwz) (norm_nonneg _)|>.trans ?_
   rw [mul_comm_div, mul_div, div_le_div_right hwz]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
@@ -400,7 +400,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   · simp
   simp only [norm_neg, norm_div, norm_mul, pmul_apply, realCoe_apply, log_apply]
   refine div_le_div_of_le_left (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-    (norm_ofNat_cpow_pos_of_pos hn _) <|
+    (norm_natCast_cpow_pos_of_pos hn _) <|
     norm_natCast_cpow_le_norm_natCast_cpow_of_pos hn <| le_of_lt ?_
   simpa only [add_re, ofReal_re, div_ofNat_re, sub_re] using hs
 

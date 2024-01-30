@@ -31,7 +31,7 @@ lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletChar
     (hs : 1 < s.re) :
     Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
   have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re
-  · rw [norm_mul, norm_ofNat_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
+  · rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
     calc ‖χ p‖ * (p : ℝ) ^ (-s).re
       _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
       _ = _ := one_mul _

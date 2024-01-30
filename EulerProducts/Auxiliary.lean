@@ -16,15 +16,15 @@ namespace Real
 
 -- #10029
 
-lemma log_le_mul_rpow {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) : log x ≤ x ^ ε / ε := by
+lemma log_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) : log x ≤ x ^ ε / ε := by
   rcases hx.eq_or_lt with rfl | h
   · rw [log_zero, zero_rpow hε.ne', zero_div]
   rw [le_div_iff' hε]
   exact (log_rpow h ε).symm.trans_le <| (log_le_sub_one_of_pos <| rpow_pos_of_pos h ε).trans
     (sub_one_lt _).le
 
-lemma log_natCast_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : log n ≤ n ^ ε / ε :=
-  log_le_mul_rpow n.cast_nonneg hε
+lemma log_natCast_le_rpow_div (n : ℕ) {ε : ℝ} (hε : 0 < ε) : log n ≤ n ^ ε / ε :=
+  log_le_rpow_div n.cast_nonneg hε
 
 -- This can be generalized to series of decreasing nonnegative terms
 lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
@@ -88,7 +88,7 @@ lemma norm_natCast_cpow_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) :
     ‖(n : ℂ) ^ s‖ = (n : ℝ) ^ (s.re) := by
   rw [norm_eq_abs, ← ofReal_nat_cast, abs_cpow_eq_rpow_re_of_pos (Nat.cast_pos.mpr hn) _]
 
-lemma norm_ofNat_cpow_pos_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) : 0 < ‖(n : ℂ) ^ s‖ :=
+lemma norm_natCast_cpow_pos_of_pos {n : ℕ} (hn : 0 < n) (s : ℂ) : 0 < ‖(n : ℂ) ^ s‖ :=
   (norm_natCast_cpow_of_pos hn _).symm ▸ Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
 
 lemma norm_prime_cpow_le_one_half (p : Nat.Primes) {s : ℂ} (hs : 1 < s.re) :
@@ -124,12 +124,12 @@ lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable f
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
 -- needs #10029
-lemma norm_log_natCast_le_mul_rpow (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
+lemma norm_log_natCast_le_rpow_div (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
   rcases n.eq_zero_or_pos with rfl | h
   · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', zero_div]
   rw [norm_eq_abs, ← natCast_log, abs_ofReal,
     _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
-  exact Real.log_natCast_le_mul_rpow n hε
+  exact Real.log_natCast_le_rpow_div n hε
 
 end Complex
 
