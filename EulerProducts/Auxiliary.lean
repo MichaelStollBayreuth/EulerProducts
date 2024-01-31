@@ -66,6 +66,13 @@ lemma natCast_cpow_natCast_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n
   · simp only [natCast_arg, mul_zero, Left.neg_neg_iff, Real.pi_pos]
   · simp only [natCast_arg, mul_zero, Real.pi_pos.le]
 
+lemma norm_log_natCast_le_rpow_div (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
+  rcases n.eq_zero_or_pos with rfl | h
+  · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', zero_div]
+  rw [norm_eq_abs, ← natCast_log, abs_ofReal,
+    _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
+  exact Real.log_natCast_le_rpow_div n hε
+
 --
 
 lemma summable_re {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).re :=
@@ -75,14 +82,6 @@ lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable f
   (Complex.hasSum_im h.hasSum).summable
 
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
-
--- needs #10029
-lemma norm_log_natCast_le_rpow_div (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
-  rcases n.eq_zero_or_pos with rfl | h
-  · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', zero_div]
-  rw [norm_eq_abs, ← natCast_log, abs_ofReal,
-    _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
-  exact Real.log_natCast_le_rpow_div n hε
 
 end Complex
 
