@@ -254,7 +254,7 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
     riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x
   · rcases eq_or_ne x 0 with rfl | h
-    · simp only [ofReal_zero, zero_pow' 4 (by norm_num), mul_zero, mul_one]
+    · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
     · field_simp [h]
       rfl
   conv at H => enter [3, x]; rw [help]
