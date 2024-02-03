@@ -565,5 +565,3 @@ lemma LSeries_ge_of_nonneg {f : ArithmeticFunction ℝ} (hf : ∀ n, 0 ≤ f n) 
     · norm_cast
       exact sub_nonpos.mpr hxy.le
   · exact Hgt hx
-
-#minimize_imports

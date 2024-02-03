@@ -1,13 +1,6 @@
 import Mathlib.Analysis.PSeries
-import Mathlib.Topology.CompletelyRegular
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.TaylorSeries
-import Mathlib.NumberTheory.LegendreSymbol.MulCharacter
-import Mathlib.RingTheory.DedekindDomain.Basic
-import Mathlib.Topology.EMetricSpace.Paracompact
-import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 
 /-!
 ### Auxiliary lemmas
