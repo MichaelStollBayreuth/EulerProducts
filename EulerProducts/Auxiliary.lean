@@ -40,6 +40,7 @@ lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod 
 
 end Real
 
+-- not really needed here
 
 namespace Complex
 
@@ -56,9 +57,9 @@ end Complex
 
 section Topology
 
-namespace Asymptotics
-
 open Filter
+
+namespace Asymptotics
 
 lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
     (hf : ∀ᶠ x in l, f x ≠ 0) :
@@ -70,22 +71,21 @@ lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {
     have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
     rw [le_div_iff hx', mul_comm] }
 
-lemma isLittleO_id {F : Type*} [NormedField F] (s : Set F) :
+lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
     (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
   ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
 
 end Asymptotics
 
 
-open Topology Asymptotics in
+open Topology Asymptotics
+
 lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
     (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
   rw [← zero_add z] at hf
-  have := (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
-  simp only [zero_add, hz, sub_zero] at this
-  exact this.trans <| isBigO_refl ..
+  simpa only [zero_add, hz, sub_zero]
+    using (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
 
-open Topology Asymptotics Filter in
 lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
   rw [isBigO_iff']
@@ -102,19 +102,18 @@ lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
     _ = _ := by simp only [norm_one, mul_one]
 
-open Topology in
 lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
   Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
     Continuous.tendsto Complex.continuous_ofReal x
 
-open Topology in
 lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
   Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
     ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
 
 end Topology
+
 
 namespace deriv
 
@@ -214,11 +213,11 @@ lemma Differentiable.comp_ofReal {e : ℂ → ℂ} (h : Differentiable ℂ e) :
   fun _ ↦ h.differentiableAt.comp_ofReal
 
 lemma DifferentiableAt.ofReal_comp {z : ℝ} {f : ℝ → ℝ} (hf : DifferentiableAt ℝ f z) :
-    DifferentiableAt ℝ (fun (y : ℝ) => (f y : ℂ)) z :=
+    DifferentiableAt ℝ (fun (y : ℝ) ↦ (f y : ℂ)) z :=
   hf.hasDerivAt.ofReal_comp.differentiableAt
 
 lemma Differentiable.ofReal_comp {f : ℝ → ℝ} (hf : Differentiable ℝ f) :
-    Differentiable ℝ (fun (y : ℝ) => (f y : ℂ)) :=
+    Differentiable ℝ (fun (y : ℝ) ↦ (f y : ℂ)) :=
   fun _ ↦ hf.differentiableAt.ofReal_comp
 
 open Complex ContinuousLinearMap in
@@ -234,17 +233,17 @@ lemma HasDerivAt.of_hasDerivAt_ofReal_comp {z : ℝ} {f : ℝ → ℝ} {u : ℂ}
   rw [comp_apply, smulRight_apply, one_apply, one_smul, reCLM_apply, ofReal_re]
 
 lemma DifferentiableAt.ofReal_comp_iff {z : ℝ} {f : ℝ → ℝ} :
-    DifferentiableAt ℝ (fun (y : ℝ) => (f y : ℂ)) z ↔ DifferentiableAt ℝ f z := by
+    DifferentiableAt ℝ (fun (y : ℝ) ↦ (f y : ℂ)) z ↔ DifferentiableAt ℝ f z := by
   refine ⟨fun H ↦ ?_, ofReal_comp⟩
   obtain ⟨u, _, hu₂⟩ := H.hasDerivAt.of_hasDerivAt_ofReal_comp
   exact HasDerivAt.differentiableAt hu₂
 
 lemma Differentiable.ofReal_comp_iff {f : ℝ → ℝ} :
-    Differentiable ℝ (fun (y : ℝ) => (f y : ℂ)) ↔ Differentiable ℝ f :=
+    Differentiable ℝ (fun (y : ℝ) ↦ (f y : ℂ)) ↔ Differentiable ℝ f :=
   forall_congr' fun _ ↦ DifferentiableAt.ofReal_comp_iff
 
 lemma deriv.ofReal_comp {z : ℝ} {f : ℝ → ℝ} :
-    deriv (fun (y : ℝ) => (f y : ℂ)) z = deriv f z := by
+    deriv (fun (y : ℝ) ↦ (f y : ℂ)) z = deriv f z := by
   by_cases hf : DifferentiableAt ℝ f z
   · exact hf.hasDerivAt.ofReal_comp.deriv
   · have hf' := mt DifferentiableAt.ofReal_comp_iff.mp hf

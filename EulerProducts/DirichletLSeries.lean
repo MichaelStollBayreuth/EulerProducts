@@ -330,7 +330,7 @@ lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable Λ
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hf
   simp only [norm_div]
   refine div_le_div_of_le (norm_nonneg _) ?_
-  simp only [realCoe_apply, norm_eq_abs, abs_ofReal, log_apply]
+  simp only [toComplexArithmeticFunction_apply, coe_algebraMap, norm_eq_abs, abs_ofReal, log_apply]
   rw [_root_.abs_of_nonneg vonMangoldt_nonneg, _root_.abs_of_nonneg <| Real.log_nat_cast_nonneg n]
   exact vonMangoldt_le_log
 

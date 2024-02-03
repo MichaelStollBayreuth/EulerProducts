@@ -1,9 +1,9 @@
-import EulerProducts.Auxiliary
 import Mathlib.NumberTheory.LSeries
 import Mathlib.NumberTheory.VonMangoldt
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Convex.Complex
 import Mathlib.Data.Complex.ExponentialBounds
+import Mathlib.Topology.Instances.EReal
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
@@ -23,94 +23,107 @@ lemma pmul_assoc {R} [Semiring R] (f₁ f₂ f₃ : ArithmeticFunction R) :
   simp only [pmul_apply, mul_assoc]
 
 /-!
-### Coercion from real-valued to complex-valued arithmetic functions
+### Coercion to complex-valued arithmetic functions
 -/
 
 open Complex
 
-/-- Coerce an arithmetic function with values in `ℝ` to one with values in `ℂ`.
-We cannot inline this in `realCoe` because it gets unfolded too much. -/
-@[coe] def ofReal (f : ArithmeticFunction ℝ) : ArithmeticFunction ℂ where
-  toFun n := f n
-  map_zero' := by simp only [map_zero, ofReal_zero]
+section toComplex
 
-instance realCoe : Coe (ArithmeticFunction ℝ) (ArithmeticFunction ℂ) := ⟨ofReal⟩
+variable {R : Type*} [CommSemiring R] [Algebra R ℂ]
+
+/-- Coerce an arithmetic function with values in `R` to one with values in `ℂ`.
+We cannot inline this in `instToComplexAritmeticFunction` because it gets unfolded too much. -/
+@[coe] def toComplexArithmeticFunction (f : ArithmeticFunction R) : ArithmeticFunction ℂ where
+  toFun n := algebraMap R ℂ (f n)
+  map_zero' := by simp only [map_zero, _root_.map_zero]
+
+instance instToComplexAritmeticFunction : CoeHead (ArithmeticFunction R) (ArithmeticFunction ℂ) :=
+  ⟨toComplexArithmeticFunction (R := R)⟩
 
 @[simp]
-lemma realCoe_apply {f : ArithmeticFunction ℝ} {n : ℕ} :
-    (f : ArithmeticFunction ℂ) n = f n := rfl
+lemma toComplexArithmeticFunction_apply {f : ArithmeticFunction R} {n : ℕ} :
+    (f : ArithmeticFunction ℂ) n = algebraMap R ℂ (f n) := rfl
 
-lemma ofReal_injective : Function.Injective ofReal := by
+@[simp, norm_cast]
+lemma toComplexArithmeticFunction_add {f g : ArithmeticFunction R} :
+    (↑(f + g) : ArithmeticFunction ℂ) = ↑f + g := by
+  ext
+  simp only [toComplexArithmeticFunction_apply, add_apply, map_add]
+
+@[simp, norm_cast]
+lemma toComplexArithmeticFunction_mul {f g : ArithmeticFunction R} :
+    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
+  ext
+  simp only [toComplexArithmeticFunction_apply, mul_apply, map_sum, map_mul]
+
+@[simp, norm_cast]
+lemma toComplexArithmeticFunction_pmul {f g : ArithmeticFunction R} :
+    (↑(pmul f g) : ArithmeticFunction ℂ) = pmul (f : ArithmeticFunction ℂ) (↑g) := by
+  ext
+  simp only [toComplexArithmeticFunction_apply, pmul_apply, map_mul]
+
+@[simp, norm_cast]
+lemma toComplexArithmeticFunction_ppow {f : ArithmeticFunction R} {n : ℕ} :
+    (↑(ppow f n) : ArithmeticFunction ℂ) = ppow (f : ArithmeticFunction ℂ) n := by
+  ext m
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp only [ppow_zero, toComplexArithmeticFunction_apply, natCoe_apply, zeta_apply, cast_ite,
+      cast_zero, cast_one, RingHom.map_ite_zero_one, CharP.cast_eq_zero]
+  · simp only [toComplexArithmeticFunction_apply, ppow_apply hn, map_pow]
+
+end toComplex
+
+section nat_int_real
+
+lemma toComplexArithmeticFunction_real_injective :
+    Function.Injective (toComplexArithmeticFunction (R := ℝ)) := by
   intro f g hfg
   ext n
-  simpa only [realCoe_apply, ofReal_inj] using congr_arg (· n) hfg
+  simpa only [toComplexArithmeticFunction_apply, coe_algebraMap, ofReal_inj]
+    using congr_arg (· n) hfg
 
 @[simp, norm_cast]
-lemma ofReal_inj {f g : ArithmeticFunction ℝ} : ofReal f = ofReal g ↔ f = g :=
-  ofReal_injective.eq_iff
+lemma toComplexArithmeticFunction_real_inj {f g : ArithmeticFunction ℝ} :
+    (f : ArithmeticFunction ℂ) = g ↔ f = g :=
+  toComplexArithmeticFunction_real_injective.eq_iff
 
--- Is there a simpler way for the following?
--- (And do we have to repeat this for addition etc.?)
-
-@[simp, norm_cast]
-lemma realCoe_mul {f g : ArithmeticFunction ℝ} :
-    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
+lemma toComplexArithmeticFunction_int_injective :
+    Function.Injective (toComplexArithmeticFunction (R := ℤ)) := by
+  intro f g hfg
   ext n
-  simp
+  simpa only [toComplexArithmeticFunction_apply, algebraMap_int_eq, eq_intCast, Int.cast_inj]
+    using congr_arg (· n) hfg
 
 @[simp, norm_cast]
-lemma realCoe_natCoe_mul {f : ArithmeticFunction ℝ} {g : ArithmeticFunction ℕ} :
-    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
+lemma toComplexArithmeticFunction_int_inj {f g : ArithmeticFunction ℤ} :
+    (f : ArithmeticFunction ℂ) = g ↔ f = g :=
+  toComplexArithmeticFunction_int_injective.eq_iff
+
+lemma toComplexArithmeticFunction_nat_injective :
+    Function.Injective (toComplexArithmeticFunction (R := ℕ)) := by
+  intro f g hfg
   ext n
-  simp
+  simpa only [toComplexArithmeticFunction_apply, eq_natCast, cast_inj] using congr_arg (· n) hfg
 
 @[simp, norm_cast]
-lemma natCoe_realCoe_mul {f : ArithmeticFunction ℕ} {g : ArithmeticFunction ℝ} :
-    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
-  ext n
-  simp
+lemma toComplexArithmeticFunction_nat_inj {f g : ArithmeticFunction ℕ} :
+    (f : ArithmeticFunction ℂ) = g ↔ f = g :=
+  toComplexArithmeticFunction_nat_injective.eq_iff
 
-@[simp, norm_cast]
-lemma realCoe_intCoe_mul {f : ArithmeticFunction ℝ} {g : ArithmeticFunction ℤ} :
-    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
-  ext n
-  simp
+@[norm_cast]
+lemma toComplexArithmeticFunction_real_int {f : ArithmeticFunction ℤ} :
+    ((f : ArithmeticFunction ℝ) : ArithmeticFunction ℂ) = f := rfl
 
-@[simp, norm_cast]
-lemma intCoe_realCoe_mul {f : ArithmeticFunction ℤ} {g : ArithmeticFunction ℝ} :
-    (↑(f * g) : ArithmeticFunction ℂ) = ↑f * g := by
-  ext n
-  simp
+@[norm_cast]
+lemma toComplexArithmeticFunction_real_nat {f : ArithmeticFunction ℕ} :
+    ((f : ArithmeticFunction ℝ) : ArithmeticFunction ℂ) = f := rfl
 
-@[simp, norm_cast]
-lemma realCoe_pmul {f g : ArithmeticFunction ℝ} :
-    (↑(pmul f g) : ArithmeticFunction ℂ) = pmul (ofReal f) g := by
-  ext n
-  simp
+@[norm_cast]
+lemma toComplexArithmeticFunction_int_nat {f : ArithmeticFunction ℕ} :
+    ((f : ArithmeticFunction ℤ) : ArithmeticFunction ℂ) = f := rfl
 
-@[simp, norm_cast]
-lemma realCoe_natCoe_pmul {f : ArithmeticFunction ℝ} {g : ArithmeticFunction ℕ} :
-    (↑(pmul f g) : ArithmeticFunction ℂ) = pmul (ofReal f) g := by
-  ext n
-  simp
-
-@[simp, norm_cast]
-lemma natCoe_realCoe_pmul {f : ArithmeticFunction ℕ} {g : ArithmeticFunction ℝ} :
-    (↑(pmul (f : ArithmeticFunction ℝ) g) : ArithmeticFunction ℂ) = pmul (ofReal f) g := by
-  ext n
-  simp
-
-@[simp, norm_cast]
-lemma realCoe_intCoe_pmul {f : ArithmeticFunction ℝ} {g : ArithmeticFunction ℤ} :
-    (↑(pmul f g) : ArithmeticFunction ℂ) = pmul (ofReal f) g := by
-  ext n
-  simp
-
-@[simp, norm_cast]
-lemma intCoe_realCoe_pmul {f : ArithmeticFunction ℤ} {g : ArithmeticFunction ℝ} :
-    (↑(pmul (f : ArithmeticFunction ℝ) g) : ArithmeticFunction ℂ) = pmul (ofReal f) g := by
-  ext n
-  simp
+end nat_int_real
 
 /-!
 ### Convergence of L-series
@@ -375,7 +388,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   -- The L-series of `f` is summable at some real `x < re z`.
   obtain ⟨x, h', hf⟩ := LSeriesSummable_lt_re_of_abscissaOfAbsConv_lt_re h
   change HasDerivAt (fun s ↦ LSeries f s) ..
-  simp only [LSeries, pmul_apply, realCoe_apply, log_apply, ← tsum_neg]
+  simp only [LSeries, pmul_apply, toComplexArithmeticFunction_apply, log_apply, ← tsum_neg]
   -- We work in the right half-plane `re s > (x + re z)/2`.
   let S : Set ℂ := {s | (x + z.re) / 2 < s.re}
   have hop : IsOpen S := isOpen_lt continuous_const continuous_re
@@ -399,7 +412,7 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
   -- Show that the derivative series is uniformly bounded term-wise.
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
-  simp only [norm_neg, norm_div, norm_mul, pmul_apply, realCoe_apply, log_apply]
+  simp only [norm_neg, norm_div, norm_mul, pmul_apply, toComplexArithmeticFunction_apply, log_apply]
   refine div_le_div_of_le_left (mul_nonneg (norm_nonneg _) (norm_nonneg _))
     (norm_natCast_cpow_pos_of_pos hn _) <|
     norm_natCast_cpow_le_norm_natCast_cpow_of_pos hn <| le_of_lt ?_
@@ -441,8 +454,6 @@ convergence. -/
 lemma LSeries.differentiableOn {f : ArithmeticFunction ℂ} :
     DifferentiableOn ℂ (LSeries f) {z | abscissaOfAbsConv f < z.re} :=
   fun _ hz ↦ (LSeries.hasDerivAt hz).differentiableAt.differentiableWithinAt
-
-
 
 /-!
 ### Multiplication of L-series
@@ -513,55 +524,4 @@ lemma LSeriesSummable_mul {f g : ArithmeticFunction ℂ} {s : ℂ} (hf : LSeries
     LSeriesSummable (f * g) s :=
   (LSeriesHasSum.mul hf.LSeriesHasSum hg.LSeriesHasSum).LSeriesSummable
 
-/-!
-### Positivity of values on the real axis
-
-We show that when `f` is an arithmetic function taking only nonnegative real
-values such that there is an entire function `F` extending its L-series and the L-series
-converges at `s : ℝ`, then `F x ≥ f 1` for all real `x`.
--/
-
-open scoped ComplexOrder in
-lemma LSeries_ge_of_nonneg {f : ArithmeticFunction ℝ} (hf : ∀ n, 0 ≤ f n) {F : ℂ → ℂ}
-    (hF : Differentiable ℂ F) (h : abscissaOfAbsConv f < ⊤)
-    (hFf : {s | abscissaOfAbsConv f < s.re}.EqOn F (LSeries f)) (x : ℝ) :
-    (f : ArithmeticFunction ℂ) 1 ≤ F x := by
-  have Hgt {x : ℝ} (hx : abscissaOfAbsConv ↑f < ↑x) : (f : ArithmeticFunction ℂ) 1 ≤ F x
-  · unfold Set.EqOn at hFf
-    have hx' : (x : ℂ) ∈ {s | abscissaOfAbsConv f < s.re}
-    · simp only [Set.mem_setOf_eq, ofReal_re, hx]
-    have H : (f : ArithmeticFunction ℂ) 1 =
-        ∑' n : ℕ, Set.indicator {1} (fun n ↦ (f : ArithmeticFunction ℂ) n / (n : ℂ) ^ (x : ℂ)) n
-    · simp only [realCoe_apply]
-      rw [← tsum_subtype, tsum_singleton 1 (f := fun n : ℕ ↦ (f n : ℂ) / (n : ℂ) ^ (x : ℂ)),
-        Nat.cast_one, one_cpow, div_one]
-    have H' (g : ℕ → ℝ) (n : ℕ) :
-        Set.indicator ({1} : Set ℕ) (fun n ↦ ((g n) : ℂ)) n = ((Set.indicator ({1} : Set ℕ) g n) : ℝ)
-    · simp_rw [Set.indicator_apply]
-      split_ifs <;> rfl
-    rw [hFf hx', LSeries, H]
-    simp_rw [← ofReal_nat_cast, ← ofReal_cpow (Nat.cast_nonneg _), realCoe_apply, ← ofReal_div, H',
-      ← ofReal_tsum]
-    norm_cast
-    have Hs : Summable fun n ↦ f n / ↑n ^ x
-    · have hxre : (x : ℂ).re = x := rfl
-      have := LSeriesSummable_of_abscissaOfAbsConv_lt_re (hxre.symm ▸ hx)
-      simpa only [LSeriesSummable, ← ofReal_nat_cast, ← ofReal_cpow (Nat.cast_nonneg _),
-        realCoe_apply, ← ofReal_div, summable_ofReal] using this
-    refine tsum_le_tsum (fun n ↦ ?_) (Hs.indicator _) Hs
-    have hnn (n : ℕ) : 0 ≤ (f n) / (n : ℝ) ^ x :=
-      div_nonneg (hf n) <| Real.rpow_nonneg n.cast_nonneg x
-    exact (Set.indicator_le_self' fun n _ ↦ hnn n) n
-  rcases le_or_lt ↑x (abscissaOfAbsConv f) with hx | hx
-  · have ⟨y, hy₁, hy₂⟩:= EReal.exists_between_coe_real h
-    have hxy := EReal.coe_lt_coe_iff.mp (hx.trans_lt hy₁)
-    refine (Hgt hy₁).trans ?_
-    let F₁ : ℂ → ℂ := fun z ↦ F (y + z)
-    convert Complex.at_zero_le_of_iteratedDeriv_alternating (f := F₁) (z := x - y)
-      (hF.comp <| Differentiable.const_add differentiable_id' (y : ℂ)) (fun n hn ↦ ?_) ?_ using 1
-    · simp only [add_zero]
-    · simp only [add_sub_cancel'_right]
-    · sorry
-    · norm_cast
-      exact sub_nonpos.mpr hxy.le
-  · exact Hgt hx
+end Nat.ArithmeticFunction
