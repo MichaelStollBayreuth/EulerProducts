@@ -83,7 +83,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
     · rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
       simp [hy]
-    rw [MulChar.one_apply _ hn', one_mul]
+    rw [MulChar.one_apply hn', one_mul]
     convert re_log_comb_nonneg' ha₀ ha₁ hz using 6
     · congr 2
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
@@ -172,7 +172,7 @@ lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ
   · refine prod_congr rfl fun p hp ↦ ?_
     simp only [mem_primeFactors, ne_eq, hN, not_false_eq_true, and_true, not_and, mem_filter] at hp
     have hp₁ := (mem_primesBelow.mp hp.1).2
-    rw [MulChar.one_apply _ <| isUnit_prime_of_not_dvd hp₁ <| hp.2 hp₁, one_mul]
+    rw [MulChar.one_apply <| isUnit_prime_of_not_dvd hp₁ <| hp.2 hp₁, one_mul]
 
 open BigOperators in
 lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re) :

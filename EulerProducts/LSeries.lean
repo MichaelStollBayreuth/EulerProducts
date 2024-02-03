@@ -1,10 +1,11 @@
 import EulerProducts.Auxiliary
-import Mathlib.NumberTheory.SumPrimeReciprocals
 import Mathlib.NumberTheory.LSeries
 import Mathlib.NumberTheory.VonMangoldt
-import Mathlib.NumberTheory.ZetaFunction
+import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.Analysis.Convex.Complex
 import Mathlib.Data.Complex.ExponentialBounds
 import Mathlib.Analysis.Normed.Field.InfiniteSum
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # More results on L-series
@@ -564,3 +565,5 @@ lemma LSeries_ge_of_nonneg {f : ArithmeticFunction ℝ} (hf : ∀ n, 0 ≤ f n) 
     · norm_cast
       exact sub_nonpos.mpr hxy.le
   · exact Hgt hx
+
+#minimize_imports

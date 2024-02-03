@@ -1,8 +1,6 @@
-import Mathlib.NumberTheory.DirichletCharacter.Basic
-import Mathlib.NumberTheory.DirichletCharacter.Bounds
-import Mathlib.NumberTheory.ArithmeticFunction
 import EulerProducts.LSeries
 import EulerProducts.Logarithm
+import Mathlib.NumberTheory.SumPrimeReciprocals
 
 /-!
 ### Dirichlet characters as arithmetic functions
@@ -290,7 +288,7 @@ open EulerProduct in
 theorem LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
     exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L ζ s := by
   convert trivialDirichletCharModOne_eq_zeta ▸ LSeries_dirichlet_eulerProduct' χ₁ hs using 7
-  rw [MulChar.one_apply _ <| isUnit_of_subsingleton _, one_mul]
+  rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
 
 open EulerProduct in
 /-- A variant of the Euler product for the Riemann zeta function. -/

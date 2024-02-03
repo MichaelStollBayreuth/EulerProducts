@@ -50,32 +50,6 @@ end Real
 
 namespace Complex
 
--- #10034
-
-@[simp, norm_cast]
-lemma natCast_log {n : ℕ} : Real.log n = log n := ofReal_nat_cast n ▸ ofReal_log n.cast_nonneg
-
-@[simp, norm_cast]
-lemma natCast_arg {n : ℕ} : arg n = 0 :=
-  ofReal_nat_cast n ▸ arg_ofReal_of_nonneg n.cast_nonneg
-
-lemma natCast_mul_natCast_cpow (m n : ℕ) (s : ℂ) : (m * n : ℂ) ^ s = m ^ s * n ^ s :=
-  ofReal_nat_cast m ▸ ofReal_nat_cast n ▸ mul_cpow_ofReal_nonneg m.cast_nonneg n.cast_nonneg s
-
-lemma natCast_cpow_natCast_mul (n m : ℕ) (z : ℂ) : (n : ℂ) ^ (m * z) = ((n : ℂ) ^ m) ^ z := by
-  refine cpow_nat_mul' (x := n) (n := m) ?_ ?_ z
-  · simp only [natCast_arg, mul_zero, Left.neg_neg_iff, Real.pi_pos]
-  · simp only [natCast_arg, mul_zero, Real.pi_pos.le]
-
-lemma norm_log_natCast_le_rpow_div (n : ℕ) {ε : ℝ} (hε : 0 < ε) : ‖log n‖ ≤ n ^ ε / ε := by
-  rcases n.eq_zero_or_pos with rfl | h
-  · rw [Nat.cast_zero, Nat.cast_zero, log_zero, norm_zero, Real.zero_rpow hε.ne', zero_div]
-  rw [norm_eq_abs, ← natCast_log, abs_ofReal,
-    _root_.abs_of_nonneg <| Real.log_nonneg <| by exact_mod_cast Nat.one_le_of_lt h.lt]
-  exact Real.log_natCast_le_rpow_div n hε
-
---
-
 lemma summable_re {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).re :=
   (Complex.hasSum_re h.hasSum).summable
 
@@ -85,24 +59,6 @@ lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable f
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
 end Complex
-
-
-namespace MulChar
-
--- #10039
-
-@[coe]
-def toMonoidWithZeroHom {R R' : Type*} [CommMonoidWithZero R] [CommMonoidWithZero R']
-    [Nontrivial R] (χ : MulChar R R') : R →*₀ R' where
-      toFun := χ.toFun
-      map_zero' := χ.map_zero
-      map_one' := χ.map_one'
-      map_mul' := χ.map_mul'
-
-lemma one_apply {R : Type*} [CommMonoid R] (R' : Type*) [CommMonoidWithZero R'] {x : R}
-    (hx : IsUnit x) : (1 : MulChar R R') x = 1 :=  one_apply_coe hx.unit
-
-end MulChar
 
 
 section Topology
@@ -302,27 +258,8 @@ lemma deriv.ofReal_comp {z : ℝ} {f : ℝ → ℝ} :
     rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt hf',
       Complex.ofReal_zero]
 
--- #10112
 
 namespace Complex
-
-section OrderInstance
-
-open scoped ComplexOrder
-
-instance : OrderClosedTopology ℂ where
-  isClosed_le' := by
-    simp_rw [le_def, Set.setOf_and]
-    refine IsClosed.inter (isClosed_le ?_ ?_) (isClosed_eq ?_ ?_) <;> continuity
-
-lemma monotone_ofReal : Monotone ofReal' := by
-  intro x y hxy
-  simp only [ofReal_eq_coe, real_le_real, hxy]
-
-end OrderInstance
-
---
-
 
 open Nat
 
