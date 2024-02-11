@@ -1,4 +1,4 @@
-import Mathlib.NumberTheory.LSeries
+import Mathlib.NumberTheory.LSeries.Basic
 import Mathlib.NumberTheory.VonMangoldt
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Convex.Complex
@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 # More results on L-series
 -/
 
-namespace Nat.ArithmeticFunction
+namespace ArithmeticFunction
 
 /-!
 ### Some general results on arithmetic functions
@@ -26,7 +26,7 @@ lemma pmul_assoc {R} [Semiring R] (f₁ f₂ f₃ : ArithmeticFunction R) :
 ### Coercion to complex-valued arithmetic functions
 -/
 
-open Complex
+open Complex Nat
 
 section toComplex
 
@@ -104,7 +104,8 @@ lemma toComplexArithmeticFunction_nat_injective :
     Function.Injective (toComplexArithmeticFunction (R := ℕ)) := by
   intro f g hfg
   ext n
-  simpa only [toComplexArithmeticFunction_apply, eq_natCast, cast_inj] using congr_arg (· n) hfg
+  simpa only [toComplexArithmeticFunction_apply, eq_natCast, Nat.cast_inj]
+    using congr_arg (· n) hfg
 
 @[simp, norm_cast]
 lemma toComplexArithmeticFunction_nat_inj {f g : ArithmeticFunction ℕ} :
@@ -151,7 +152,7 @@ lemma LSeriesSummable.LSeriesHasSum {f : ArithmeticFunction ℂ} {s : ℂ} (h : 
     LSeriesHasSum f s (LSeries f s) :=
   h.hasSum
 
-lemma norm_LSeriesTerm_le_of_re_le_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
+lemma norm_LSeriesTerm_le_of_re_le_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
     (h : w.re ≤ z.re) (n : ℕ) : ‖f n / n ^ z‖ ≤ ‖f n / n ^ w‖ := by
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
@@ -163,7 +164,7 @@ lemma norm_LSeriesTerm_le_of_re_le_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ}
   rw [← norm_div, ← cpow_sub _ _ <| Nat.cast_ne_zero.mpr hn.ne', norm_natCast_cpow_of_pos hn]
   exact Real.one_le_rpow (one_le_cast.mpr hn) <| by simp only [sub_re, sub_nonneg, h]
 
-lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : Nat.ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
+lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
     (h : w.re < z.re) (n : ℕ) :
     ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
   have hwz : 0 < z.re - w.re := sub_pos.mpr h
@@ -176,7 +177,7 @@ lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : Nat.ArithmeticFunction ℂ) {
   rw [mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn, sub_sub_cancel_left,
     Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
 
-lemma LSeriesSummable.of_re_le_re {f : Nat.ArithmeticFunction ℂ} {w : ℂ} {z : ℂ} (h : w.re ≤ z.re)
+lemma LSeriesSummable.of_re_le_re {f : ArithmeticFunction ℂ} {w : ℂ} {z : ℂ} (h : w.re ≤ z.re)
     (hf : LSeriesSummable f w) : LSeriesSummable f z := by
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
   exact hf.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (norm_LSeriesTerm_le_of_re_le_re f h)
@@ -383,7 +384,7 @@ lemma LSeriesTerm_iteratedDeriv (f : ArithmeticFunction ℂ) (m n : ℕ) (s : �
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then the L-series
 of `f` is differentiable with derivative the negative of the L-series of the point-wise
 product of `log` with `f`. -/
-lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
+lemma LSeries.hasDerivAt {f : ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
     HasDerivAt (LSeries f) (- LSeries (pmul log f) z) z := by
   -- The L-series of `f` is summable at some real `x < re z`.
   obtain ⟨x, h', hf⟩ := LSeriesSummable_lt_re_of_abscissaOfAbsConv_lt_re h
@@ -420,20 +421,20 @@ lemma LSeries.hasDerivAt {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : absciss
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
 the derivative of this L-series is the negative of the L-series of `pmul log f`. -/
-lemma LSeries_deriv {f : Nat.ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
+lemma LSeries_deriv {f : ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
     deriv (LSeries f) z = - LSeries (pmul log f) z :=
   (LSeries.hasDerivAt h).deriv
 
 /-- The derivative of the L-series of `f` agrees with the negative of the L-series of
 `pmul log f` on the right half-plane of absolute convergence. -/
-lemma LSeries_deriv_eqOn {f : Nat.ArithmeticFunction ℂ} :
+lemma LSeries_deriv_eqOn {f : ArithmeticFunction ℂ} :
     {z | abscissaOfAbsConv f < z.re}.EqOn (deriv (LSeries f)) (- LSeries (pmul log f)) :=
   deriv_eqOn (isOpen_rightHalfPlane _) fun _ hz ↦ HasDerivAt.hasDerivWithinAt <|
     LSeries.hasDerivAt hz
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
 the `n`th derivative of this L-series is `(-1)^n` times the L-series of `pmul (ppow log n) f`. -/
-lemma LSeries_iteratedDeriv {f : Nat.ArithmeticFunction ℂ} (n : ℕ) {z : ℂ}
+lemma LSeries_iteratedDeriv {f : ArithmeticFunction ℂ} (n : ℕ) {z : ℂ}
     (h : abscissaOfAbsConv f < z.re) :
     iteratedDeriv n (LSeries f) z = (-1) ^ n * LSeries (pmul (ppow log n) f) z := by
   induction' n with n ih generalizing z
@@ -524,4 +525,4 @@ lemma LSeriesSummable_mul {f g : ArithmeticFunction ℂ} {s : ℂ} (hf : LSeries
     LSeriesSummable (f * g) s :=
   (LSeriesHasSum.mul hf.LSeriesHasSum hg.LSeriesHasSum).LSeriesSummable
 
-end Nat.ArithmeticFunction
+end ArithmeticFunction

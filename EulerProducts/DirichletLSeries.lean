@@ -79,9 +79,9 @@ lemma hSMul_one {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter 
 end DirichletCharacter
 
 
-namespace Nat.ArithmeticFunction
+namespace ArithmeticFunction
 
-open Complex
+open Complex Nat
 
 /-!
 ### L-series of Dirichlet characters
@@ -356,4 +356,4 @@ lemma LSeries_vonMangoldt_eq_deriv_riemannZeta_div {s : ℂ} (hs : 1 < s.re) :
     exact fun _ hz ↦ (LSeries.zeta_eq_riemannZeta hz).symm
   · exact (LSeries.zeta_eq_riemannZeta hs).symm
 
-end Nat.ArithmeticFunction
+end ArithmeticFunction
