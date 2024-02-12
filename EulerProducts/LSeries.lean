@@ -14,15 +14,6 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 namespace ArithmeticFunction
 
 /-!
-### Some general results on arithmetic functions
--/
-
-lemma pmul_assoc {R} [Semiring R] (f₁ f₂ f₃ : ArithmeticFunction R) :
-    pmul (pmul f₁ f₂) f₃ = pmul f₁ (pmul f₂ f₃) := by
-  ext
-  simp only [pmul_apply, mul_assoc]
-
-/-!
 ### Coercion to complex-valued arithmetic functions
 -/
 
