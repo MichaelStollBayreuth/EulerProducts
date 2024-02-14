@@ -332,7 +332,7 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
     exact (le_def.mp (h n)).2.symm
   obtain ⟨F, hFd, hF⟩ := realValued_of_iteratedDeriv_real hf hD
   rw [hF]
-  refine monotone_ofReal.comp_monotoneOn <| (convex_Ici 0).monotoneOn_of_deriv_nonneg
+  refine monotone_ofReal.comp_monotoneOn <| monotoneOn_of_deriv_nonneg (convex_Ici 0)
     hFd.continuous.continuousOn hFd.differentiableOn fun x hx ↦ ?_
   have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0
   · rw [← iteratedDeriv_succ']
