@@ -121,7 +121,7 @@ end nat_int_real
 ### Convergence of L-series
 -/
 
-lemma LSeriesTerm_norm_eq (f : ArithmeticFunction ℂ) (s : ℂ) (n : ℕ) :
+lemma Norm_lseriesterm_eq (f : ArithmeticFunction ℂ) (s : ℂ) (n : ℕ) :
     ‖f n / n ^ s‖ = ‖f n‖ / n ^ s.re := by
   rcases n.eq_zero_or_pos with rfl | hn
   · simp only [map_zero, zero_div, norm_zero, zero_mul]
@@ -149,24 +149,10 @@ lemma norm_LSeriesTerm_le_of_re_le_re (f : ArithmeticFunction ℂ) {w : ℂ} {z 
   · simp
   have hn' := norm_natCast_cpow_pos_of_pos hn w
   simp_rw [norm_div]
-  suffices : ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖
-  · exact div_le_div (norm_nonneg _) le_rfl hn' this
+  suffices this : ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖ from div_le_div (norm_nonneg _) le_rfl hn' this
   refine (one_le_div hn').mp ?_
   rw [← norm_div, ← cpow_sub _ _ <| Nat.cast_ne_zero.mpr hn.ne', norm_natCast_cpow_of_pos hn]
   exact Real.one_le_rpow (one_le_cast.mpr hn) <| by simp only [sub_re, sub_nonneg, h]
-
-lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
-    (h : w.re < z.re) (n : ℕ) :
-    ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
-  have hwz : 0 < z.re - w.re := sub_pos.mpr h
-  rw [mul_div_assoc, norm_mul, log_apply, ofReal_log n.cast_nonneg]
-  refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_rpow_div n hwz) (norm_nonneg _)|>.trans ?_
-  rw [mul_comm_div, mul_div, div_le_div_right hwz]
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  simp_rw [norm_div, norm_natCast_cpow_of_pos hn]
-  rw [mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn, sub_sub_cancel_left,
-    Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
 
 lemma LSeriesSummable.of_re_le_re {f : ArithmeticFunction ℂ} {w : ℂ} {z : ℂ} (h : w.re ≤ z.re)
     (hf : LSeriesSummable f w) : LSeriesSummable f z := by
@@ -180,7 +166,7 @@ noncomputable def abscissaOfAbsConv (f : ArithmeticFunction ℂ) : EReal :=
   sInf <| Real.toEReal '' {x : ℝ | LSeriesSummable f x}
 
 /-- An open right half plane is open. -/
-lemma isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
+lemma _root_.Complex.isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
   isOpen_lt continuous_const <| EReal.continuous_coe_iff.mpr continuous_re
 
 lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
@@ -208,8 +194,8 @@ lemma abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable {f : ArithmeticFunction 
   refine sInf_le_iff.mpr fun y hy ↦ ?_
   simp only [mem_lowerBounds, Set.mem_image, Set.mem_setOf_eq, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂] at hy
-  have H (a : EReal) : x < a → y ≤ a
-  · induction' a using EReal.rec with a₀
+  have H (a : EReal) : x < a → y ≤ a := by
+    induction' a using EReal.rec with a₀
     · simp only [not_lt_bot, le_bot_iff, IsEmpty.forall_iff]
     · exact_mod_cast fun ha ↦ hy a₀ (h a₀ ha)
     · simp only [EReal.coe_lt_top, le_top, forall_true_left]
@@ -232,28 +218,27 @@ lemma LSeriesSummable.le_const_mul_rpow {f : ArithmeticFunction ℂ} {s : ℂ}
   replace h := h.norm
   by_contra! H
   obtain ⟨n, hn⟩ := H (tsum fun n ↦ ‖f n / n ^ s‖)
-  have hn₀ : 0 < n
-  · refine n.eq_zero_or_pos.resolve_left ?_
+  have hn₀ : 0 < n := by
+    refine n.eq_zero_or_pos.resolve_left ?_
     rintro rfl
     rw [map_zero, norm_zero, Nat.cast_zero, mul_neg_iff] at hn
     replace hn := hn.resolve_left <| fun hh ↦ hh.2.not_le <| Real.rpow_nonneg (le_refl 0) s.re
     exact hn.1.not_le <| tsum_nonneg (fun _ ↦ norm_nonneg _)
   have := le_tsum h n fun _ _ ↦ norm_nonneg _
-  rw [LSeriesTerm_norm_eq, div_le_iff <| Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn₀) _] at this
+  rw [Norm_lseriesterm_eq, div_le_iff <| Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn₀) _] at this
   exact (this.trans_lt hn).false.elim
 
 lemma LSeriesSummable_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x : ℝ} {s : ℂ}
     (hs : x < s.re) (h : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ (x - 1)) :
     LSeriesSummable f s := by
   obtain ⟨C, hC⟩ := h
-  have hC₀ : 0 ≤ C
-  · specialize hC 1
+  have hC₀ : 0 ≤ C := by
+    specialize hC 1
     simp only [cast_one, Real.one_rpow, mul_one] at hC
     exact (norm_nonneg _).trans hC
-  have hsum : Summable fun n : ℕ ↦ ‖(C : ℂ) / n ^ (s + (1 - x))‖
-  · simp_rw [div_eq_mul_inv, norm_mul, ← cpow_neg]
-    have hsx : -s.re + x - 1 < -1
-    · linarith only [hs]
+  have hsum : Summable fun n : ℕ ↦ ‖(C : ℂ) / n ^ (s + (1 - x))‖ := by
+    simp_rw [div_eq_mul_inv, norm_mul, ← cpow_neg]
+    have hsx : -s.re + x - 1 < -1 := by linarith only [hs]
     refine Summable.mul_left _ <|
       Summable.of_norm_bounded_eventually_nat (fun n ↦ (n : ℝ) ^ (-s.re + x - 1)) ?_ ?_
     · simp [hsx]
@@ -290,6 +275,21 @@ lemma abscissaOfAbsConv_le_of_le_const {f : ArithmeticFunction ℂ}
   · norm_num
   · simpa only [norm_eq_abs, Real.rpow_zero, mul_one] using h
 
+-- ATTN: the following needs the coercion of `log` to an airthmetic function over `ℂ`
+
+lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
+    (h : w.re < z.re) (n : ℕ) :
+    ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
+  have hwz : 0 < z.re - w.re := sub_pos.mpr h
+  rw [mul_div_assoc, norm_mul, log_apply, ofReal_log n.cast_nonneg]
+  refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_rpow_div n hwz) (norm_nonneg _)|>.trans ?_
+  rw [mul_comm_div, mul_div, div_le_div_right hwz]
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  simp_rw [norm_div, norm_natCast_cpow_of_pos hn]
+  rw [mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn, sub_sub_cancel_left,
+    Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
+
 /-- If the L-series of `f` is summable at `w` and `re w < re z`, then the L-series of the
 point-wise product of `log` with `f` is summable at `z`. -/
 lemma LSeriesSummable.log_pmul_of_re_lt_re {f : ArithmeticFunction ℂ} {w : ℂ} {z : ℂ}
@@ -322,14 +322,11 @@ lemma abscissaOfAbsConv_pmul_log {f : ArithmeticFunction ℂ} :
   refine le_antisymm ?_ ?_
   · refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
     obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_coe_real hy
-    have hx₁' : abscissaOfAbsConv f < ↑((x : ℂ).re)
-    · simp only [ofReal_re, hx₁]
-    have hx₂' : (x : ℂ).re < (y : ℂ).re
-    · simp only [ofReal_re, EReal.coe_lt_coe_iff.mp hx₂]
+    have hx₁' : abscissaOfAbsConv f < ↑((x : ℂ).re) := by simp only [ofReal_re, hx₁]
+    have hx₂' : (x : ℂ).re < (y : ℂ).re := by simp only [ofReal_re, EReal.coe_lt_coe_iff.mp hx₂]
     exact (LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁').log_pmul_of_re_lt_re hx₂'
   · refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
-    have hy' : abscissaOfAbsConv (pmul (↑log) f) < ↑((y : ℂ).re)
-    · simp only [ofReal_re, hy]
+    have hy' : abscissaOfAbsConv (pmul (↑log) f) < ↑((y : ℂ).re) := by simp only [ofReal_re, hy]
     exact (LSeriesSummable_of_abscissaOfAbsConv_lt_re hy').of_LSeriesSummable_pmul_log
 
 /-- The abscissa of absolute convergence of the point-wise product of a power of `log` and `f`
@@ -385,20 +382,20 @@ lemma LSeries.hasDerivAt {f : ArithmeticFunction ℂ} {z : ℂ} (h : abscissaOfA
   let S : Set ℂ := {s | (x + z.re) / 2 < s.re}
   have hop : IsOpen S := isOpen_lt continuous_const continuous_re
   have hpr : IsPreconnected S := (convex_halfspace_re_gt _).isPreconnected
-  have hmem : z ∈ S
-  · simp only [Set.mem_setOf_eq]
+  have hmem : z ∈ S := by
+    simp only [Set.mem_setOf_eq]
     linarith only [h']
   -- To get a uniform summable bound for the derivative series, we use that we
   -- have summability of the L-series of `pmul log f` at `(x + z)/2`.
-  have hx : (x : ℂ).re < ((x + z) / 2).re
-  · simp only [add_re, ofReal_re, div_ofNat_re, sub_re]
+  have hx : (x : ℂ).re < ((x + z) / 2).re := by
+    simp only [add_re, ofReal_re, div_ofNat_re, sub_re]
     linarith only [h']
   have hf' := hf.log_pmul_of_re_lt_re hx
   rw [LSeriesSummable, ← summable_norm_iff] at hf'
   -- Show that the terms have the correct derivative.
   have hderiv (n : ℕ) :
-      ∀ s ∈ S, HasDerivAt (fun z ↦ f n / n ^ z) (-(↑(Real.log n) * f n / n ^ s)) s
-  · exact fun s _ ↦ LSeriesTerm_hasDerivAt f n s
+      ∀ s ∈ S, HasDerivAt (fun z ↦ f n / n ^ z) (-(↑(Real.log n) * f n / n ^ s)) s := by
+    exact fun s _ ↦ LSeriesTerm_hasDerivAt f n s
   refine hasDerivAt_tsum_of_isPreconnected (F := ℂ) hf' hop hpr hderiv
     (fun n s hs ↦ ?_) hmem (hf.of_re_le_re <| ofReal_re x ▸ h'.le) hmem
   -- Show that the derivative series is uniformly bounded term-wise.
@@ -431,8 +428,8 @@ lemma LSeries_iteratedDeriv {f : ArithmeticFunction ℂ} (n : ℕ) {z : ℂ}
   induction' n with n ih generalizing z
   · simp only [zero_eq, iteratedDeriv_zero, _root_.pow_zero, ppow_zero, zeta_pmul, one_mul]
   · have ih' : {z | abscissaOfAbsConv f < z.re}.EqOn (iteratedDeriv n (LSeries f))
-        ((-1) ^ n * LSeries (pmul (ppow (↑log) n) f))
-    · exact fun _ hs ↦ ih hs
+        ((-1) ^ n * LSeries (pmul (ppow (↑log) n) f)) := by
+      exact fun _ hs ↦ ih hs
     rw [iteratedDeriv_succ]
     have := derivWithin_congr ih' (ih h)
     simp_rw [derivWithin_of_isOpen (isOpen_rightHalfPlane _) h] at this
@@ -468,8 +465,8 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
             congrArg Finset.toSet divisorsAntidiagonal_zero]
       simp only [Finset.coe_sort_coe, tsum_empty, zero_div]
     · -- the right hand sum is over the union below, but in each term, one factor is always zero
-      have hS : m ⁻¹' {0} = {0} ×ˢ univ ∪ (univ \ {0}) ×ˢ {0}
-      · ext
+      have hS : m ⁻¹' {0} = {0} ×ˢ univ ∪ (univ \ {0}) ×ˢ {0} := by
+        ext
         simp only [m, mem_preimage, mem_singleton_iff, _root_.mul_eq_zero, mem_union, mem_prod,
           mem_univ, mem_diff]
         tauto
@@ -480,8 +477,8 @@ lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ}
         tsum_setProd_singleton_left 0 _ h, tsum_setProd_singleton_right _ 0 h]
       simp only [map_zero, zero_div, zero_mul, tsum_zero, mul_zero, add_zero]
   -- now `n > 0`
-  have H : n.divisorsAntidiagonal = m ⁻¹' {n}
-  · ext x
+  have H : n.divisorsAntidiagonal = m ⁻¹' {n} := by
+    ext x
     replace hn := hn.ne' -- for `tauto` below
     simp only [Finset.mem_coe, mem_divisorsAntidiagonal, m, mem_preimage, mem_singleton_iff]
     tauto

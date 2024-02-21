@@ -12,15 +12,15 @@ namespace Real
 lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
     ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
   have : NeZero m := { out := hm }
-  suffices : ¬ Summable fun n : ℕ ↦ (1 / (m * n + k.val) : ℝ)
-  · set f : ℕ → ℝ := Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)
+  suffices this : ¬ Summable fun n : ℕ ↦ (1 / (m * n + k.val) : ℝ) by
+    set f : ℕ → ℝ := Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)
     contrapose! this
     let g : ℕ → ℕ := fun n ↦ m * n + k.val
-    have hg : Function.Injective g
-    · intro m n hmn
+    have hg : Function.Injective g := by
+      intro m n hmn
       simpa [g, hm] using hmn
-    have hg' : ∀ n ∉ Set.range g, f n = 0
-    · intro n hn
+    have hg' : ∀ n ∉ Set.range g, f n = 0 := by
+      intro n hn
       contrapose! hn
       convert Set.mem_of_indicator_ne_zero hn
       ext n
@@ -37,6 +37,14 @@ lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod 
   gcongr
   norm_cast
   linarith only [ZMod.val_le k]
+
+-- generalize ℝ?
+lemma summable_indicator_mod_iff {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
+    (hf₀ : ∀ n, 0 ≤ f n) :
+    Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} f) ↔ Summable f := by
+  refine ⟨fun H ↦ ?_, fun H ↦ Summable.indicator H _⟩
+
+  sorry
 
 end Real
 
@@ -89,8 +97,8 @@ lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : Diffe
 lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
     (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
   rw [isBigO_iff']
-  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0
-  · convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
+  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0 := by
+    convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
     · simp
     · simp [Function.comp_def, hf]
   simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
@@ -126,8 +134,8 @@ lemma comp_neg (f : 𝕜 → F) (a : 𝕜) : deriv (fun x ↦ f (-x)) a = -deriv
     change (fderiv 𝕜 (f ∘ fun x ↦ -x) a) 1 = _
     rw [fderiv.comp _ h differentiable_neg.differentiableAt, show @Neg.neg 𝕜 _ = (- ·) from rfl,
       coe_comp', Function.comp_apply, fderiv_neg, fderiv_id', neg_apply, coe_id', id_eq, map_neg]
-  · have H : ¬ DifferentiableAt 𝕜 (fun x ↦ f (-x)) a
-    · contrapose! h
+  · have H : ¬ DifferentiableAt 𝕜 (fun x ↦ f (-x)) a := by
+      contrapose! h
       rw [← neg_neg a] at h
       convert h.comp (-a) differentiable_neg.differentiableAt
       ext
@@ -145,8 +153,8 @@ lemma const_smul {f : 𝕜 → F} {x : 𝕜} {R : Type*} [Field R] [Module R F] 
   · exact deriv_const_smul c hf
   · rcases eq_or_ne c 0 with rfl | hc
     · simp only [zero_smul, deriv_const']
-    · have H : ¬DifferentiableAt 𝕜 (fun y ↦ c • f y) x
-      · contrapose! hf
+    · have H : ¬DifferentiableAt 𝕜 (fun y ↦ c • f y) x := by
+        contrapose! hf
         change DifferentiableAt 𝕜 (fun y ↦ f y) x
         conv => enter [2, y]; rw [← inv_smul_smul₀ hc (f y)]
         exact DifferentiableAt.const_smul hf c⁻¹
@@ -263,8 +271,8 @@ lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : ℝ⦄ {
     (hd : ∀ n, iteratedDeriv n f c = D n) :
     ∃ F : ℝ → ℝ, DifferentiableOn ℝ F (Set.Ioo (c - r) (c + r)) ∧
       Set.EqOn (f ∘ ofReal') (ofReal' ∘ F) (Set.Ioo (c - r) (c + r)) := by
-  have Hz : ∀ x ∈ Set.Ioo (c - r) (c + r), (x : ℂ) ∈ Metric.ball (c : ℂ) r
-  · intro x hx
+  have Hz : ∀ x ∈ Set.Ioo (c - r) (c + r), (x : ℂ) ∈ Metric.ball (c : ℂ) r := by
+    intro x hx
     refine Metric.mem_ball.mpr ?_
     rw [dist_eq, ← ofReal_sub, abs_ofReal, abs_sub_lt_iff, sub_lt_iff_lt_add', sub_lt_comm]
     exact and_comm.mpr hx
@@ -326,20 +334,20 @@ monotonic on the nonnegative real axis. -/
 theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
     (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal') (Set.Ici (0 : ℝ)) := by
   let D : ℕ → ℝ := fun n ↦ (iteratedDeriv n f 0).re
-  have hD (n : ℕ) : iteratedDeriv n f 0 = D n
-  · refine Complex.ext rfl ?_
+  have hD (n : ℕ) : iteratedDeriv n f 0 = D n := by
+    refine Complex.ext rfl ?_
     simp only [ofReal_im]
     exact (le_def.mp (h n)).2.symm
   obtain ⟨F, hFd, hF⟩ := realValued_of_iteratedDeriv_real hf hD
   rw [hF]
   refine monotone_ofReal.comp_monotoneOn <| monotoneOn_of_deriv_nonneg (convex_Ici 0)
     hFd.continuous.continuousOn hFd.differentiableOn fun x hx ↦ ?_
-  have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0
-  · rw [← iteratedDeriv_succ']
+  have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0 := by
+    rw [← iteratedDeriv_succ']
     exact h (n + 1)
   have hf' := (contDiff_succ_iff_deriv.mp <| hf.contDiff (n := 2)).2.differentiable rfl.le
-  have hx : (0 : ℂ) ≤ x
-  · norm_cast
+  have hx : (0 : ℂ) ≤ x := by
+    norm_cast
     simp only [Set.nonempty_Iio, interior_Ici', Set.mem_Ioi] at hx
     exact hx.le
   have H := nonneg_of_iteratedDeriv_nonneg hf' hD' hx
@@ -353,10 +361,10 @@ possibly the value itself) has values of the form `f 0 + nonneg. real` along the
 real axis. -/
 theorem at_zero_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
     (h : ∀ n ≠ 0, 0 ≤ iteratedDeriv n f 0) {z : ℂ} (hz : 0 ≤ z) : f 0 ≤ f z := by
-  have h' (n : ℕ) : 0 ≤ iteratedDeriv n (f · - f 0) 0
-  · cases n with
-  | zero => simp only [iteratedDeriv_zero, sub_self, le_refl]
-  | succ n =>
+  have h' (n : ℕ) : 0 ≤ iteratedDeriv n (f · - f 0) 0 := by
+    cases n with
+    | zero => simp only [iteratedDeriv_zero, sub_self, le_refl]
+    | succ n =>
       specialize h n.succ <| succ_ne_zero n
       rw [iteratedDeriv_succ'] at h ⊢
       convert h using 2

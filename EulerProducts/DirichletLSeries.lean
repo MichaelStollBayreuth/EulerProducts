@@ -100,8 +100,8 @@ lemma dirichletCharModZero_eq_one {R : Type*} [CommSemiring R] {χ : DirichletCh
   rcases eq_or_ne n 1 with rfl | hn'
   · simp only [ne_eq, one_ne_zero, not_false_eq_true, toArithmeticFunction_apply_of_ne_zero,
       cast_one, map_one, one_one]
-  have : ¬ IsUnit (n : ZMod 0)
-  · contrapose! hn'
+  have : ¬ IsUnit (n : ZMod 0) := by
+    contrapose! hn'
     exact ZMod.eq_one_of_isUnit_natCast hn'
   simp only [ne_eq, hn, not_false_eq_true, toArithmeticFunction_apply_of_ne_zero,
     MulChar.map_nonunit χ this, hn', one_apply_ne]
@@ -321,8 +321,8 @@ lemma _root_.riemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) : rieman
 /-- The L-series of the von Mangoldt function `Λ` is summable at `s` when `re s > 1`. -/
 lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable Λ s := by
   let s' : ℂ := 1 + (s.re - 1) / 2
-  have Hs : s'.re ∈ Set.Ioo 1 s.re
-  · simp only [add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
+  have Hs : s'.re ∈ Set.Ioo 1 s.re := by
+    simp only [add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
     constructor <;> linarith
   have hf := (zeta_LSeriesSummable_iff_one_lt_re.mpr Hs.1).log_pmul_of_re_lt_re Hs.2
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
@@ -337,8 +337,8 @@ lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable Λ
 /-- The L-series of the von Mangoldt function `Λ` equals the negative logarithmic derivative
 of the L-series of the arithmetic function `ζ` on its domain of convergence `re s > 1`. -/
 lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L Λ s = - deriv (L ζ) s / L ζ s := by
-  have hs' : abscissaOfAbsConv ζ < s.re
-  · rwa [abscissaOfAbsConv_zeta, ← EReal.coe_one, EReal.coe_lt_coe_iff]
+  have hs' : abscissaOfAbsConv ζ < s.re := by
+    rwa [abscissaOfAbsConv_zeta, ← EReal.coe_one, EReal.coe_lt_coe_iff]
   rw [eq_div_iff <| LSeries.zeta_ne_zero hs,
     ← LSeries_mul (LSeriesSummable_vonMangoldt hs) (zeta_LSeriesSummable_iff_one_lt_re.mpr hs),
     ← neg_eq_iff_eq_neg, LSeries_deriv hs']

@@ -30,8 +30,8 @@ local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
 lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     (hs : 1 < s.re) :
     Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
-  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re
-  · rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
+  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
+    rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
     calc ‖χ p‖ * (p : ℝ) ^ (-s).re
       _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
       _ = _ := one_mul _
@@ -44,12 +44,10 @@ is nonnegative. This is used to show non-vanishing of the Riemann zeta function 
 Dirichlet L-series on the line `re s = 1`. -/
 lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
-  have hac₀ : ‖(a : ℂ)‖ < 1
-  · simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
-  have hac₁ : ‖a * z‖ < 1
-  · rwa [norm_mul, hz, mul_one]
-  have hac₂ : ‖a * z ^ 2‖ < 1
-  · rwa [norm_mul, norm_pow, hz, one_pow, mul_one]
+  have hac₀ : ‖(a : ℂ)‖ < 1 := by
+    simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
+  have hac₁ : ‖a * z‖ < 1 := by rwa [norm_mul, hz, mul_one]
+  have hac₂ : ‖a * z ^ 2‖ < 1 := by rwa [norm_mul, norm_pow, hz, one_pow, mul_one]
   have H₀ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₀).mul_left 3
   have H₁ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₁).mul_left 4
   have H₂ := hasSum_re <| hasSum_taylorSeries_neg_log hac₂
@@ -75,12 +73,12 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
   by_cases hn' : IsUnit (n : ZMod N)
   · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg n.cast_nonneg _
-    have ha₁ : (n : ℝ) ^ (-x) < 1
-    · simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
+    have ha₁ : (n : ℝ) ^ (-x) < 1 := by
+      simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
         Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff]
         using Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
-    have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1
-    · rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
+    have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1 := by
+      rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
       simp [hy]
     rw [MulChar.one_apply hn', one_mul]
@@ -115,8 +113,8 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
       L (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   let χ₀ := (1 : DirichletCharacter ℂ N)
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
-  have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re -- kills three goals of the `convert` below
-  · simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
+  have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
+    simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
     (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ₀ h₀).hasSum).summable.mul_left 3
   have hsum₁ :=
@@ -150,19 +148,19 @@ lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ
         ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹ := by
   letI ε : DirichletCharacter ℂ N := 1
   rw [mul_comm]
-  have hd : Disjoint N.primeFactors (n.primesBelow.filter (· ∉ N.primeFactors))
-  · convert disjoint_filter_filter_neg N.primeFactors n.primesBelow (· ∈ N.primeFactors)
+  have hd : Disjoint N.primeFactors (n.primesBelow.filter (· ∉ N.primeFactors)) := by
+    convert disjoint_filter_filter_neg N.primeFactors n.primesBelow (· ∈ N.primeFactors)
     rw [filter_mem_eq_inter, inter_self]
-  have hdeq : disjUnion _ _ hd = primesBelow n
-  · simp only [disjUnion_eq_union]
+  have hdeq : disjUnion _ _ hd = primesBelow n := by
+    simp only [disjUnion_eq_union]
     ext p
     simp only [mem_union, mem_filter]
     refine ⟨fun H' ↦ H'.elim (fun H ↦ ?_) fun H ↦ H.1, fun _ ↦ by tauto⟩
     exact mem_primesBelow.mpr ⟨(le_of_mem_primeFactors H).trans_lt hn, prime_of_mem_primeFactors H⟩
   have H₁ := hdeq ▸ prod_disjUnion (f := fun p : ℕ ↦ (1 - ε p * (p : ℂ) ^ (-s))⁻¹) hd
   have H₂ := hdeq ▸ prod_disjUnion (f := fun p : ℕ ↦ (1 - (p : ℂ) ^ (-s))⁻¹) hd
-  have H₃ : ∏ p in N.primeFactors, (1 - ε p * (p : ℂ) ^ (-s))⁻¹ = 1
-  · refine prod_eq_one fun p hp ↦ ?_
+  have H₃ : ∏ p in N.primeFactors, (1 - ε p * (p : ℂ) ^ (-s))⁻¹ = 1 := by
+    refine prod_eq_one fun p hp ↦ ?_
     rw [MulChar.map_nonunit _ <| not_isUnit_of_mem_primeFactors hp, zero_mul, sub_zero, inv_one]
   rw [H₁, H₂, H₃, one_mul, ← mul_assoc, ← prod_mul_distrib]; clear H₁ H₂ H₃
   conv => enter [2]; rw [← one_mul (∏ p in (n.primesBelow.filter _), _)]
@@ -181,8 +179,9 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
   have HL := dirichletLSeries_eulerProduct (1 : DirichletCharacter ℂ N) hs
   have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) *
     (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))) =ᶠ[Filter.atTop]
-    (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹)
-  · refine Filter.eventuallyEq_of_mem (s := {n | N < n}) ?_
+      (fun n : ℕ ↦ ∏ p in primesBelow n,
+        (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹) := by
+    refine Filter.eventuallyEq_of_mem (s := {n | N < n}) ?_
       fun _ ↦ prod_primesBelow_mul_eq_prod_primesBelow hN hs
     simp only [Filter.mem_atTop_sets, Set.mem_setOf_eq]
     exact ⟨N + 1, fun _ hm ↦ hm⟩
@@ -204,9 +203,9 @@ open Filter Topology Homeomorph Asymptotics
 
 lemma riemannZeta_isBigO_near_one_horizontal :
     (fun x : ℝ ↦ ζ (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
-  have : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·)
-  · have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1)
-    · convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1
+  have : (fun w : ℂ ↦ ζ (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
+    have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1) := by
+      convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1
       · ext w
         simp only [Function.comp_apply, add_sub_cancel']
       · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
@@ -234,12 +233,12 @@ lemma riemannZeta_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0) (h : ζ (
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
   refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero_of_one_lt_re
   -- We assume that `ζ z = 0` and `z.re = 1` and derive a contradiction.
-  have hz₀ : z.im ≠ 0
-  · rw [← re_add_im z, ← h, ofReal_one] at hz
+  have hz₀ : z.im ≠ 0 := by
+    rw [← re_add_im z, ← h, ofReal_one] at hz
     simpa only [ne_eq, add_right_eq_self, mul_eq_zero, ofReal_eq_zero, I_ne_zero, or_false]
       using hz
-  have hzeq : z = 1 + I * z.im
-  · rw [mul_comm I, ← re_add_im z, ← h]
+  have hzeq : z = 1 + I * z.im := by
+    rw [mul_comm I, ← re_add_im z, ← h]
     push_cast
     simp only [add_im, one_im, mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero,
       add_zero, zero_add]
@@ -252,8 +251,8 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
   have H := (riemannZeta_isBigO_near_one_horizontal.pow 3).mul
     ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ Hz)).pow 4)|>.mul <|
     riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
-  have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x
-  · rcases eq_or_ne x 0 with rfl | h
+  have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
+    rcases eq_or_ne x 0 with rfl | h
     · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
     · field_simp [h]
       rfl
@@ -301,8 +300,8 @@ lemma ζ₁_differentiable : Differentiable ℂ ζ₁ := by
 
 lemma deriv_ζ₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
     deriv ζ₁ z = deriv ζ z * (z - 1) + ζ z := by
-  have H : deriv ζ₁ z = deriv (fun w ↦ ζ w * (w - 1)) z
-  · refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
+  have H : deriv ζ₁ z = deriv (fun w ↦ ζ w * (w - 1)) z := by
+    refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
     simp only [ζ₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true, Function.update_noteq]
   rw [H, deriv_mul (differentiableAt_riemannZeta hz) <| differentiableAt_id'.sub <|
@@ -337,8 +336,8 @@ theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
     Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (nhds 1) := by
   have hnv := riemannZeta_ne_zero_of_one_le_re
   refine WIT (F := fun z ↦ -deriv ζ₁ z / ζ₁ z) (fun _ ↦ vonMangoldt_nonneg) (fun s hs ↦ ?_) ?_
-  · have hs₁ : s ≠ 1
-    · rintro rfl
+  · have hs₁ : s ≠ 1 := by
+      rintro rfl
       simp at hs
     simp only [ne_eq, hs₁, not_false_eq_true, LSeries_vonMangoldt_eq_deriv_riemannZeta_div hs,
       ofReal_one]
