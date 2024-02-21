@@ -38,13 +38,82 @@ lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod 
   norm_cast
   linarith only [ZMod.val_le k]
 
--- generalize ℝ?
-lemma summable_indicator_mod_iff {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
-    (hf₀ : ∀ n, 0 ≤ f n) :
-    Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} f) ↔ Summable f := by
-  refine ⟨fun H ↦ ?_, fun H ↦ Summable.indicator H _⟩
+open BigOperators in
+lemma sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero m] (f : ℕ → β) :
+    f = ∑ a : ZMod m, {n : ℕ | (n : ZMod m) = a}.indicator f := by
+  ext n
+  simp only [Finset.sum_apply, Set.indicator_apply, Set.mem_setOf_eq, Finset.sum_ite_eq,
+    Finset.mem_univ, ↓reduceIte]
+
+lemma summable_indicator_mod_iff_summable {m : ℕ} (hm : m ≠ 0) (k : ℕ) {f : ℕ → ℝ} :
+    Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable fun n ↦ f (m * n + k) := by
+  have H : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔
+      Summable ({n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f) := by
+    rw [← (Set.finite_lt_nat k).summable_compl_iff (f := {n : ℕ | (n : ZMod m) = k}.indicator f),
+      summable_subtype_iff_indicator, Set.indicator_indicator, Set.inter_comm, Set.setOf_and,
+      Set.compl_setOf]
+    simp only [not_lt]
+  rw [H]
+  let g : ℕ → ℕ := fun n ↦ m * n + k
+  have hg : Function.Injective g := by
+    intro m n hmn
+    simpa [g, hm] using hmn
+  have hg' : ∀ n ∉ Set.range g, {n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f n = 0 := by
+    intro n hn
+    contrapose! hn
+    convert Set.mem_of_indicator_ne_zero hn
+    ext n
+    simp only [Set.mem_range, Set.mem_setOf_eq, ZMod.nat_coe_zmod_eq_iff]
+    conv => enter [1, 1, y]; rw [add_comm, eq_comm]
+    refine ⟨fun H ↦ ?_, fun ⟨H₁, H₂⟩ ↦ ?_⟩
+    · obtain ⟨a, ha⟩ := H
+      refine ⟨?_, le_iff_exists_add.mpr ⟨_, ha⟩⟩
+      simpa using congr_arg ((↑) : ℕ → ZMod m) ha
+    · obtain ⟨a, ha⟩ := le_iff_exists_add.mp H₂
+      simp only [ha, Nat.cast_add, add_right_eq_self, ZMod.nat_cast_zmod_eq_zero_iff_dvd] at H₁
+      obtain ⟨b, rfl⟩ := H₁
+      use b
+  convert (Function.Injective.summable_iff hg hg').symm using 3 with n
+  simp only [Function.comp_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero,
+    zero_mul, zero_add, le_add_iff_nonneg_left, zero_le, and_self, Set.indicator_of_mem]
+
+lemma summable_indicator_mod_iff_succ {m : ℕ} (hm : m ≠ 0) (k : ℕ) {f : ℕ → ℝ}
+    (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n) :
+    Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔
+      Summable ({n : ℕ | (n : ZMod m) = k + 1}.indicator f) := by
 
   sorry
+
+lemma summable_indictator_zero_mod {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
+    (hf₀ : ∀ n, 0 ≤ f n) (hs : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f)) :
+    Summable ({n : ℕ | (n : ZMod m) = 0}.indicator f) := by
+  sorry
+
+lemma summable_indicator_mod_iff_summable_indicator_mod {m : ℕ} (hm : m ≠ 0) {k : ZMod m}
+    (l : ZMod m) {f : ℕ → ℝ} (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n)
+    (hs : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f)) :
+    Summable ({n : ℕ | (n : ZMod m) = l}.indicator f) := by
+  have H := summable_indictator_zero_mod hm k hf hf₀ hs
+  have H' (l' : ℕ) : Summable ({n : ℕ | (n : ZMod m) = l'}.indicator f) := by
+    induction' l' with l' ih
+    · exact_mod_cast H
+    · exact_mod_cast (summable_indicator_mod_iff_succ hm l' hf hf₀).mp ih
+  convert H' l.val
+  have _ : NeZero m := ⟨hm⟩
+  exact (ZMod.nat_cast_zmod_val l).symm
+
+-- generalize ℝ?
+open BigOperators in
+lemma summable_indicator_mod_iff {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
+    (hf₀ : ∀ n, 0 ≤ f n) :
+    Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable f := by
+  refine ⟨fun H ↦ ?_, fun H ↦ Summable.indicator H _⟩
+  suffices key : ∀ a : ZMod m, Summable ({n : ℕ | (n :ZMod m) = a}.indicator f) by
+    have _ : NeZero m := ⟨hm⟩
+    rw [sum_indicator_mod m f]
+    convert summable_sum (s := Finset.univ) fun a _ ↦ key a
+    simp only [Finset.sum_apply]
+  exact fun a ↦ summable_indicator_mod_iff_summable_indicator_mod hm a hf hf₀ H
 
 end Real
 
