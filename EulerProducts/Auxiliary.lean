@@ -86,11 +86,8 @@ lemma Real.not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : 
       if (n : ZMod m) = k - 1 then (1 / (n + 1) : ℝ) else (0 : ℝ) := by
     simp only [Set.indicator_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_one]
   simp only [← h]
-  rw [summable_indicator_mod_iff m (fun n₁ n₂ h ↦ ?hf) (fun n ↦ by positivity) (k - 1)]
+  rw [summable_indicator_mod_iff m (fun n₁ n₂ h ↦ by gcongr) (fun n ↦ by positivity) (k - 1)]
   exact mt (summable_nat_add_iff (f := fun n : ℕ ↦ 1 / (n : ℝ)) 1).mp not_summable_one_div_nat_cast
-  case hf =>
-    simp only [Nat.cast_add, Nat.cast_one]
-    rw [one_div_le_one_div] <;> norm_cast <;> linarith
 
 -- not really needed here
 
