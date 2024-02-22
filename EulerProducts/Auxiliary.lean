@@ -6,53 +6,54 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 ### Auxiliary lemmas
 -/
 
-namespace Real
-
 open BigOperators in
-lemma sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero m] (f : ℕ → β) :
+lemma Finset.sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero m] (f : ℕ → β) :
     f = ∑ a : ZMod m, {n : ℕ | (n : ZMod m) = a}.indicator f := by
   ext n
   simp only [Finset.sum_apply, Set.indicator_apply, Set.mem_setOf_eq, Finset.sum_ite_eq,
     Finset.mem_univ, ↓reduceIte]
 
-lemma range_mul_add (m k : ℕ) :
+lemma Nat.range_mul_add (m k : ℕ) :
     Set.range (fun n : ℕ ↦ m * n + k) = {n : ℕ | (n : ZMod m) = k ∧ k ≤ n} := by
   ext n
   simp only [Set.mem_range, Set.mem_setOf_eq]
   conv => enter [1, 1, y]; rw [add_comm, eq_comm]
-  refine ⟨fun H ↦ ?_, fun ⟨H₁, H₂⟩ ↦ ?_⟩
-  · obtain ⟨a, ha⟩ := H
-    refine ⟨?_, le_iff_exists_add.mpr ⟨_, ha⟩⟩
-    simpa using congr_arg ((↑) : ℕ → ZMod m) ha
+  refine ⟨fun ⟨a, ha⟩ ↦ ⟨?_, le_iff_exists_add.mpr ⟨_, ha⟩⟩, fun ⟨H₁, H₂⟩ ↦ ?_⟩
+  · simpa using congr_arg ((↑) : ℕ → ZMod m) ha
   · obtain ⟨a, ha⟩ := le_iff_exists_add.mp H₂
     simp only [ha, Nat.cast_add, add_right_eq_self, ZMod.nat_cast_zmod_eq_zero_iff_dvd] at H₁
     obtain ⟨b, rfl⟩ := H₁
-    use b
+    exact ⟨b, ha⟩
 
-lemma summable_indicator_mod_iff_summable (m : ℕ) [hm : NeZero m] (k : ℕ) {f : ℕ → ℝ} :
+section summable_indicator
+
+variable (m : ℕ) [hm: NeZero m]
+
+open Set in
+/-- A sequence `f` with values in an additive topological group `R` is summable on the
+residue class of `k` mod `m` if and only if `f (m*n + k)` is summable. -/
+lemma summable_indicator_mod_iff_summable {R : Type*} [AddCommGroup R] [TopologicalSpace R]
+    [TopologicalAddGroup R] (k : ℕ) (f : ℕ → R) :
     Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable fun n ↦ f (m * n + k) := by
-  have H : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔
-      Summable ({n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f) := by
-    rw [← (Set.finite_lt_nat k).summable_compl_iff (f := {n : ℕ | (n : ZMod m) = k}.indicator f),
-      summable_subtype_iff_indicator, Set.indicator_indicator, Set.inter_comm, Set.setOf_and,
-      Set.compl_setOf]
-    simp only [not_lt]
-  rw [H]
-  let g : ℕ → ℕ := fun n ↦ m * n + k
-  have hg : Function.Injective g := by
-    intro m n hmn
-    simpa [g, hm.ne] using hmn
-  have hg' : ∀ n ∉ Set.range g, {n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f n = 0 := by
-    intro n hn
-    contrapose! hn
-    convert Set.mem_of_indicator_ne_zero hn
-    exact range_mul_add m k
-  convert (Function.Injective.summable_iff hg hg').symm using 3 with n
-  simp only [Function.comp_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero,
-    zero_mul, zero_add, le_add_iff_nonneg_left, zero_le, and_self, Set.indicator_of_mem]
+  trans Summable ({n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f)
+  · rw [← (finite_lt_nat k).summable_compl_iff (f := {n : ℕ | (n : ZMod m) = k}.indicator f)]
+    simp only [summable_subtype_iff_indicator, indicator_indicator, inter_comm, setOf_and, compl_setOf,
+      not_lt]
+  · let g : ℕ → ℕ := fun n ↦ m * n + k
+    have hg : Function.Injective g := fun m n hmn ↦ by simpa [hm.ne] using hmn
+    have hg' : ∀ n ∉ range g, {n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f n = 0 := by
+      intro n hn
+      contrapose! hn
+      exact (Nat.range_mul_add m k).symm ▸ mem_of_indicator_ne_zero hn
+    convert (Function.Injective.summable_iff hg hg').symm using 3
+    simp only [Function.comp_apply, mem_setOf_eq, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero,
+      zero_mul, zero_add, le_add_iff_nonneg_left, zero_le, and_self, indicator_of_mem]
 
-lemma summable_indicator_mod_iff_summable_indicator_mod (m : ℕ) [NeZero m] {k : ZMod m}
-    (l : ZMod m) {f : ℕ → ℝ} (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n)
+variable {f : ℕ → ℝ} (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n)
+
+/-- If a decreasing nonngeative sequence of real numbers is summable on one residue class
+modulo `m`, then it is also summable on every other residue class mod `m`. -/
+lemma summable_indicator_mod_iff_summable_indicator_mod {k : ZMod m} (l : ZMod m)
     (hs : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f)) :
     Summable ({n : ℕ | (n : ZMod m) = l}.indicator f) := by
   rw [← ZMod.nat_cast_zmod_val k, summable_indicator_mod_iff_summable] at hs
@@ -62,34 +63,34 @@ lemma summable_indicator_mod_iff_summable_indicator_mod (m : ℕ) [NeZero m] {k 
   refine Summable.of_nonneg_of_le (fun n ↦ hf₀ _) (fun n ↦ hf <| Nat.add_le_add Nat.le.refl ?_) hs
   exact ((ZMod.val_lt k).trans_le <| m.le_add_left (ZMod.val l)).le
 
--- generalize ℝ?
-open BigOperators in
-lemma summable_indicator_mod_iff (m : ℕ) [NeZero m] (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
-    (hf₀ : ∀ n, 0 ≤ f n) :
+/-- A decreasing nonnegative sequence of real numbers is summable on a residue class
+if and only if it is summable. -/
+lemma summable_indicator_mod_iff (k : ZMod m) :
     Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable f := by
   refine ⟨fun H ↦ ?_, fun H ↦ Summable.indicator H _⟩
-  suffices key : ∀ a : ZMod m, Summable ({n : ℕ | (n :ZMod m) = a}.indicator f) by
-    rw [sum_indicator_mod m f]
-    convert summable_sum (s := Finset.univ) fun a _ ↦ key a
-    simp only [Finset.sum_apply]
-  exact fun a ↦ summable_indicator_mod_iff_summable_indicator_mod m a hf hf₀ H
+  have key (a : ZMod m) : Summable ({n : ℕ | (n :ZMod m) = a}.indicator f) :=
+    summable_indicator_mod_iff_summable_indicator_mod m hf hf₀ a H
+  rw [Finset.sum_indicator_mod m f]
+  convert summable_sum (s := Finset.univ) fun a _ ↦ key a
+  simp only [Finset.sum_apply]
 
-lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
-    ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
-  have : NeZero m := { out := hm }
-  rw [← summable_nat_add_iff 1]
+end summable_indicator
+
+/-- The harmonic series restricted to a residue class is not summable. -/
+lemma Real.not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
+    ¬ Summable ({n : ℕ | (n : ZMod m) = k}.indicator fun n : ℕ ↦ (1 / n : ℝ)) := by
+  have : NeZero m := ⟨hm⟩ -- instance is needed below
+  rw [← summable_nat_add_iff 1] -- shift by one to avoid non-monotonicity at zero
   simp only [Set.indicator_apply, Set.mem_setOf, Nat.cast_add, Nat.cast_one, ← eq_sub_iff_add_eq]
-  have h (n : ℕ) : Set.indicator {n : ℕ | (n : ZMod m) = k - 1} (fun n : ℕ ↦ (1 / (n + 1 :) : ℝ)) n =
+  have h (n : ℕ) : {n : ℕ | (n : ZMod m) = k - 1}.indicator (fun n : ℕ ↦ (1 / (n + 1 :) : ℝ)) n =
       if (n : ZMod m) = k - 1 then (1 / (n + 1) : ℝ) else (0 : ℝ) := by
     simp only [Set.indicator_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_one]
   simp only [← h]
-  rw [summable_indicator_mod_iff m (k - 1) (fun n₁ n₂ h ↦ ?hf) (fun n ↦ by positivity)]
+  rw [summable_indicator_mod_iff m (fun n₁ n₂ h ↦ ?hf) (fun n ↦ by positivity) (k - 1)]
   exact mt (summable_nat_add_iff (f := fun n : ℕ ↦ 1 / (n : ℝ)) 1).mp not_summable_one_div_nat_cast
   case hf =>
     simp only [Nat.cast_add, Nat.cast_one]
     rw [one_div_le_one_div] <;> norm_cast <;> linarith
-
-end Real
 
 -- not really needed here
 
