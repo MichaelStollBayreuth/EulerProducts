@@ -8,36 +8,6 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 
 namespace Real
 
--- This can be generalized to series of decreasing nonnegative terms
-lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
-    ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
-  have : NeZero m := { out := hm }
-  suffices this : ¬ Summable fun n : ℕ ↦ (1 / (m * n + k.val) : ℝ) by
-    set f : ℕ → ℝ := Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)
-    contrapose! this
-    let g : ℕ → ℕ := fun n ↦ m * n + k.val
-    have hg : Function.Injective g := by
-      intro m n hmn
-      simpa [g, hm] using hmn
-    have hg' : ∀ n ∉ Set.range g, f n = 0 := by
-      intro n hn
-      contrapose! hn
-      convert Set.mem_of_indicator_ne_zero hn
-      ext n
-      simp only [Set.mem_range, Set.mem_setOf_eq, ZMod.nat_coe_zmod_eq_iff]
-      conv => enter [1, 1, y]; rw [add_comm, eq_comm]
-    convert (Function.Injective.summable_iff hg hg').mpr this with n
-    simp [g]
-  by_contra! h
-  refine not_summable_one_div_nat_cast <| (summable_nat_add_iff 2).mp <|
-    (summable_mul_left_iff (one_div_ne_zero <| Nat.cast_ne_zero.mpr hm)).mp <|
-    Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_) <| (summable_nat_add_iff 1).mpr h
-  field_simp
-  rw [← ZMod.nat_cast_val k]
-  gcongr
-  norm_cast
-  linarith only [ZMod.val_le k]
-
 open BigOperators in
 lemma sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero m] (f : ℕ → β) :
     f = ∑ a : ZMod m, {n : ℕ | (n : ZMod m) = a}.indicator f := by
@@ -45,7 +15,21 @@ lemma sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero m] (f 
   simp only [Finset.sum_apply, Set.indicator_apply, Set.mem_setOf_eq, Finset.sum_ite_eq,
     Finset.mem_univ, ↓reduceIte]
 
-lemma summable_indicator_mod_iff_summable {m : ℕ} (hm : m ≠ 0) (k : ℕ) {f : ℕ → ℝ} :
+lemma range_mul_add (m k : ℕ) :
+    Set.range (fun n : ℕ ↦ m * n + k) = {n : ℕ | (n : ZMod m) = k ∧ k ≤ n} := by
+  ext n
+  simp only [Set.mem_range, Set.mem_setOf_eq]
+  conv => enter [1, 1, y]; rw [add_comm, eq_comm]
+  refine ⟨fun H ↦ ?_, fun ⟨H₁, H₂⟩ ↦ ?_⟩
+  · obtain ⟨a, ha⟩ := H
+    refine ⟨?_, le_iff_exists_add.mpr ⟨_, ha⟩⟩
+    simpa using congr_arg ((↑) : ℕ → ZMod m) ha
+  · obtain ⟨a, ha⟩ := le_iff_exists_add.mp H₂
+    simp only [ha, Nat.cast_add, add_right_eq_self, ZMod.nat_cast_zmod_eq_zero_iff_dvd] at H₁
+    obtain ⟨b, rfl⟩ := H₁
+    use b
+
+lemma summable_indicator_mod_iff_summable (m : ℕ) [hm : NeZero m] (k : ℕ) {f : ℕ → ℝ} :
     Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable fun n ↦ f (m * n + k) := by
   have H : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔
       Summable ({n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f) := by
@@ -57,63 +41,53 @@ lemma summable_indicator_mod_iff_summable {m : ℕ} (hm : m ≠ 0) (k : ℕ) {f 
   let g : ℕ → ℕ := fun n ↦ m * n + k
   have hg : Function.Injective g := by
     intro m n hmn
-    simpa [g, hm] using hmn
+    simpa [g, hm.ne] using hmn
   have hg' : ∀ n ∉ Set.range g, {n : ℕ | (n : ZMod m) = k ∧ k ≤ n}.indicator f n = 0 := by
     intro n hn
     contrapose! hn
     convert Set.mem_of_indicator_ne_zero hn
-    ext n
-    simp only [Set.mem_range, Set.mem_setOf_eq, ZMod.nat_coe_zmod_eq_iff]
-    conv => enter [1, 1, y]; rw [add_comm, eq_comm]
-    refine ⟨fun H ↦ ?_, fun ⟨H₁, H₂⟩ ↦ ?_⟩
-    · obtain ⟨a, ha⟩ := H
-      refine ⟨?_, le_iff_exists_add.mpr ⟨_, ha⟩⟩
-      simpa using congr_arg ((↑) : ℕ → ZMod m) ha
-    · obtain ⟨a, ha⟩ := le_iff_exists_add.mp H₂
-      simp only [ha, Nat.cast_add, add_right_eq_self, ZMod.nat_cast_zmod_eq_zero_iff_dvd] at H₁
-      obtain ⟨b, rfl⟩ := H₁
-      use b
+    exact range_mul_add m k
   convert (Function.Injective.summable_iff hg hg').symm using 3 with n
   simp only [Function.comp_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero,
     zero_mul, zero_add, le_add_iff_nonneg_left, zero_le, and_self, Set.indicator_of_mem]
 
-lemma summable_indicator_mod_iff_succ {m : ℕ} (hm : m ≠ 0) (k : ℕ) {f : ℕ → ℝ}
-    (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n) :
-    Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔
-      Summable ({n : ℕ | (n : ZMod m) = k + 1}.indicator f) := by
-
-  sorry
-
-lemma summable_indictator_zero_mod {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
-    (hf₀ : ∀ n, 0 ≤ f n) (hs : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f)) :
-    Summable ({n : ℕ | (n : ZMod m) = 0}.indicator f) := by
-  sorry
-
-lemma summable_indicator_mod_iff_summable_indicator_mod {m : ℕ} (hm : m ≠ 0) {k : ZMod m}
+lemma summable_indicator_mod_iff_summable_indicator_mod (m : ℕ) [NeZero m] {k : ZMod m}
     (l : ZMod m) {f : ℕ → ℝ} (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n)
     (hs : Summable ({n : ℕ | (n : ZMod m) = k}.indicator f)) :
     Summable ({n : ℕ | (n : ZMod m) = l}.indicator f) := by
-  have H := summable_indictator_zero_mod hm k hf hf₀ hs
-  have H' (l' : ℕ) : Summable ({n : ℕ | (n : ZMod m) = l'}.indicator f) := by
-    induction' l' with l' ih
-    · exact_mod_cast H
-    · exact_mod_cast (summable_indicator_mod_iff_succ hm l' hf hf₀).mp ih
-  convert H' l.val
-  have _ : NeZero m := ⟨hm⟩
-  exact (ZMod.nat_cast_zmod_val l).symm
+  rw [← ZMod.nat_cast_zmod_val k, summable_indicator_mod_iff_summable] at hs
+  have hl : (l.val + m : ZMod m) = l := by
+    simp only [ZMod.nat_cast_val, ZMod.cast_id', id_eq, CharP.cast_eq_zero, add_zero]
+  rw [← hl, ← Nat.cast_add, summable_indicator_mod_iff_summable]
+  refine Summable.of_nonneg_of_le (fun n ↦ hf₀ _) (fun n ↦ hf <| Nat.add_le_add Nat.le.refl ?_) hs
+  exact ((ZMod.val_lt k).trans_le <| m.le_add_left (ZMod.val l)).le
 
 -- generalize ℝ?
 open BigOperators in
-lemma summable_indicator_mod_iff {m : ℕ} (hm : m ≠ 0) (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
+lemma summable_indicator_mod_iff (m : ℕ) [NeZero m] (k : ZMod m) {f : ℕ → ℝ} (hf : Antitone f)
     (hf₀ : ∀ n, 0 ≤ f n) :
     Summable ({n : ℕ | (n : ZMod m) = k}.indicator f) ↔ Summable f := by
   refine ⟨fun H ↦ ?_, fun H ↦ Summable.indicator H _⟩
   suffices key : ∀ a : ZMod m, Summable ({n : ℕ | (n :ZMod m) = a}.indicator f) by
-    have _ : NeZero m := ⟨hm⟩
     rw [sum_indicator_mod m f]
     convert summable_sum (s := Finset.univ) fun a _ ↦ key a
     simp only [Finset.sum_apply]
-  exact fun a ↦ summable_indicator_mod_iff_summable_indicator_mod hm a hf hf₀ H
+  exact fun a ↦ summable_indicator_mod_iff_summable_indicator_mod m a hf hf₀ H
+
+lemma not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
+    ¬ Summable (Set.indicator {n : ℕ | (n : ZMod m) = k} fun n : ℕ ↦ (1 / n : ℝ)) := by
+  have : NeZero m := { out := hm }
+  rw [← summable_nat_add_iff 1]
+  simp only [Set.indicator_apply, Set.mem_setOf, Nat.cast_add, Nat.cast_one, ← eq_sub_iff_add_eq]
+  have h (n : ℕ) : Set.indicator {n : ℕ | (n : ZMod m) = k - 1} (fun n : ℕ ↦ (1 / (n + 1 :) : ℝ)) n =
+      if (n : ZMod m) = k - 1 then (1 / (n + 1) : ℝ) else (0 : ℝ) := by
+    simp only [Set.indicator_apply, Set.mem_setOf_eq, Nat.cast_add, Nat.cast_one]
+  simp only [← h]
+  rw [summable_indicator_mod_iff m (k - 1) (fun n₁ n₂ h ↦ ?hf) (fun n ↦ by positivity)]
+  exact mt (summable_nat_add_iff (f := fun n : ℕ ↦ 1 / (n : ℝ)) 1).mp not_summable_one_div_nat_cast
+  case hf =>
+    simp only [Nat.cast_add, Nat.cast_one]
+    rw [one_div_le_one_div] <;> norm_cast <;> linarith
 
 end Real
 
