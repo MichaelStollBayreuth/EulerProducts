@@ -13,6 +13,13 @@ lemma Finset.sum_indicator_mod {β : Type*} [AddCommMonoid β] (m : ℕ) [NeZero
   simp only [Finset.sum_apply, Set.indicator_apply, Set.mem_setOf_eq, Finset.sum_ite_eq,
     Finset.mem_univ, ↓reduceIte]
 
+-- #find_home! Finset.sum_indicator_mod
+-- [Mathlib.Algebra.MonoidAlgebra.Support,
+--  Mathlib.LinearAlgebra.Alternating.Basic,
+--  Mathlib.Algebra.Group.UniqueProds,
+--  Mathlib.Topology.Algebra.Group.Basic,
+--  Mathlib.Algebra.Algebra.Operations]
+
 lemma Nat.range_mul_add (m k : ℕ) :
     Set.range (fun n : ℕ ↦ m * n + k) = {n : ℕ | (n : ZMod m) = k ∧ k ≤ n} := by
   ext n
@@ -24,6 +31,8 @@ lemma Nat.range_mul_add (m k : ℕ) :
     simp only [ha, Nat.cast_add, add_right_eq_self, ZMod.nat_cast_zmod_eq_zero_iff_dvd] at H₁
     obtain ⟨b, rfl⟩ := H₁
     exact ⟨b, ha⟩
+
+-- #find_home! Nat.range_mul_add -- [Mathlib.Data.ZMod.Basic]
 
 section summable_indicator
 
@@ -48,6 +57,13 @@ lemma summable_indicator_mod_iff_summable {R : Type*} [AddCommGroup R] [Topologi
     convert (Function.Injective.summable_iff hg hg').symm using 3
     simp only [Function.comp_apply, mem_setOf_eq, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero,
       zero_mul, zero_add, le_add_iff_nonneg_left, zero_le, and_self, indicator_of_mem]
+
+-- #find_home! summable_indicator_mod_iff_summable
+-- [Mathlib.Topology.Instances.Matrix,
+--  Mathlib.Topology.Algebra.Module.FiniteDimension,
+--  Mathlib.Analysis.Convex.Normed,
+--  Mathlib.Analysis.Normed.Group.AddCircle,
+--  Mathlib.Data.Complex.Module]
 
 variable {f : ℕ → ℝ} (hf : Antitone f) (hf₀ : ∀ n, 0 ≤ f n)
 
@@ -88,6 +104,7 @@ lemma Real.not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : 
   simp_rw [indicator_apply, mem_setOf, cast_add, cast_one, ← eq_sub_iff_add_eq, ← h]
   rw [summable_indicator_mod_iff m (fun n₁ n₂ h ↦ by gcongr) (fun n ↦ by positivity) (k - 1)]
   exact mt (summable_nat_add_iff (f := fun n : ℕ ↦ 1 / (n : ℝ)) 1).mp not_summable_one_div_nat_cast
+
 
 -- not really needed here
 

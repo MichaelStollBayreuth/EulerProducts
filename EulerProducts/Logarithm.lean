@@ -105,7 +105,7 @@ lemma Summable.neg_log_one_sub {α  : Type*} {f : α → ℂ} (hsum : Summable f
       by simp only [sub_zero, one_mem_slitPlane]
   have : g =O[𝓝 0] id := by
     have H := DifferentiableAt.isBigO_sub hg
-    simp at H
+    simp only [sub_zero, log_one, neg_zero] at H
     exact H
   exact Asymptotics.IsBigO.comp_summable this hsum
 
