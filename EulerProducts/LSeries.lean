@@ -1,4 +1,5 @@
 import Mathlib.NumberTheory.LSeries.Basic
+import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.VonMangoldt
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Convex.Complex
@@ -121,161 +122,11 @@ end nat_int_real
 ### Convergence of L-series
 -/
 
-lemma Norm_lseriesterm_eq (f : ArithmeticFunction ℂ) (s : ℂ) (n : ℕ) :
-    ‖f n / n ^ s‖ = ‖f n‖ / n ^ s.re := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp only [map_zero, zero_div, norm_zero, zero_mul]
-  rw [norm_div, norm_natCast_cpow_of_pos hn]
-
-/-- This states that the L-series of the arithmetic function `f` converges at `s` to `a`. -/
-def LSeriesHasSum (f : ArithmeticFunction ℂ) (s a : ℂ) : Prop :=
-  HasSum (fun (n : ℕ) => f n / n ^ s) a
-
-lemma LSeriesHasSum.LSeriesSummable {f : ArithmeticFunction ℂ} {s a : ℂ}
-    (h : LSeriesHasSum f s a) : LSeriesSummable f s :=
-  h.summable
-
-lemma LSeriesHasSum.LSeries_eq {f : ArithmeticFunction ℂ} {s a : ℂ}
-    (h : LSeriesHasSum f s a) : LSeries f s = a :=
-  h.tsum_eq
-
-lemma LSeriesSummable.LSeriesHasSum {f : ArithmeticFunction ℂ} {s : ℂ} (h : LSeriesSummable f s) :
-    LSeriesHasSum f s (LSeries f s) :=
-  h.hasSum
-
-lemma norm_LSeriesTerm_le_of_re_le_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
-    (h : w.re ≤ z.re) (n : ℕ) : ‖f n / n ^ z‖ ≤ ‖f n / n ^ w‖ := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  have hn' := norm_natCast_cpow_pos_of_pos hn w
-  simp_rw [norm_div]
-  suffices this : ‖(n : ℂ) ^ w‖ ≤ ‖(n : ℂ) ^ z‖ from div_le_div (norm_nonneg _) le_rfl hn' this
-  refine (one_le_div hn').mp ?_
-  rw [← norm_div, ← cpow_sub _ _ <| Nat.cast_ne_zero.mpr hn.ne', norm_natCast_cpow_of_pos hn]
-  exact Real.one_le_rpow (one_le_cast.mpr hn) <| by simp only [sub_re, sub_nonneg, h]
-
-lemma LSeriesSummable.of_re_le_re {f : ArithmeticFunction ℂ} {w : ℂ} {z : ℂ} (h : w.re ≤ z.re)
-    (hf : LSeriesSummable f w) : LSeriesSummable f z := by
-  rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
-  exact hf.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (norm_LSeriesTerm_le_of_re_le_re f h)
-
-/-- The abscissa `x : EReal` of absolute convergence of the L-series associated to `f`:
-the series converges absolutely at `s` when `re s > x` and does not converge absolutely
-when `re s < x`. -/
-noncomputable def abscissaOfAbsConv (f : ArithmeticFunction ℂ) : EReal :=
-  sInf <| Real.toEReal '' {x : ℝ | LSeriesSummable f x}
-
 /-- An open right half plane is open. -/
 lemma _root_.Complex.isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
   isOpen_lt continuous_const <| EReal.continuous_coe_iff.mpr continuous_re
 
-lemma LSeriesSummable_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
-    (hs : abscissaOfAbsConv f < s.re) : LSeriesSummable f s := by
-  simp only [abscissaOfAbsConv, sInf_lt_iff, Set.mem_image, Set.mem_setOf_eq,
-    exists_exists_and_eq_and, EReal.coe_lt_coe_iff] at hs
-  obtain ⟨y, hy, hys⟩ := hs
-  exact hy.of_re_le_re <| ofReal_re y ▸ hys.le
-
-lemma LSeriesSummable_lt_re_of_abscissaOfAbsConv_lt_re {f : ArithmeticFunction ℂ} {s : ℂ}
-    (hs : abscissaOfAbsConv f < s.re) :
-    ∃ x : ℝ, x < s.re ∧ LSeriesSummable f x := by
-  obtain ⟨x, hx₁, hx₂⟩ := EReal.exists_between_coe_real hs
-  refine ⟨x, EReal.coe_lt_coe_iff.mp hx₂, LSeriesSummable_of_abscissaOfAbsConv_lt_re hx₁⟩
-
-lemma LSeriesSummable.abscissaOfAbsConv_le {f : ArithmeticFunction ℂ} {s : ℂ}
-    (h : LSeriesSummable f s) : abscissaOfAbsConv f ≤ s.re := by
-  refine sInf_le <| Membership.mem.out ?_
-  simp only [Set.mem_setOf_eq, Set.mem_image, EReal.coe_eq_coe_iff, exists_eq_right]
-  exact h.of_re_le_re <| by simp only [ofReal_re, le_refl]
-
-lemma abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable {f : ArithmeticFunction ℂ} {x : ℝ}
-    (h : ∀ y : ℝ, x < y → LSeriesSummable f y) :
-    abscissaOfAbsConv f ≤ x := by
-  refine sInf_le_iff.mpr fun y hy ↦ ?_
-  simp only [mem_lowerBounds, Set.mem_image, Set.mem_setOf_eq, forall_exists_index, and_imp,
-    forall_apply_eq_imp_iff₂] at hy
-  have H (a : EReal) : x < a → y ≤ a := by
-    induction' a using EReal.rec with a₀
-    · simp only [not_lt_bot, le_bot_iff, IsEmpty.forall_iff]
-    · exact_mod_cast fun ha ↦ hy a₀ (h a₀ ha)
-    · simp only [EReal.coe_lt_top, le_top, forall_true_left]
-  exact Set.Ioi_subset_Ici_iff.mp H
-
-lemma abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' {f : ArithmeticFunction ℂ} {x : EReal}
-    (h : ∀ y : ℝ, x < y → LSeriesSummable f y) :
-    abscissaOfAbsConv f ≤ x := by
-  induction' x using EReal.rec with y
-  · refine le_of_eq <| sInf_eq_bot.mpr fun y hy ↦ ?_
-    induction' y using EReal.rec with z
-    · simp only [gt_iff_lt, lt_self_iff_false] at hy
-    · exact ⟨z - 1,  ⟨z-1, h (z - 1) <| EReal.bot_lt_coe _, rfl⟩, by norm_cast; exact sub_one_lt z⟩
-    · exact ⟨0, ⟨0, h 0 <| EReal.bot_lt_coe 0, rfl⟩, EReal.zero_lt_top⟩
-  · exact abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable <| by exact_mod_cast h
-  · exact le_top
-
-lemma LSeriesSummable.le_const_mul_rpow {f : ArithmeticFunction ℂ} {s : ℂ}
-    (h : LSeriesSummable f s) : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ s.re := by
-  replace h := h.norm
-  by_contra! H
-  obtain ⟨n, hn⟩ := H (tsum fun n ↦ ‖f n / n ^ s‖)
-  have hn₀ : 0 < n := by
-    refine n.eq_zero_or_pos.resolve_left ?_
-    rintro rfl
-    rw [map_zero, norm_zero, Nat.cast_zero, mul_neg_iff] at hn
-    replace hn := hn.resolve_left <| fun hh ↦ hh.2.not_le <| Real.rpow_nonneg (le_refl 0) s.re
-    exact hn.1.not_le <| tsum_nonneg (fun _ ↦ norm_nonneg _)
-  have := le_tsum h n fun _ _ ↦ norm_nonneg _
-  rw [Norm_lseriesterm_eq, div_le_iff <| Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn₀) _] at this
-  exact (this.trans_lt hn).false.elim
-
-lemma LSeriesSummable_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x : ℝ} {s : ℂ}
-    (hs : x < s.re) (h : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ (x - 1)) :
-    LSeriesSummable f s := by
-  obtain ⟨C, hC⟩ := h
-  have hC₀ : 0 ≤ C := by
-    specialize hC 1
-    simp only [cast_one, Real.one_rpow, mul_one] at hC
-    exact (norm_nonneg _).trans hC
-  have hsum : Summable fun n : ℕ ↦ ‖(C : ℂ) / n ^ (s + (1 - x))‖ := by
-    simp_rw [div_eq_mul_inv, norm_mul, ← cpow_neg]
-    have hsx : -s.re + x - 1 < -1 := by linarith only [hs]
-    refine Summable.mul_left _ <|
-      Summable.of_norm_bounded_eventually_nat (fun n ↦ (n : ℝ) ^ (-s.re + x - 1)) ?_ ?_
-    · simp [hsx]
-    · simp only [neg_add_rev, neg_sub, norm_norm, Filter.eventually_atTop]
-      refine ⟨1, fun n hn ↦ ?_⟩
-      simp only [norm_natCast_cpow_of_pos hn, add_re, sub_re, neg_re, ofReal_re, one_re]
-      convert le_refl ?_ using 2
-      ring
-  refine Summable.of_norm <| hsum.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp only [map_zero, zero_div, norm_zero, norm_nonneg]
-  have hn' : 0 < (n : ℝ) ^ s.re := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) _
-  simp_rw [norm_div, norm_natCast_cpow_of_pos hn, div_le_iff hn', add_re, sub_re, one_re,
-    ofReal_re, Real.rpow_add <| Nat.cast_pos.mpr hn, div_eq_mul_inv, mul_inv]
-  rw [mul_assoc, mul_comm _ ((n : ℝ) ^ s.re), ← mul_assoc ((n : ℝ) ^ s.re), mul_inv_cancel hn'.ne',
-    ← Real.rpow_neg n.cast_nonneg, norm_eq_abs (C : ℂ), abs_ofReal, _root_.abs_of_nonneg hC₀,
-    neg_sub, one_mul]
-  exact hC n
-
-/-- If `‖f n‖` is bounded by a constant times `n^x`, then the abscissa of absolute convergence
-of `f` is bounded by `x + 1`. -/
-lemma abscissaOfAbsConv_le_of_le_const_mul_rpow {f : ArithmeticFunction ℂ} {x : ℝ}
-    (h : ∃ C, ∀ n, ‖f n‖ ≤ C * n ^ x) : abscissaOfAbsConv f ≤ x + 1 := by
-  rw [show x = x + 1 - 1 by ring] at h
-  by_contra! H
-  obtain ⟨y, hy₁, hy₂⟩ := EReal.exists_between_coe_real H
-  exact (LSeriesSummable_of_le_const_mul_rpow (s := y) (EReal.coe_lt_coe_iff.mp hy₁) h
-    |>.abscissaOfAbsConv_le.trans_lt hy₂).false
-
-/-- If `f` is bounded, the the abscissa of absolute convergence of `f` is bounded above by `1`. -/
-lemma abscissaOfAbsConv_le_of_le_const {f : ArithmeticFunction ℂ}
-    (h : ∃ C, ∀ n, ‖f n‖ ≤ C) : abscissaOfAbsConv f ≤ 1 := by
-  convert abscissaOfAbsConv_le_of_le_const_mul_rpow (x := 0) ?_
-  · norm_num
-  · simpa only [norm_eq_abs, Real.rpow_zero, mul_one] using h
-
--- ATTN: the following needs the coercion of `log` to an airthmetic function over `ℂ`
+-- ATTN: the following needs the coercion of `log` to an arithmetic function over `ℂ`
 
 lemma norm_log_mul_LSeriesTerm_le_of_re_lt_re (f : ArithmeticFunction ℂ) {w : ℂ} {z : ℂ}
     (h : w.re < z.re) (n : ℕ) :
