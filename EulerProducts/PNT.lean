@@ -7,13 +7,15 @@ import Mathlib.Tactic.RewriteSearch
 ### Statement of a version of the Wiener-Ikehara Theorem
 -/
 
+open scoped LSeries.notation
+
 open Filter Topology Nat ArithmeticFunction in
 /-- A version of the *Wiener-Ikehara Tauberian Theorem*: If `f` is a nonnegative arithmetic
 function whose L-series has a simple pole at `s = 1` with residue `A` and otherwise extends
 continuously to the closed half-plane `re s ≥ 1`, then `∑ n < N, f n` is asymptotic to `A*N`. -/
 def WienerIkeharaTheorem : Prop :=
-  ∀ {f : ArithmeticFunction ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
-    Set.EqOn F (fun s ↦ L f s - A / (s - 1)) {s | 1 < s.re} →
+  ∀ {f : ℕ → ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
+    Set.EqOn F (fun s ↦ L ↗f s - A / (s - 1)) {s | 1 < s.re} →
     ContinuousOn F {s | 1 ≤ s.re} →
     Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
@@ -25,7 +27,7 @@ open Complex
 
 local notation (name := rzeta) "ζ" => riemannZeta
 
-local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
+local notation (name := Dchar_one') "χ₁" => (1 : DirichletCharacter ℂ 1)
 
 lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     (hs : 1 < s.re) :
@@ -109,8 +111,8 @@ open Nat ArithmeticFunction
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
 lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 0 < x)
     (hy : y ≠ 0) :
-    ‖L (1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L χ (1 + x + I * y) ^ 4 *
-      L (χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
+    ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
+      L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   let χ₀ := (1 : DirichletCharacter ℂ N)
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
@@ -121,8 +123,9 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
     (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
     (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
-  rw [← LSeries_dirichlet_eulerProduct' _ h₀, ← LSeries_dirichlet_eulerProduct' χ h₁,
-    ← LSeries_dirichlet_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add,
+  rw [← DirichletCharacter.LSeries_eulerProduct' _ h₀,
+    ← DirichletCharacter.LSeries_eulerProduct' χ h₁,
+    ← DirichletCharacter.LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add,
     ← exp_add, norm_eq_abs, abs_exp]
   simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff]
@@ -138,8 +141,8 @@ $|\zeta(x)^3 \cdot \zeta(x+iy)^4 \cdot \zeta(x+2iy)| \ge 1$. -/
 lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
     ‖ζ (1 + x) ^ 3 * ζ (1 + x + I * y) ^ 4 * ζ (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
-  simpa only [one_pow, dirichletCharModOne_eq_zeta, LSeries.zeta_eq_riemannZeta, h₀, h₁, h₂]
-    using norm_dirichlet_product_ge_one χ₁ hx hy
+  simpa only [one_pow, norm_mul, norm_pow, DirichletCharacter.LSeries_modOne_eq,
+    LSeries_one_eq_riemannZeta, h₀, h₁, h₂] using norm_dirichlet_product_ge_one χ₁ hx hy
 
 open BigOperators Finset ZMod in
 lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re)
@@ -174,7 +177,7 @@ lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ
 
 open BigOperators in
 lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re) :
-    L (1 : DirichletCharacter ℂ N) s = ζ s * ∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
+    L ↗(1 : DirichletCharacter ℂ N) s = ζ s * ∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
   have Hζ := (riemannZeta_eulerProduct hs).mul_const (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))
   have HL := dirichletLSeries_eulerProduct (1 : DirichletCharacter ℂ N) hs
   have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) *
@@ -191,9 +194,9 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
   funext n
   simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
   rcases eq_or_ne n 0 with rfl | hn
-  · simp only [ArithmeticFunction.map_zero, CharP.cast_eq_zero, ne_eq, ne_zero_of_one_lt_re hs,
-      not_false_eq_true, zero_cpow, div_zero, cast_zero, neg_eq_zero, mul_zero]
-  rw [DirichletCharacter.toArithmeticFunction_apply_of_ne_zero _ hn, div_eq_mul_inv, cpow_neg]
+  · simp only [term_zero, cast_zero, CharP.cast_eq_zero, ne_eq, neg_eq_zero,
+    ne_zero_of_one_lt_re hs, not_false_eq_true, zero_cpow, mul_zero]
+  rw [LSeries.term_of_ne_zero hn, div_eq_mul_inv, cpow_neg]
 
 end
 

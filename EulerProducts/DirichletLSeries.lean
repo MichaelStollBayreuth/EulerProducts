@@ -2,225 +2,255 @@ import EulerProducts.LSeries
 import EulerProducts.Logarithm
 import Mathlib.NumberTheory.SumPrimeReciprocals
 
-/-!
-### Dirichlet characters as arithmetic functions
--/
+open scoped LSeries.notation
 
-namespace DirichletCharacter
-
-open Nat ArithmeticFunction
-
-/-- A Dirichlet character defines an arithmetic function. -/
-@[coe, simps]
-noncomputable def toArithmeticFunction {R : Type*} [CommMonoidWithZero R]
-    {N : ℕ} (χ : DirichletCharacter R N) : ArithmeticFunction R where
-      toFun n := if n = 0 then 0 else χ n
-      map_zero' := by simp
-
-attribute [simp] toArithmeticFunction_apply
-
-noncomputable
-instance {R : Type*} [CommSemiring R] {N : ℕ} :
-    CoeOut (DirichletCharacter R N) (ArithmeticFunction R) where
-      coe := DirichletCharacter.toArithmeticFunction
-
-@[simp]
-lemma toArithmeticFunction_apply_of_ne_zero {R : Type*} [CommMonoidWithZero R] {N : ℕ}
-    (χ : DirichletCharacter R N) {n : ℕ} (hn : n ≠ 0) :
-    χ.toArithmeticFunction n = χ (n : ZMod N) := by
-  rw [toArithmeticFunction_apply]
-  simp only [hn, ite_false]
-
-/-- We define scalar multiplication by Dirichlet characters on arithmetic functions as
-point-wise multiplication. -/
-noncomputable
-instance {R : Type*} [CommSemiring R] {N : ℕ} :
-    HSMul (DirichletCharacter R N) (ArithmeticFunction R) (ArithmeticFunction R) where
-      hSMul := fun χ f ↦ pmul χ f
-
-lemma hSMul_arithmeticFunction_def {R : Type*} [CommSemiring R] {N : ℕ}
-    (χ : DirichletCharacter R N) (f : ArithmeticFunction R) : χ • f = pmul χ f := rfl
-
-@[simp]
-lemma hSMul_arithmeticFunction_apply {R : Type*} [CommSemiring R] {N : ℕ}
-    (χ : DirichletCharacter R N) (f : ArithmeticFunction R) (n : ℕ) : (χ • f) n = χ n * f n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [ArithmeticFunction.map_zero, cast_zero, mul_zero]
-  · simp only [hSMul_arithmeticFunction_def, pmul_apply, ne_eq, hn, not_false_eq_true,
-      toArithmeticFunction_apply_of_ne_zero]
-
-lemma hSMul_arithmeticFunction_mul_distrib {R : Type*} [CommSemiring R] {N : ℕ}
-    (χ : DirichletCharacter R N) (f g : ArithmeticFunction R) :
-    χ • (f * g) = (χ • f) * (χ • g) := by
-  ext
-  simp only [hSMul_arithmeticFunction_apply, mul_apply, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun km hkm ↦ ?_
-  rw [mul_mul_mul_comm, ← map_mul, ← Nat.cast_mul, (mem_divisorsAntidiagonal.mp hkm).1]
-
-lemma hSMul_arithmeticFunction_mul_assoc {R : Type*} [CommSemiring R] {N : ℕ}
-    (χ ψ : DirichletCharacter R N) (f : ArithmeticFunction R) :
-    χ • (ψ • f) = (χ * ψ) • f := by
-  ext
-  simp only [hSMul_arithmeticFunction_apply, MulChar.coeToFun_mul, Pi.mul_apply, mul_assoc]
-
-lemma hSMul_zeta_eq_self {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
-    χ • (ζ : ArithmeticFunction R) = χ := by
-  ext n
-  rw [toArithmeticFunction_apply χ n]
-  simp only [hSMul_arithmeticFunction_apply, natCoe_apply, zeta_apply, cast_ite, cast_zero,
-    cast_one, mul_ite, mul_zero, mul_one]
-
-lemma hSMul_one {R : Type*} [CommSemiring R] {N : ℕ} (χ : DirichletCharacter R N) :
-    χ • (1 : ArithmeticFunction R) = 1 := by
-  ext
-  simp (config := { contextual := true })
-    only [hSMul_arithmeticFunction_apply, one_apply, mul_ite, mul_one, mul_zero, cast_one, map_one]
-
-end DirichletCharacter
-
-
-namespace ArithmeticFunction
-
-open Complex Nat
+section delta
 
 /-!
-### L-series of Dirichlet characters
+### L-series of δ
+
+We define `LSeries.delta` (with notation `δ`) to be the indicator function of `{1}`.
+Its `LSeries` is the constant function `1`.
 -/
 
-scoped notation (name := Lseries) "L" => LSeries
+namespace LSeries
 
-local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
+open Nat Complex
 
-open DirichletCharacter in
-lemma dirichletCharModZero_eq_one {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 0} :
-    (χ : ArithmeticFunction R) = 1 := by
-  ext n
+/-- The indicator function of `{1} ⊆ ℕ` with values in `ℂ`. -/
+def delta (n : ℕ) : ℂ :=
+  if n = 1 then 1 else 0
+
+@[inherit_doc]
+scoped[LSeries.notation] notation "δ" => delta
+
+lemma term_delta (s : ℂ) (n : ℕ) : term δ s n = if n = 1 then 1 else 0 := by
   rcases eq_or_ne n 0 with rfl | hn
-  · simp only [map_zero]
-  rcases eq_or_ne n 1 with rfl | hn'
-  · simp only [ne_eq, one_ne_zero, not_false_eq_true, toArithmeticFunction_apply_of_ne_zero,
-      cast_one, map_one, one_one]
-  have : ¬ IsUnit (n : ZMod 0) := by
-    contrapose! hn'
-    exact ZMod.eq_one_of_isUnit_natCast hn'
-  simp only [ne_eq, hn, not_false_eq_true, toArithmeticFunction_apply_of_ne_zero,
-    MulChar.map_nonunit χ this, hn', one_apply_ne]
+  · simp only [term_zero, zero_ne_one, ↓reduceIte]
+  · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, delta]
+    rcases eq_or_ne n 1 with rfl | hn'
+    · simp only [↓reduceIte, cast_one, one_cpow, ne_eq, one_ne_zero, not_false_eq_true, div_self]
+    · simp only [hn', ↓reduceIte, zero_div]
 
-open DirichletCharacter in
-lemma dirichletCharModZero_hSMul {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 0}
-    {f : ArithmeticFunction R} (hf : f 1 = 1) : χ • f = 1 := by
+/-- The L-series of `δ` is the constant function `1`. -/
+lemma _root_.LSeries_delta : L δ = 1 := by
+  ext
+  simp only [LSeries, term_delta, tsum_ite_eq, Pi.one_apply]
+
+lemma mul_delta {f : ℕ → ℂ} (h : f 1 = 1) : f * δ = δ := by
   ext n
-  simp only [hSMul_arithmeticFunction_apply, one_apply]
-  rcases eq_or_ne n 1 with rfl | hn
-  · simp only [cast_one, map_one, hf, mul_one, ite_true]
-  · simp only [MulChar.map_nonunit χ <| ZMod.eq_one_of_isUnit_natCast.mt hn, zero_mul, hn,
-      ite_false]
+  simp only [Pi.mul_apply, delta, mul_ite, mul_one, mul_zero]
+  split_ifs with hn <;> simp only [hn, h]
 
-lemma dirichletCharModOne_eq_zeta {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 1} :
-    (χ : ArithmeticFunction R) = ζ := by
+lemma delta_mul {f : ℕ → ℂ} (h : f 1 = 1) : δ * f = δ :=
+  (mul_comm δ f) ▸ mul_delta h
+
+end LSeries
+
+lemma ArithmeticFunction.one_eq_delta : ↗(1 : ArithmeticFunction ℂ) = δ := by
   ext n
-  have : χ = (MulChar.trivial (ZMod 1) _) := χ.level_one
-  rw [χ.toArithmeticFunction_apply, this, natCoe_apply, zeta_apply, MulChar.trivial_apply]
-  simp only [isUnit_of_subsingleton, ite_true, cast_ite, cast_zero, cast_one]
+  rcases eq_or_ne n 0 with rfl | _
+  · simp only [map_zero, LSeries.delta, zero_ne_one, ↓reduceIte]
+  · simp only [one_apply, LSeries.delta]
 
-lemma trivialDirichletCharModOne_eq_zeta : χ₁ = (ζ : ArithmeticFunction ℂ) :=
-  dirichletCharModOne_eq_zeta
+end delta
 
-lemma not_LSeriesSummable_dirichlet_at_one {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) :
-    ¬ LSeriesSummable χ 1 := by
-  by_contra! h
-  refine (Real.not_summable_indicator_one_div_natCast hN 1) ?_
-  refine Summable.of_nonneg_of_le (fun m ↦ Set.indicator_apply_nonneg (fun _ ↦ by positivity))
-    (fun n ↦ ?_) h.norm
-  rw [norm_div, cpow_one, norm_nat]
-  by_cases hn : n ∈ {(m : ℕ) | (m : ZMod N) = 1}
-  · rw [Set.indicator_of_mem hn]
-    rcases eq_or_ne n 0 with rfl | hn₀
-    · simp
-    gcongr
-    rw [χ.toArithmeticFunction_apply_of_ne_zero hn₀, hn]
-    simp only [map_one, norm_one, le_refl]
-  · rw [Set.indicator_of_not_mem hn]
-    positivity
 
-/-- The L-series os a Dirichlet character converges absolutely at `s` if and only if `re s > 1`. -/
-lemma LSeriesSummable_dirichlet_iff {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) {s : ℂ} :
-    LSeriesSummable χ s ↔ 1 < s.re := by
-  refine ⟨fun H ↦? _, LSeriesSummable_of_bounded_of_one_lt_re (m := 1) fun n ↦ ?_⟩
-  · by_contra! h
-    have h' : s.re ≤ (1 : ℂ).re := by simp only [one_re, h]
-    exact not_LSeriesSummable_dirichlet_at_one hN χ <| LSeriesSummable.of_re_le_re h' H
-  · rw [← norm_eq_abs]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    rw [χ.toArithmeticFunction_apply_of_ne_zero hn]
-    exact χ.norm_le_one _
-
-/-- The abscissa of absolute convergence of the L-series of a Dirichlet character is `1`. -/
-lemma abscissaOfAbsConv_dirichlet {N : ℕ} (hn : N ≠ 0) (χ : DirichletCharacter ℂ N) :
-    abscissaOfAbsConv χ = 1 := by
-  simpa only [abscissaOfAbsConv, LSeriesSummable_dirichlet_iff hn χ, ofReal_re, Set.Ioi_def,
-    EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
-
-open EulerProduct in
-/-- A variant of the Euler product for Dirichlet L-series. -/
-theorem LSeries_dirichlet_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
-    (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - χ p * p ^ (-s))) = L χ s := by
-  rw [LSeries]
-  convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
-    summable_dirichletSummand χ hs with _ n -- bug: should just be `... with n`
-  simp only [div_eq_mul_inv, dirichletSummandHom, cpow_neg, MonoidWithZeroHom.coe_mk,
-    ZeroHom.coe_mk, mul_eq_mul_right_iff, inv_eq_zero, cpow_eq_zero_iff, cast_eq_zero]
-  -- ↑χ n = χ ↑n ∨ n = 0 ∧ s ≠ 0
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact .inr ⟨rfl, ne_zero_of_one_lt_re hs⟩
-  · exact .inl <| DirichletCharacter.toArithmeticFunction_apply_of_ne_zero χ hn
-
-/-!
-### The L-series of the arithmetic function 1
--/
-
-/-- The L-series of the arithmetic function `1` (taking the value `1` at `1` and zero else)
-is the constant function `1`. -/
-lemma LSeries.one : L 1 = 1 := by
-  ext s
-  simp only [LSeries, one_apply]
-  have H (n : ℕ) : (if n = 1 then 1 / (n : ℂ) ^ s else 0) = if n = 1 then 1 else 0 :=
-    ite_congr rfl (fun h ↦ by simp [h]) (fun _ ↦ rfl)
-  conv => enter [1, 1, n]; simp only [apply_ite (· / (n : ℂ) ^ s), zero_div, H]
-  exact tsum_ite_eq 1 1
+section Moebius
 
 /-!
 ### The L-series of the Möbius function
+
+We show that `L μ s` converges absolutely if and only if `re s > 1`.
 -/
 
-lemma not_LSeriesSummable_moebius_at_one : ¬ LSeriesSummable μ 1 := by
+namespace ArithmeticFunction
+
+open LSeries Nat Complex
+
+lemma not_LSeriesSummable_moebius_at_one : ¬ LSeriesSummable ↗μ 1 := by
   by_contra! h
   refine not_summable_one_div_on_primes <| summable_ofReal.mp <| Summable.of_neg ?_
   simp only [← Pi.neg_def, Set.indicator_comp_of_zero ofReal_zero, ofReal_inv, ofReal_nat_cast]
   convert h.indicator {n | n.Prime} using 1
   ext n
   by_cases hn : n ∈ {p | p.Prime}
-  · simpa [Set.indicator_of_mem hn, moebius_apply_prime hn] using neg_div' (n : ℂ) 1
-  · simp [Set.indicator_of_not_mem hn]
+  · simp only [Pi.neg_apply, Set.indicator_of_mem hn, ofReal_div, ofReal_one, ofReal_nat_cast,
+      neg_div', term_of_ne_zero hn.ne_zero, moebius_apply_prime hn, Int.reduceNeg, Int.cast_neg,
+      Int.cast_one, cpow_one]
+  · simp only [one_div, Pi.neg_apply, Set.indicator_of_not_mem hn, ofReal_zero, neg_zero]
 
 /-- The L-series of the Möbius function converges absolutely at `s` if and only if `re s > 1`. -/
-lemma moebius_LSeriesSummable_iff {s : ℂ} : LSeriesSummable μ s ↔ 1 < s.re := by
+lemma moebius_LSeriesSummable_iff {s : ℂ} : LSeriesSummable ↗μ s ↔ 1 < s.re := by
   refine ⟨fun H ↦? _, LSeriesSummable_of_bounded_of_one_lt_re (m := 1) fun n ↦ ?_⟩
   · by_contra! h
     have h' : s.re ≤ (1 : ℂ).re := by simp only [one_re, h]
     exact not_LSeriesSummable_moebius_at_one <| LSeriesSummable.of_re_le_re h' H
-  · rw [intCoe_apply, ← int_cast_abs, ← Int.cast_abs]
+  · rw [abs_intCast, ← Int.cast_abs]
     norm_cast
     rcases eq_or_ne (μ n) 0 with h | h
     · simp [h]
     · rcases moebius_ne_zero_iff_eq_or.mp h with h | h <;> simp [h]
 
 /-- The abscissa of absolute convergence of the L-series of the Möbius function is `1`. -/
-lemma abscissaOfAbsConv_mu : abscissaOfAbsConv μ = 1 := by
+lemma abscissaOfAbsConv_mu : abscissaOfAbsConv ↗μ = 1 := by
   simpa only [abscissaOfAbsConv, moebius_LSeriesSummable_iff, ofReal_re, Set.Ioi_def,
     EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
+
+end ArithmeticFunction
+
+end Moebius
+
+/-!
+### L-series of Dirichlet characters
+-/
+
+local notation (name := Dchar_one) "χ₁" => (1 : DirichletCharacter ℂ 1)
+
+namespace DirichletCharacter
+
+open LSeries Nat Complex
+
+lemma mul_convolution_distrib {R : Type*} [CommSemiring R] {n : ℕ} (χ : DirichletCharacter R n)
+    (f g : ℕ → R) :
+    ((χ ·) : ℕ → R) * (f ⍟ g) = (((χ ·) : ℕ → R) * f) ⍟ (((χ ·) : ℕ → R) * g) := by
+  ext n
+  simp only [Pi.mul_apply, LSeries.convolution_def, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  rw [(Nat.mem_divisorsAntidiagonal.mp hp).1.symm, Nat.cast_mul, map_mul]
+  exact mul_mul_mul_comm ..
+
+open scoped ArithmeticFunction.Moebius ArithmeticFunction.zeta in
+lemma convolution_mul_moebius {n : ℕ} (χ : DirichletCharacter ℂ n) :
+    ↗χ ⍟ (↗χ * ↗μ) = δ := by
+  nth_rewrite 1 [← mul_one ↗χ]
+  rw [← mul_convolution_distrib χ 1 ↗μ]
+  have : (1 : ℕ → ℂ) ⍟ (μ ·) = δ := by
+    ext n
+    have H : (1 : ℕ → ℂ) ⍟ (μ ·) = (((ζ * μ :) ·) : ℕ → ℂ) := by
+      ext n
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp only [convolution_def', divisorsAntidiagonal_zero, Pi.one_apply, one_mul,
+          Finset.sum_empty, ArithmeticFunction.coe_zeta_mul_moebius, ArithmeticFunction.map_zero,
+          Int.cast_zero]
+      simp only [convolution_def', Pi.one_apply, one_mul, ArithmeticFunction.mul_apply]
+      norm_cast
+      refine Finset.sum_congr rfl fun p hp ↦ ?_
+      have : p.1 ≠ 0 := Nat.ne_zero_of_mul_ne_zero_left <|
+        (Nat.mem_divisorsAntidiagonal.mp hp).1.symm ▸ hn
+      simp only [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, this, ↓reduceIte,
+        cast_one, one_mul]
+    simp only [H, ArithmeticFunction.coe_zeta_mul_moebius, ArithmeticFunction.one_apply,
+      Int.cast_ite, Int.cast_one, Int.cast_zero, delta]
+  rw [this]
+  exact mul_delta <| by simp only [cast_one, map_one]
+
+lemma mul_delta {n : ℕ} (χ : DirichletCharacter ℂ n) : ↗χ * δ = δ := by
+  ext n
+  simp only [Pi.mul_apply, delta, mul_ite, mul_one, mul_zero]
+  split_ifs with h <;> simp only [h, cast_one, map_one]
+
+lemma delta_mul {n : ℕ} (χ : DirichletCharacter ℂ n) : δ * ↗χ = δ := by
+  rw [mul_comm]
+  exact mul_delta ..
+
+lemma modZero_eq_delta {χ : DirichletCharacter ℂ 0} : ↗χ = δ := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [CharP.cast_eq_zero, isUnit_zero_iff, zero_ne_one, not_false_eq_true,
+      MulCharClass.map_nonunit, delta, ↓reduceIte]
+  rcases eq_or_ne n 1 with rfl | hn'
+  · simp only [cast_one, map_one, delta, ↓reduceIte]
+  have : ¬ IsUnit (n : ZMod 0) := by
+    contrapose! hn'
+    exact ZMod.eq_one_of_isUnit_natCast hn'
+  simp only [MulChar.map_nonunit χ this, delta, hn', ↓reduceIte]
+
+lemma modOne_eq_one {R : Type*} [CommSemiring R] {χ : DirichletCharacter R 1} :
+    ((χ ·) : ℕ → R) = 1 := by
+  ext n
+  have : χ = (MulChar.trivial (ZMod 1) _) := χ.level_one
+  rw [this, MulChar.trivial_apply]
+  simp only [isUnit_of_subsingleton, ↓reduceIte, Pi.one_apply]
+
+lemma LSeries_modOne_eq : L ↗χ₁ = L 1 := by
+  ext s
+  refine LSeries_congr s fun n _ ↦ ?_
+  simp only [MulChar.one_apply (isUnit_of_subsingleton (n : ZMod 1)), Pi.one_apply]
+
+/- lemma _root_.Real.not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
+    ¬ Summable ({n : ℕ | (n : ZMod m) = k}.indicator fun n : ℕ ↦ (1 / n : ℝ)) := by
+  sorry -/
+
+lemma not_LSeriesSummable_at_one {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) :
+    ¬ LSeriesSummable ↗χ 1 := by
+  by_contra! h
+  refine (Real.not_summable_indicator_one_div_natCast hN 1) ?_
+  refine Summable.of_nonneg_of_le (fun m ↦ Set.indicator_apply_nonneg (fun _ ↦ by positivity))
+    (fun n ↦ ?_) h.norm
+  rw [norm_term_eq, one_re, Real.rpow_one]
+  by_cases hn : n ∈ {(m : ℕ) | (m : ZMod N) = 1}
+  · rw [Set.indicator_of_mem hn]
+    rcases eq_or_ne n 0 with rfl | hn₀
+    · simp only [CharP.cast_eq_zero, div_zero, ↓reduceIte, le_refl]
+    simp only [hn₀, ↓reduceIte]
+    gcongr
+    rw [hn]
+    simp only [map_one, norm_one, le_refl]
+  · rw [Set.indicator_of_not_mem hn]
+    positivity
+
+/-- The L-series os a Dirichlet character converges absolutely at `s` if and only if `re s > 1`. -/
+lemma LSeriesSummable_iff {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) {s : ℂ} :
+    LSeriesSummable ↗χ s ↔ 1 < s.re := by
+  refine ⟨fun H ↦? _, LSeriesSummable_of_bounded_of_one_lt_re (m := 1) fun n ↦ ?_⟩
+  · by_contra! h
+    have h' : s.re ≤ (1 : ℂ).re := by simp only [one_re, h]
+    exact not_LSeriesSummable_at_one hN χ <| LSeriesSummable.of_re_le_re h' H
+  · rw [← norm_eq_abs]
+    exact fun _ ↦ χ.norm_le_one _
+
+/-- The abscissa of absolute convergence of the L-series of a Dirichlet character is `1`. -/
+lemma absicssaOfAbsConv {N : ℕ} (hn : N ≠ 0) (χ : DirichletCharacter ℂ N) :
+    abscissaOfAbsConv ↗χ = 1 := by
+  simpa only [abscissaOfAbsConv, LSeriesSummable_iff hn χ, ofReal_re, Set.Ioi_def,
+    EReal.image_coe_Ioi, EReal.coe_one] using csInf_Ioo <| EReal.coe_lt_top _
+
+/-- The L-series of the twist of `f` by a Dirichlet character converges at `s` if the L-series
+of `f` does. -/
+lemma LSeriesSummable.mul {N : ℕ} (χ : DirichletCharacter ℂ N) {f : ℕ → ℂ} {s : ℂ}
+    (h : LSeriesSummable f s) :
+    LSeriesSummable (↗χ * f) s := by
+  refine Summable.of_norm <| h.norm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
+  refine norm_term_le s ?_
+  simp only [Pi.mul_apply, norm_mul]
+  conv => enter [2]; rw [← one_mul (‖_‖)]
+  gcongr
+  exact DirichletCharacter.norm_le_one ..
+
+open scoped ArithmeticFunction.Moebius in
+/-- The L-series of a Dirichlet character `χ` and of the twist of `μ` by `χ` are multiplicative
+inverses. -/
+lemma LSeries.mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
+    (hs : 1 < s.re) : L ↗χ s * L (↗χ * ↗μ) s = 1 := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [modZero_eq_delta, LSeries_delta, LSeries.delta_mul (by norm_cast), LSeries_delta,
+     Pi.one_apply, one_mul]
+  rw [← LSeries_convolution ((LSeriesSummable_iff hN χ).mpr hs) ?_, convolution_mul_moebius,
+    LSeries_delta, Pi.one_apply]
+  exact LSeriesSummable.mul χ <| ArithmeticFunction.moebius_LSeriesSummable_iff.mpr hs
+
+open EulerProduct in
+/-- A variant of the Euler product for Dirichlet L-series. -/
+theorem LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
+  rw [LSeries]
+  convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
+    summable_dirichletSummand χ hs -- where does the `x✝: ℕ` come from??
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [term_zero, map_zero]
+  · simp [hn, dirichletSummandHom, div_eq_mul_inv, cpow_neg]
 
 /-!
 ### L-series of Dirichlet characters do not vanish on re s > 1
@@ -228,132 +258,197 @@ lemma abscissaOfAbsConv_mu : abscissaOfAbsConv μ = 1 := by
 
 /-- The L-series of the twist of `f` by a Dirichlet character converges at `s` if the L-series
 of `f` does. -/
-lemma LSeriesSummable.smul {N : ℕ} (χ : DirichletCharacter ℂ N) {f : ArithmeticFunction ℂ} {s : ℂ}
+lemma LSeriesSummable_mul {N : ℕ} (χ : DirichletCharacter ℂ N) {f : ℕ → ℂ} {s : ℂ}
     (h : LSeriesSummable f s) :
-    LSeriesSummable (χ • f) s := by
+    LSeriesSummable (↗χ * f) s := by
   refine Summable.of_norm <| h.norm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
-  simp only [DirichletCharacter.hSMul_arithmeticFunction_apply, norm_div, norm_mul]
-  rw [← one_mul (‖_‖ / _), mul_div_assoc]
-  gcongr
-  exact DirichletCharacter.norm_le_one ..
-
-open DirichletCharacter in
-/-- The L-series of a Dirichlet character `χ` and of the twist of `μ` by `χ` are multiplicative
-inverses. -/
-lemma LSeries.dirichlet_mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
-    (hs : 1 < s.re) : L χ s * L (χ • μ) s = 1 := by
-  rcases eq_or_ne N 0 with rfl | hN
-  · rw [dirichletCharModZero_eq_one, LSeries.one, Pi.one_apply, one_mul,
-      dirichletCharModZero_hSMul ?h]
-    exact congrFun LSeries.one s
-    case h =>
-      simp only [intCoe_apply, isUnit_one, IsUnit.squarefree, moebius_apply_of_squarefree,
-        cardFactors_one, _root_.pow_zero, Int.cast_one]
-  rw [← LSeries_mul ((LSeriesSummable_dirichlet_iff hN χ).mpr hs)
-          <| (moebius_LSeriesSummable_iff.mpr hs).smul ..,
-    ← hSMul_zeta_eq_self, ← hSMul_arithmeticFunction_mul_distrib, coe_zeta_mul_coe_moebius,
-    hSMul_one]
-  exact congrFun LSeries.one s
+  refine LSeries.norm_term_le s ?_
+  rw [Pi.mul_apply, norm_mul]
+  exact mul_le_of_le_one_left (norm_nonneg _) <| DirichletCharacter.norm_le_one ..
 
 /-- The L-series of a Dirichlet character does not vanish on the right half-plane `re s > 1`. -/
-lemma LSeries.dirichlet_ne_zero {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
-    L χ s ≠ 0 :=
-  fun h ↦ by simpa [h] using LSeries.dirichlet_mul_mu_eq_one χ hs
+lemma LSeries_ne_zero {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    L ↗χ s ≠ 0 :=
+  fun h ↦ by simpa [h] using LSeries.mul_mu_eq_one χ hs
+
+end DirichletCharacter
+
+section zeta
 
 /-!
-### The L-series of ζ
--/
+### The L-series of the arithmetic function ζ-/
 
-/-- The abscissa of (absolute) convergence of `ζ` is `1`. -/
-lemma abscissaOfAbsConv_zeta : abscissaOfAbsConv ζ = 1 :=
-  trivialDirichletCharModOne_eq_zeta ▸ abscissaOfAbsConv_dirichlet one_ne_zero χ₁
+namespace ArithmeticFunction
+
+open LSeries Nat Complex DirichletCharacter
+
+/-- The `LSeries` of the arithmetic function `ζ` is the same as the `LSeries` associated
+to the constant function `1`. -/
+lemma LSeries_zeta_eq : L ↗ζ = L 1 := by
+  ext s
+  refine LSeries_congr s fun n hn ↦ ?_
+  simp only [zeta_apply, hn, ↓reduceIte, cast_one, Pi.one_apply]
+
+/-- The abscissa of (absolute) convergence of the constant sequence `1` is `1`. -/
+lemma abscissaOfAbsConv_one : abscissaOfAbsConv 1 = 1 :=
+  modOne_eq_one (R := ℂ) ▸ absicssaOfAbsConv one_ne_zero χ₁
+
+/-- The abscissa of (absolute) convergence of the arithmetic function `ζ` is `1`. -/
+lemma abscissaOfAbsConv_zeta : abscissaOfAbsConv ↗ζ = 1 := by
+  rw [abscissaOfAbsConv_congr (g := 1) fun n hn ↦ by simp [hn]]
+  exact abscissaOfAbsConv_one
 
 /-- The L-series of the arithmetic function `ζ` equals the Riemann Zeta Function on its
 domain of convergence `1 < re s`. -/
-lemma LSeries.zeta_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) : L ζ s = riemannZeta s := by
+lemma LSeries_zeta_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) : L ↗ζ s = riemannZeta s := by
   simp only [LSeries, natCoe_apply, zeta_apply, cast_ite, CharP.cast_eq_zero, cast_one]
   rw [zeta_eq_tsum_one_div_nat_cpow hs]
   refine tsum_congr fun n ↦ ?_
   rcases n.eq_zero_or_pos with rfl | hn
   · simp [ne_zero_of_one_lt_re hs]
-  simp only [hn.ne', ite_false]
+  simp only [ne_eq, hn.ne', not_false_eq_true, term_of_ne_zero, ↓reduceIte, one_div]
+
+/-- The L-series of the constant sequence `1` equals the Riemann Zeta Function on its
+domain of convergence `1 < re s`. -/
+lemma _root_.LSeries_one_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) : L 1 s = riemannZeta s :=
+  ArithmeticFunction.LSeries_zeta_eq ▸ LSeries_zeta_eq_riemannZeta hs
 
 /-- The L-series of the arithmetic function `ζ` equals the Riemann Zeta Function on its
 domain of convergence `1 < re s`. -/
-lemma LSeriesHasSum_zeta {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum ζ s (riemannZeta s) :=
-  LSeries.zeta_eq_riemannZeta hs ▸ (zeta_LSeriesSummable_iff_one_lt_re.mpr hs).LSeriesHasSum
+lemma LSeriesHasSum_zeta {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum ↗ζ s (riemannZeta s) :=
+  LSeries_zeta_eq_riemannZeta hs ▸ (zeta_LSeriesSummable_iff_one_lt_re.mpr hs).LSeriesHasSum
+
+/-- The L-series of the constant sequence `1` equals the Riemann Zeta Function on its
+domain of convergence `1 < re s`. -/
+lemma _root_.LSeriesHasSum_one {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum 1 s (riemannZeta s) :=
+  LSeries_one_eq_riemannZeta hs ▸ (LSeriesSummable.one_iff_one_lt_re.mpr hs).LSeriesHasSum
 
 open EulerProduct in
 /-- A variant of the Euler product for the L-series of `ζ`. -/
 theorem LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L ζ s := by
-  convert trivialDirichletCharModOne_eq_zeta ▸ LSeries_dirichlet_eulerProduct' χ₁ hs using 7
+    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L 1 s := by
+  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' χ₁ hs using 7
   rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
 
 open EulerProduct in
 /-- A variant of the Euler product for the Riemann zeta function. -/
 theorem _root_.riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
     exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = riemannZeta s :=
-  LSeries.zeta_eq_riemannZeta hs ▸ LSeries_zeta_eulerProduct' hs
+  LSeries_one_eq_riemannZeta hs ▸ LSeries_zeta_eulerProduct' hs
 
 -- Rename `zeta_LSeriesSummable_iff_one_lt_re` → `zeta_LSeriesSummable_iff`
 
-/-- The L-series of the constant function `1` and of the Möbius function are inverses. -/
-lemma LSeries.zeta_mul_mu_eq_one {s : ℂ} (hs : 1 < s.re) : L ζ s * L μ s = 1 := by
-  rw [← LSeries_mul (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
-          (moebius_LSeriesSummable_iff.mpr hs),
-    coe_zeta_mul_coe_moebius]
-  exact congrFun LSeries.one s
+lemma convolution_zeta_moebius : ↗ζ ⍟ ↗μ = δ := by
+  have hζ : ↗ζ = ↗(ζ : ArithmeticFunction ℂ) := by
+    simp only [zeta_apply, cast_ite, CharP.cast_eq_zero, cast_one, natCoe_apply]
+  have hμ : ↗μ = ↗(μ : ArithmeticFunction ℂ) := by
+    simp only [intCoe_apply]
+  ext
+  simp only [hμ, hζ, mul_to_convolution, coe_zeta_mul_coe_moebius, one_apply, delta]
+
+/-- The L-series of the constant sequence `1` and of the Möbius function are inverses. -/
+lemma _root_.LSeries_one_mul_Lseries_moebius {s : ℂ} (hs : 1 < s.re) : L 1 s * L ↗μ s = 1 := by
+  rw [← LSeries_zeta_eq, ← LSeries_convolution (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
+    (moebius_LSeriesSummable_iff.mpr hs),
+    convolution_zeta_moebius, LSeries_delta, Pi.one_apply]
+
+/-- The L-series of the constant sequence `1` does not vanish on the right half-plane
+`re s > 1`.-/
+lemma _root_.LSeries_one_ne_zero {s : ℂ} (hs : 1 < s.re) : L 1 s ≠ 0 :=
+  fun h ↦ by simpa [h] using LSeries_one_mul_Lseries_moebius hs
 
 /-- The L-series of the arithmetic function `ζ` does not vanish on the right half-plane
 `re s > 1`.-/
-lemma LSeries.zeta_ne_zero {s : ℂ} (hs : 1 < s.re) : L ζ s ≠ 0 :=
-  fun h ↦ by simpa [h] using LSeries.zeta_mul_mu_eq_one hs
+lemma LSeries_zeta_ne_zero {s : ℂ} (hs : 1 < s.re) : L ↗ζ s ≠ 0 :=
+  LSeries_zeta_eq ▸ LSeries_one_ne_zero hs
+
+  --fun h ↦ by simpa [h] using LSeries_one_mul_Lseries_moebius hs
 
 /-- The Riemann Zeta Function does not vanish on the half-plane `re s > 1`. -/
 lemma _root_.riemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) : riemannZeta s ≠ 0 :=
-  LSeries.zeta_eq_riemannZeta hs ▸ LSeries.zeta_ne_zero hs
+  LSeries_one_eq_riemannZeta hs ▸ LSeries_one_ne_zero hs
+
+end ArithmeticFunction
+
+end zeta
+
+
+section vonMangoldt
 
 /-!
 ### The L-series of the von Mangoldt function
 -/
 
+namespace ArithmeticFunction
+
+open LSeries Nat Complex
+
+/-- `ArithmeticFunction.vonMangoldtℂ` is a version of the von Mangoldt function
+with values in `ℂ`. -/
+noncomputable
+abbrev vonMangoldtℂ : ArithmeticFunction ℂ where
+  toFun n := Λ n
+  map_zero' := by simp
+
+@[inherit_doc]
+scoped[ArithmeticFunction.vonMangoldt] notation "Λℂ" => vonMangoldtℂ
+
+@[inherit_doc]
+scoped[ArithmeticFunction] notation "Λℂ" => vonMangoldtℂ
+
+lemma vonMangoldtℂ_eq_vonMangoldt : ↗Λℂ = ↗Λ := rfl
+
+-- Maybe use `Complex.log` on the rhs?
+lemma vonMangoldtℂ_mul_zeta :
+    ↗(Λℂ * (ζ : ArithmeticFunction ℂ)) = ↗(log : ArithmeticFunction ℝ) := by
+  rw [← vonMangoldt_mul_zeta]
+  ext n
+  simp only [mul_apply, coe_mk, natCoe_apply, zeta_apply, cast_ite, CharP.cast_eq_zero, cast_one,
+    mul_ite, mul_zero, mul_one, ofReal_sum, apply_ite ofReal', ofReal_zero]
+
 /-- The L-series of the von Mangoldt function `Λ` is summable at `s` when `re s > 1`. -/
-lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable Λ s := by
+lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable ↗Λ s := by
   let s' : ℂ := 1 + (s.re - 1) / 2
   have Hs : s'.re ∈ Set.Ioo 1 s.re := by
     simp only [add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
     constructor <;> linarith
-  have hf := (zeta_LSeriesSummable_iff_one_lt_re.mpr Hs.1).log_pmul_of_re_lt_re Hs.2
+  have hf := (LSeriesSummable.one_iff_one_lt_re.mpr Hs.1).logMul_of_re_lt_re Hs.2
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
-  rw [pmul_zeta] at hf
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hf
-  simp only [norm_div]
-  refine div_le_div_of_le (norm_nonneg _) ?_
-  simp only [toComplexArithmeticFunction_apply, coe_algebraMap, norm_eq_abs, abs_ofReal, log_apply]
-  rw [_root_.abs_of_nonneg vonMangoldt_nonneg, _root_.abs_of_nonneg <| Real.log_nat_cast_nonneg n]
-  exact vonMangoldt_le_log
+  refine norm_term_le s ?_
+  have hΛ : ‖↗Λ n‖ ≤ ‖Complex.log n‖ := by
+    simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg vonMangoldt_nonneg,
+      ← Complex.natCast_log, _root_.abs_of_nonneg <| Real.log_nat_cast_nonneg n]
+    exact ArithmeticFunction.vonMangoldt_le_log
+  refine hΛ.trans ?_
+  simp only [norm_eq_abs, norm_mul, Pi.one_apply, norm_one, mul_one, le_refl]
 
 /-- The L-series of the von Mangoldt function `Λ` equals the negative logarithmic derivative
-of the L-series of the arithmetic function `ζ` on its domain of convergence `re s > 1`. -/
-lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L Λ s = - deriv (L ζ) s / L ζ s := by
-  have hs' : abscissaOfAbsConv ζ < s.re := by
+of the L-series of the constant sequence `1` on its domain of convergence `re s > 1`. -/
+lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L ↗Λ s = - deriv (L 1) s / L 1 s := by
+  rw [← LSeries_zeta_eq]
+  have hs' : abscissaOfAbsConv ↗ζ < s.re := by
     rwa [abscissaOfAbsConv_zeta, ← EReal.coe_one, EReal.coe_lt_coe_iff]
-  rw [eq_div_iff <| LSeries.zeta_ne_zero hs,
-    ← LSeries_mul (LSeriesSummable_vonMangoldt hs) (zeta_LSeriesSummable_iff_one_lt_re.mpr hs),
-    ← neg_eq_iff_eq_neg, LSeries_deriv hs']
+  have hΛ : LSeriesSummable ↗Λℂ s := LSeriesSummable_vonMangoldt hs
+  have hζ : LSeriesSummable ↗(ζ : ArithmeticFunction ℂ) s :=
+    zeta_LSeriesSummable_iff_one_lt_re.mpr hs
+  rw [eq_div_iff <| LSeries_zeta_ne_zero hs, show ↗ζ = ↗(ζ : ArithmeticFunction ℂ) from rfl,
+    ← vonMangoldtℂ_eq_vonMangoldt,
+    ← LSeries_mul hΛ hζ,
+    ← neg_eq_iff_eq_neg, show ↗(ζ : ArithmeticFunction ℂ) = ↗ζ from rfl,
+     LSeries_deriv hs', vonMangoldtℂ_mul_zeta]
   congr
-  norm_cast
-  simp only [vonMangoldt_mul_zeta, pmul_zeta]
+  ext ⟨- | n⟩
+  · simp
+  · rw [log_apply, logMul, zeta_apply, natCast_log]
+    simp only [succ_ne_zero, ↓reduceIte, cast_one, mul_one]
 
 /-- The L-series of the von Mangoldt function `Λ` equals the negative logarithmic derivative
 of the Riemann zeta function on its domain of convergence `re s > 1`. -/
 lemma LSeries_vonMangoldt_eq_deriv_riemannZeta_div {s : ℂ} (hs : 1 < s.re) :
-    L Λ s = - deriv riemannZeta s / riemannZeta s := by
+    L ↗Λ s = - deriv riemannZeta s / riemannZeta s := by
   convert LSeries_vonMangoldt_eq hs using 2
   · refine neg_inj.mpr <| Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{z | 1 < z.re}, (isOpen_lt continuous_const continuous_re).mem_nhds hs, ?_⟩
-    exact fun _ hz ↦ (LSeries.zeta_eq_riemannZeta hz).symm
-  · exact (LSeries.zeta_eq_riemannZeta hs).symm
-
-end ArithmeticFunction
+    exact fun _ hz ↦ (LSeries_one_eq_riemannZeta hz).symm
+  · exact (LSeries_one_eq_riemannZeta hs).symm
