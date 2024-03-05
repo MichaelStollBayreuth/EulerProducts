@@ -227,12 +227,12 @@ namespace iteratedDeriv
 
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-lemma neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
+/- lemma neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
     iteratedDeriv n (fun x ↦ -(f x)) a = -(iteratedDeriv n f a) := by
   induction' n with n ih generalizing a
   · simp only [Nat.zero_eq, iteratedDeriv_zero]
   · have ih' : iteratedDeriv n (fun x ↦ -f x) = fun x ↦ -iteratedDeriv n f x := funext ih
-    rw [iteratedDeriv_succ, iteratedDeriv_succ, ih', deriv.neg]
+    rw [iteratedDeriv_succ, iteratedDeriv_succ, ih', deriv.neg] -/
 
 lemma comp_neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
     iteratedDeriv n (fun x ↦ f (-x)) a = (-1 : 𝕜) ^ n • iteratedDeriv n f (-a) := by

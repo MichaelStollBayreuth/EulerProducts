@@ -1,11 +1,8 @@
-import Mathlib.NumberTheory.ZetaValues
+import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.NumberTheory.EulerProduct.Basic
-import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import Mathlib.NumberTheory.VonMangoldt
-import EulerProducts.Auxiliary
+import Mathlib.Topology.MetricSpace.Polish
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+-- import EulerProducts.Auxiliary
 
 /-!
 # Logarithms of Euler Products

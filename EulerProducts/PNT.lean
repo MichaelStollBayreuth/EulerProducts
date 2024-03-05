@@ -1,5 +1,7 @@
 import EulerProducts.Logarithm
 import EulerProducts.DirichletLSeries
+import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Tactic.RewriteSearch
 
 /-!
@@ -24,8 +26,10 @@ def WienerIkeharaTheorem : Prop :=
 
 open Complex
 
+/-- We use `ζ` to denote the Rieman zeta function. -/
 local notation (name := rzeta) "ζ" => riemannZeta
 
+/-- We use `χ₁` to denote the (trivial) Dirichlet character modulo `1`. -/
 local notation (name := Dchar_one') "χ₁" => (1 : DirichletCharacter ℂ 1)
 
 section EulerProduct
@@ -100,7 +104,7 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
 has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
 lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n)
-    {x y : ℝ} (hx : 1 < x) (hy : y ≠ 0) :
+    {x y : ℝ} (hx : 1 < x) :
     0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
@@ -113,7 +117,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
     have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1 := by
       rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
-      simp [hy]
+      simp
     rw [MulChar.one_apply hn', one_mul]
     convert re_log_comb_nonneg' ha₀ ha₁ hz using 6
     · congr 2
@@ -140,8 +144,8 @@ open Nat ArithmeticFunction
 
 /-- For positive `x` and nonzero `y` we have that
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
-lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x y : ℝ} (hx : 0 < x)
-    (hy : y ≠ 0) :
+lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x : ℝ} (hx : 0 < x)
+    (y : ℝ) :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   let χ₀ := (1 : DirichletCharacter ℂ N)
@@ -164,16 +168,16 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
     re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₁,
     re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
     ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
-  convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le h₀ hy
+  convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le h₀
   rw [sq, sq, MulChar.mul_apply]
 
 /-- For positive `x` and nonzero `y` we have that
 $|\zeta(x)^3 \cdot \zeta(x+iy)^4 \cdot \zeta(x+2iy)| \ge 1$. -/
-lemma norm_zeta_product_ge_one {x y : ℝ} (hx : 0 < x) (hy : y ≠ 0) :
+lemma norm_zeta_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     ‖ζ (1 + x) ^ 3 * ζ (1 + x + I * y) ^ 4 * ζ (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
   simpa only [one_pow, norm_mul, norm_pow, DirichletCharacter.LSeries_modOne_eq,
-    LSeries_one_eq_riemannZeta, h₀, h₁, h₂] using norm_dirichlet_product_ge_one χ₁ hx hy
+    LSeries_one_eq_riemannZeta, h₀, h₁, h₂] using norm_dirichlet_product_ge_one χ₁ hx y
 
 open BigOperators Finset ZMod in
 lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re)
@@ -231,6 +235,68 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
 
 end
 
+section Topology
+
+open Filter
+
+namespace Asymptotics
+
+lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
+    (hf : ∀ᶠ x in l, f x ≠ 0) :
+    (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
+  rw [isBigO_iff', isBigO_iff']
+  refine ⟨fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩, fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩⟩ <;>
+  { refine H.congr <| Eventually.mp hf <| eventually_of_forall fun x hx ↦ ?_
+    rw [norm_mul, norm_div, ← mul_div_assoc, mul_comm]
+    have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
+    rw [le_div_iff hx', mul_comm] }
+
+lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
+    (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
+  ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
+
+end Asymptotics
+
+/-!
+### Some API additions
+-/
+
+open Topology Asymptotics
+
+lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
+    (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
+  rw [← zero_add z] at hf
+  simpa only [zero_add, hz, sub_zero]
+    using (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
+
+lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
+    (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
+  rw [isBigO_iff']
+  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0 := by
+    convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
+    · simp
+    · simp [Function.comp_def, hf]
+  simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
+  specialize hf 1 zero_lt_one
+  refine ⟨‖f z‖ + 1, by positivity, ?_⟩
+  refine Eventually.mp hf <| eventually_of_forall fun w hw ↦ le_of_lt ?_
+  calc ‖f (w + z)‖
+    _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
+    _ < ‖f z‖ + 1 := add_lt_add_left hw _
+    _ = _ := by simp only [norm_one, mul_one]
+
+lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    Continuous.tendsto Complex.continuous_ofReal x
+
+lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
+
+end Topology
+
 section
 
 open Filter Topology Homeomorph Asymptotics
@@ -281,7 +347,7 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
       (fun x ↦ ζ (1 + x) ^ 3 * ζ (1 + x + I * z.im) ^ 4 * ζ (1 + x + 2 * I * z.im)) :=
     IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
-      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_zeta_product_ge_one hx hz₀).le
+      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_zeta_product_ge_one hx z.im).le
   have H := (riemannZeta_isBigO_near_one_horizontal.pow 3).mul
     ((riemannZeta_isBigO_near_root_horizontal hz₀ (hzeq ▸ Hz)).pow 4)|>.mul <|
     riemannZeta_isBigO_of_ne_one_horizontal <| mul_ne_zero two_ne_zero hz₀
