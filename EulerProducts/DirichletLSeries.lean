@@ -1,6 +1,7 @@
 import EulerProducts.LSeries
-import EulerProducts.Logarithm
 import Mathlib.NumberTheory.SumPrimeReciprocals
+import Mathlib.NumberTheory.DirichletCharacter.Bounds
+import Mathlib.NumberTheory.ZetaFunction
 
 open scoped LSeries.notation
 
@@ -240,17 +241,6 @@ lemma LSeries.mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     LSeries_delta, Pi.one_apply]
   exact LSeriesSummable.mul χ <| ArithmeticFunction.moebius_LSeriesSummable_iff.mpr hs
 
-open EulerProduct in
-/-- A variant of the Euler product for Dirichlet L-series. -/
-theorem LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
-  rw [LSeries]
-  convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
-    summable_dirichletSummand χ hs -- where does the `x✝: ℕ` come from??
-  ext n
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [term_zero, map_zero]
-  · simp [hn, dirichletSummandHom, div_eq_mul_inv, cpow_neg]
 
 /-!
 ### L-series of Dirichlet characters do not vanish on re s > 1
@@ -322,19 +312,6 @@ lemma LSeriesHasSum_zeta {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum ↗ζ s (riem
 domain of convergence `1 < re s`. -/
 lemma _root_.LSeriesHasSum_one {s : ℂ} (hs : 1 < s.re) : LSeriesHasSum 1 s (riemannZeta s) :=
   LSeries_one_eq_riemannZeta hs ▸ (LSeriesSummable.one_iff_one_lt_re.mpr hs).LSeriesHasSum
-
-open EulerProduct in
-/-- A variant of the Euler product for the L-series of `ζ`. -/
-theorem LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L 1 s := by
-  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' χ₁ hs using 7
-  rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
-
-open EulerProduct in
-/-- A variant of the Euler product for the Riemann zeta function. -/
-theorem _root_.riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = riemannZeta s :=
-  LSeries_one_eq_riemannZeta hs ▸ LSeries_zeta_eulerProduct' hs
 
 -- Rename `zeta_LSeriesSummable_iff_one_lt_re` → `zeta_LSeriesSummable_iff`
 

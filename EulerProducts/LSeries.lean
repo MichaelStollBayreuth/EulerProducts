@@ -1,13 +1,10 @@
-import Mathlib.NumberTheory.LSeries.Basic
-import Mathlib.NumberTheory.LSeries.Convergence
-import Mathlib.NumberTheory.VonMangoldt
+import EulerProducts.Auxiliary
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Convex.Complex
 import Mathlib.Data.Complex.ExponentialBounds
-import Mathlib.Topology.Instances.EReal
+import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import EulerProducts.Auxiliary
 
 /-!
 # More results on L-series
