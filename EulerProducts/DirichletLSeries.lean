@@ -390,7 +390,7 @@ lemma vonMangoldtℂ_mul_zeta :
 lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable ↗Λ s := by
   let s' : ℂ := 1 + (s.re - 1) / 2
   have Hs : s'.re ∈ Set.Ioo 1 s.re := by
-    simp only [add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
+    simp only [s', add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
     constructor <;> linarith
   have hf := (LSeriesSummable.one_iff_one_lt_re.mpr Hs.1).logMul_of_re_lt_re Hs.2
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢

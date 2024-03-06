@@ -101,9 +101,7 @@ lemma Summable.neg_log_one_sub {α  : Type*} {f : α → ℂ} (hsum : Summable f
     DifferentiableAt.neg <| ((differentiableAt_const 1).sub differentiableAt_id').clog <|
       by simp only [sub_zero, one_mem_slitPlane]
   have : g =O[𝓝 0] id := by
-    have H := DifferentiableAt.isBigO_sub hg
-    simp only [sub_zero, log_one, neg_zero] at H
-    exact H
+    simpa only [g, sub_zero, log_one, neg_zero] using DifferentiableAt.isBigO_sub hg
   exact Asymptotics.IsBigO.comp_summable this hsum
 
 namespace EulerProduct

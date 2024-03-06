@@ -178,7 +178,7 @@ lemma LSeries.hasDerivAt {f : ℕ → ℂ} {z : ℂ} (h : abscissaOfAbsConv f < 
   have hop : IsOpen S := isOpen_lt continuous_const continuous_re
   have hpr : IsPreconnected S := (convex_halfspace_re_gt _).isPreconnected
   have hmem : z ∈ S := by
-    simp only [Set.mem_setOf_eq]
+    simp only [S, Set.mem_setOf_eq]
     linarith only [h']
   -- To get a uniform summable bound for the derivative series, we use that we
   -- have summability of the L-series of `pmul log f` at `(x + z)/2`.
@@ -196,7 +196,7 @@ lemma LSeries.hasDerivAt {f : ℕ → ℂ} {z : ℂ} (h : abscissaOfAbsConv f < 
   -- Show that the derivative series is uniformly bounded term-wise.
   simp only [norm_neg, norm_div, norm_mul]
   refine LSeries.norm_term_le_of_re_le_re _ ?_ _
-  simp only [Set.mem_setOf_eq, div_ofNat_re, add_re, ofReal_re] at hs ⊢
+  simp only [S, Set.mem_setOf_eq, div_ofNat_re, add_re, ofReal_re] at hs ⊢
   exact hs.le
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
@@ -305,11 +305,11 @@ lemma term_convolution (f g : ℕ → ℂ) (s : ℂ) (n : ℕ) :
         tsum_union_disjoint (Disjoint.set_prod_left disjoint_sdiff_right ..) ?_ ?_,
           -- (hsum.subtype _) (hsum.subtype _),
         tsum_setProd_singleton_left 0 _ h, tsum_setProd_singleton_right _ 0 h]
-      · simp only [LSeries.term_zero, zero_mul, tsum_zero, mul_zero, add_zero]
-      · simp only [Function.comp_def]
+      · simp only [h, LSeries.term_zero, zero_mul, tsum_zero, mul_zero, add_zero]
+      · simp only [h, Function.comp_def]
         convert summable_zero with p
         rw [Set.mem_singleton_iff.mp p.prop.1, LSeries.term_zero, zero_mul]
-      · simp only [Function.comp_def]
+      · simp only [h, Function.comp_def]
         convert summable_zero with p
         rw [Set.mem_singleton_iff.mp p.prop.2, LSeries.term_zero, mul_zero]
   -- now `n > 0`
