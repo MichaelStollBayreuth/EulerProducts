@@ -100,15 +100,15 @@ noncomputable abbrev logPowMul (n : ℕ) (f : ℕ → ℂ) (m : ℕ) : ℂ :=
 
 lemma logPowMul_zero (f : ℕ → ℂ) : logPowMul 0 f = f := by
   ext
-  simp only [logPowMul, _root_.pow_zero, one_mul]
+  simp only [logPowMul, pow_zero, one_mul]
 
 lemma logPowMul_succ (n : ℕ) (f : ℕ → ℂ) : logPowMul n.succ f = logMul (logPowMul n f) := by
   ext
-  simp only [logPowMul, _root_.pow_succ, mul_assoc, logMul]
+  simp only [logPowMul, pow_succ, mul_assoc, logMul]
 
 lemma logPowMul_succ' (n : ℕ) (f : ℕ → ℂ) : logPowMul n.succ f = logPowMul n (logMul f) := by
   ext n
-  simp only [logPowMul, _root_.pow_succ, logMul, ← mul_assoc]
+  simp only [logPowMul, pow_succ, logMul, ← mul_assoc]
   rw [mul_comm (log n)]
 
 /-- The abscissa of absolute convergence of the point-wise product of a power of `log` and `f`
@@ -199,12 +199,12 @@ lemma LSeries.term_iteratedDeriv (f : ℕ → ℂ) (m n : ℕ) (s : ℂ) :
     iteratedDeriv m (fun z ↦ term f z n) s =
       (-1) ^ m * (term (logPowMul m f) s n) := by
   induction' m with m ih generalizing f s
-  · simp only [Nat.zero_eq, iteratedDeriv_zero, _root_.pow_zero, logPowMul_zero, one_mul]
+  · simp only [Nat.zero_eq, iteratedDeriv_zero, pow_zero, logPowMul_zero, one_mul]
   · have ih' : iteratedDeriv m (fun z ↦ term (logMul f) z n) =
         fun s ↦ (-1) ^ m * (term (logPowMul m (logMul f)) s n) :=
       funext <| ih (logMul f)
     rw [iteratedDeriv_succ', term_deriv' f n, iteratedDeriv_neg, ih', neg_mul_eq_neg_mul,
-      logPowMul_succ', _root_.pow_succ, neg_one_mul]
+      logPowMul_succ', pow_succ, neg_one_mul]
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
 the `n`th derivative of this L-series is `(-1)^n` times the L-series of `log^n * f`. -/
@@ -212,16 +212,15 @@ lemma LSeries_iteratedDeriv {f : ℕ → ℂ} (n : ℕ) {z : ℂ}
     (h : abscissaOfAbsConv f < z.re) :
     iteratedDeriv n (LSeries f) z = (-1) ^ n * LSeries (logPowMul n f) z := by
   induction' n with n ih generalizing z
-  · simp only [Nat.zero_eq, iteratedDeriv_zero, _root_.pow_zero, logPowMul_zero, one_mul]
+  · simp only [Nat.zero_eq, iteratedDeriv_zero, pow_zero, logPowMul_zero, one_mul]
   · have ih' : {z | abscissaOfAbsConv f < z.re}.EqOn (iteratedDeriv n (LSeries f))
         ((-1) ^ n * LSeries (logPowMul n f)) := by
       exact fun _ hs ↦ ih hs
-    rw [iteratedDeriv_succ]
     have := derivWithin_congr ih' (ih h)
     simp_rw [derivWithin_of_isOpen (isOpen_rightHalfPlane _) h] at this
-    rw [this]
+    rw [iteratedDeriv_succ, this]
     change deriv (fun z ↦ (-1) ^ n * LSeries (logPowMul n f) z) z = _
-    rw [deriv_const_mul_field', _root_.pow_succ', mul_assoc, neg_one_mul]
+    rw [deriv_const_mul_field', pow_succ', mul_assoc, neg_one_mul]
     simp only [LSeries_deriv <| absicssaOfAbsConv_pmul_ppow_log.symm ▸ h, logPowMul_succ]
 
 /-- The L-series of `f` is complex differentiable in its open half-plane of absolute
