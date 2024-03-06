@@ -8,19 +8,6 @@ import Mathlib.Analysis.Normed.Field.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 
-namespace iteratedDeriv
-
-variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-lemma neg (n : ℕ) (f : 𝕜 → F) (a : 𝕜) :
-    iteratedDeriv n (fun x ↦ -(f x)) a = -(iteratedDeriv n f a) := by
-  induction' n with n ih generalizing a
-  · simp only [Nat.zero_eq, iteratedDeriv_zero]
-  · have ih' : iteratedDeriv n (fun x ↦ -f x) = fun x ↦ -iteratedDeriv n f x := funext ih
-    rw [iteratedDeriv_succ, iteratedDeriv_succ, ih', deriv.neg]
-
-end iteratedDeriv
-
 /-!
 # More results on L-series
 -/
@@ -221,7 +208,7 @@ lemma LSeries.term_iteratedDeriv (f : ℕ → ℂ) (m n : ℕ) (s : ℂ) :
   · have ih' : iteratedDeriv m (fun z ↦ LSeries.term (logMul f) z n) =
         fun s ↦ (-1) ^ m * (LSeries.term (logPowMul m (logMul f)) s n) :=
       funext <| ih (logMul f)
-    rw [iteratedDeriv_succ', LSeries.term_deriv' f n, iteratedDeriv.neg, ih', neg_mul_eq_neg_mul,
+    rw [iteratedDeriv_succ', LSeries.term_deriv' f n, iteratedDeriv_neg, ih', neg_mul_eq_neg_mul,
       logPowMul_succ', _root_.pow_succ, neg_one_mul]
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
