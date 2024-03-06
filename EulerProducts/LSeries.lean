@@ -20,7 +20,7 @@ scoped[LSeries.notation] notation:max "↗" f:max => fun n : ℕ ↦ (f n : ℂ)
 
 open scoped LSeries.notation
 
-open Complex
+open Complex LSeries
 
 /-!
 ### Convergence of L-series
@@ -37,51 +37,48 @@ lemma Complex.isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
   isOpen_lt continuous_const <| EReal.continuous_coe_iff.mpr continuous_re
 
 /-- The (point-wise) product of `log : ℕ → ℂ` with `f`. -/
-noncomputable abbrev LSeries.logMul (f : ℕ → ℂ) (n : ℕ) : ℂ := Complex.log n * f n
+noncomputable abbrev LSeries.logMul (f : ℕ → ℂ) (n : ℕ) : ℂ := log n * f n
 
 open LSeries
 
-lemma norm_logMul_LSeries.term_le_of_re_lt_re (f : ℕ → ℂ) {w : ℂ} {z : ℂ}
-    (h : w.re < z.re) (n : ℕ) :
-    ‖LSeries.term (logMul f) z n‖ ≤ ‖LSeries.term f w n‖ / (z.re - w.re) := by
-    -- ‖log n * f n / n ^ z‖ ≤ ‖f n / n ^ w‖ / (z.re - w.re) := by
+/-- A bound for the norm of the L-series terms of `f`, multiplied by `log`, in terms
+of the norm at a complex number with larger real part. -/
+lemma norm_lSeriesTerm_LogMul_le_of_re_lt_re (f : ℕ → ℂ) {w z : ℂ} (h : w.re < z.re) (n : ℕ) :
+    ‖term (logMul f) z n‖ ≤ ‖term f w n‖ / (z.re - w.re) := by
   have hwz : 0 < z.re - w.re := sub_pos.mpr h
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp only [LSeries.term_zero, norm_zero, zero_div, le_refl]
-  simp only [LSeries.term_of_ne_zero hn.ne']
+  · simp only [term_zero, norm_zero, zero_div, le_refl]
+  simp only [term_of_ne_zero hn.ne']
   rw [mul_div_assoc, norm_mul]
   refine mul_le_mul_of_nonneg_right (norm_log_natCast_le_rpow_div n hwz) (norm_nonneg _)|>.trans ?_
-  rw [mul_comm_div, mul_div, div_le_div_right hwz]
-  simp_rw [norm_div, norm_natCast_cpow_of_pos hn]
-  rw [mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn, sub_sub_cancel_left,
-    Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
+  rw [mul_comm_div, mul_div, div_le_div_right hwz, norm_div, norm_div, norm_natCast_cpow_of_pos hn,
+    norm_natCast_cpow_of_pos hn, mul_div_left_comm, ← Real.rpow_sub <| Nat.cast_pos.mpr hn,
+    sub_sub_cancel_left, Real.rpow_neg n.cast_nonneg, div_eq_mul_inv]
 
 /-- If the L-series of `f` is summable at `w` and `re w < re z`, then the L-series of the
 point-wise product of `log` with `f` is summable at `z`. -/
-lemma LSeriesSummable.logMul_of_re_lt_re {f : ℕ → ℂ} {w : ℂ} {z : ℂ}
-    (h : w.re < z.re) (hf : LSeriesSummable f w) :
+lemma LSeriesSummable.logMul_of_re_lt_re {f : ℕ → ℂ} {w z : ℂ} (h : w.re < z.re)
+    (hf : LSeriesSummable f w) :
     LSeriesSummable (logMul f) z := by
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
   exact (hf.div_const _).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-    (norm_logMul_LSeries.term_le_of_re_lt_re f h)
+    (norm_lSeriesTerm_LogMul_le_of_re_lt_re f h)
 
 /-- If the L-series of the point-wise product of `log` with `f` is summable at `z`, then
 so is the L-series of `f`. -/
 lemma LSeriesSummable.of_LSeriesSummable_logMul  {f : ℕ → ℂ} {z : ℂ}
-    (h : LSeriesSummable (fun n ↦ Complex.log n * f n) z) : LSeriesSummable f z := by
-  refine h.norm.of_norm_bounded_eventually_nat (fun n ↦ ‖LSeries.term (logMul f) z n‖) ?_
+    (h : LSeriesSummable (fun n ↦ Complex.log n * f n) z) :
+    LSeriesSummable f z := by
+  refine h.norm.of_norm_bounded_eventually_nat (fun n ↦ ‖term (logMul f) z n‖) ?_
   simp only [norm_div, natCast_log, norm_mul, Filter.eventually_atTop]
   refine ⟨3, fun n hn ↦ ?_⟩
-  simp only [LSeries.term_of_ne_zero (show n ≠ 0 by omega), LSeries.logMul, norm_div, norm_mul]
+  simp only [term_of_ne_zero (show n ≠ 0 by omega), logMul, norm_div, norm_mul]
   conv => enter [1, 1]; rw [← one_mul (‖f n‖)]
   gcongr
   rw [← natCast_log, norm_eq_abs, abs_ofReal,
-    _root_.abs_of_nonneg <| Real.log_nonneg <| by norm_cast; linarith]
-  calc 1
-    _ = Real.log (Real.exp 1) := by rw [Real.log_exp]
-    _ ≤ Real.log 3 := Real.log_le_log (by positivity) <|
-                       (Real.exp_one_lt_d9.trans <| by norm_num).le
-    _ ≤ Real.log n := Real.log_le_log zero_lt_three <| by exact_mod_cast hn
+    _root_.abs_of_nonneg <| Real.log_nonneg <| by norm_cast; linarith, ← Real.log_exp 1]
+  exact Real.log_le_log (Real.exp_pos 1) <| (Real.exp_one_lt_d9.trans <| by norm_num).le.trans <|
+    (show (3 : ℝ) ≤ n by exact_mod_cast hn)
 
 /-- The abscissa of absolute convergence of the point-wise product of `log` and `f`
 is the same as that of `f`. -/
@@ -99,7 +96,7 @@ lemma abscissaOfAbsConv_logMul {f : ℕ → ℂ} :
 
 /-- The (point-wise) product of the `n`th power of `log` with `f`. -/
 noncomputable abbrev logPowMul (n : ℕ) (f : ℕ → ℂ) (m : ℕ) : ℂ :=
-  (Complex.log m) ^ n * f m
+  (log m) ^ n * f m
 
 lemma logPowMul_zero (f : ℕ → ℂ) : logPowMul 0 f = f := by
   ext
@@ -112,7 +109,7 @@ lemma logPowMul_succ (n : ℕ) (f : ℕ → ℂ) : logPowMul n.succ f = logMul (
 lemma logPowMul_succ' (n : ℕ) (f : ℕ → ℂ) : logPowMul n.succ f = logPowMul n (logMul f) := by
   ext n
   simp only [logPowMul, _root_.pow_succ, logMul, ← mul_assoc]
-  rw [mul_comm (Complex.log n)]
+  rw [mul_comm (log n)]
 
 /-- The abscissa of absolute convergence of the point-wise product of a power of `log` and `f`
 is the same as that of `f`. -/
@@ -129,11 +126,10 @@ lemma absicssaOfAbsConv_pmul_ppow_log {f : ℕ → ℂ} {n : ℕ} :
 
 /-- The derivative of the terms of an L-series. -/
 lemma LSeries.term_hasDerivAt (f : ℕ → ℂ) (n : ℕ) (s : ℂ) :
-    HasDerivAt (fun z ↦ LSeries.term f z n) (-(LSeries.term (logMul f) s n)) s := by
-  rcases eq_or_ne n 0 with rfl | hn₀
-  · simp only [LSeries.term_zero, neg_zero, hasDerivAt_const]
-  have hn : 0 < n := Nat.pos_of_ne_zero hn₀
-  simp only [LSeries.term_of_ne_zero hn₀]
+    HasDerivAt (fun z ↦ term f z n) (-(term (logMul f) s n)) s := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp only [term_zero, neg_zero, hasDerivAt_const]
+  simp only [term_of_ne_zero hn.ne']
   rw [← neg_div, ← neg_mul, mul_comm, mul_div_assoc]
   simp_rw [div_eq_mul_inv, ← cpow_neg]
   refine HasDerivAt.const_mul (f n) ?_
@@ -142,14 +138,14 @@ lemma LSeries.term_hasDerivAt (f : ℕ → ℂ) (n : ℕ) (s : ℂ) :
 
 /-- The derivative of the terms of an L-series. -/
 lemma LSeries.term_deriv (f : ℕ → ℂ) (n : ℕ) (s : ℂ) :
-    deriv (fun z ↦ LSeries.term f z n) s = -(LSeries.term (logMul f) s n) :=
-  (LSeries.term_hasDerivAt f n s).deriv
+    deriv (fun z ↦ term f z n) s = -(term (logMul f) s n) :=
+  (term_hasDerivAt f n s).deriv
 
 /-- The derivative of the terms of an L-series. -/
 lemma LSeries.term_deriv' (f : ℕ → ℂ) (n : ℕ) :
-    deriv (fun z ↦ LSeries.term f z n) = fun s ↦ -(LSeries.term (logMul f) s n) := by
+    deriv (fun z ↦ term f z n) = fun s ↦ -(term (logMul f) s n) := by
   ext
-  exact LSeries.term_deriv ..
+  exact term_deriv ..
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then the L-series
 of `f` is differentiable with derivative the negative of the L-series of the point-wise
@@ -176,13 +172,13 @@ lemma LSeries.hasDerivAt {f : ℕ → ℂ} {z : ℂ} (h : abscissaOfAbsConv f < 
   rw [LSeriesSummable, ← summable_norm_iff] at hf'
   -- Show that the terms have the correct derivative.
   have hderiv (n : ℕ) :
-      ∀ s ∈ S, HasDerivAt (fun z ↦ LSeries.term f z n) (-(LSeries.term (logMul f) s n)) s := by
-    exact fun s _ ↦ LSeries.term_hasDerivAt f n s
+      ∀ s ∈ S, HasDerivAt (fun z ↦ term f z n) (-(term (logMul f) s n)) s := by
+    exact fun s _ ↦ term_hasDerivAt f n s
   refine hasDerivAt_tsum_of_isPreconnected (F := ℂ) hf' hop hpr hderiv
     (fun n s hs ↦ ?_) hmem (hf.of_re_le_re <| ofReal_re x ▸ h'.le) hmem
   -- Show that the derivative series is uniformly bounded term-wise.
   simp only [norm_neg, norm_div, norm_mul]
-  refine LSeries.norm_term_le_of_re_le_re _ ?_ _
+  refine norm_term_le_of_re_le_re _ ?_ _
   simp only [S, Set.mem_setOf_eq, div_ofNat_re, add_re, ofReal_re] at hs ⊢
   exact hs.le
 
@@ -190,25 +186,24 @@ lemma LSeries.hasDerivAt {f : ℕ → ℂ} {z : ℂ} (h : abscissaOfAbsConv f < 
 the derivative of this L-series is the negative of the L-series of `log * f`. -/
 lemma LSeries_deriv {f : ℕ → ℂ} {z : ℂ} (h : abscissaOfAbsConv f < z.re) :
     deriv (LSeries f) z = - LSeries (logMul f) z :=
-  (LSeries.hasDerivAt h).deriv
+  (hasDerivAt h).deriv
 
 /-- The derivative of the L-series of `f` agrees with the negative of the L-series of
 `log * f` on the right half-plane of absolute convergence. -/
 lemma LSeries_deriv_eqOn {f : ℕ → ℂ} :
     {z | abscissaOfAbsConv f < z.re}.EqOn (deriv (LSeries f)) (- LSeries (logMul f)) :=
-  deriv_eqOn (isOpen_rightHalfPlane _) fun _ hz ↦ HasDerivAt.hasDerivWithinAt <|
-    LSeries.hasDerivAt hz
+  deriv_eqOn (isOpen_rightHalfPlane _) fun _ hz ↦ (hasDerivAt hz).hasDerivWithinAt
 
 /-- The higher derivatives of the terms of an L-series. -/
 lemma LSeries.term_iteratedDeriv (f : ℕ → ℂ) (m n : ℕ) (s : ℂ) :
-    iteratedDeriv m (fun z ↦ LSeries.term f z n) s =
-      (-1) ^ m * (LSeries.term (logPowMul m f) s n) := by
+    iteratedDeriv m (fun z ↦ term f z n) s =
+      (-1) ^ m * (term (logPowMul m f) s n) := by
   induction' m with m ih generalizing f s
   · simp only [Nat.zero_eq, iteratedDeriv_zero, _root_.pow_zero, logPowMul_zero, one_mul]
-  · have ih' : iteratedDeriv m (fun z ↦ LSeries.term (logMul f) z n) =
-        fun s ↦ (-1) ^ m * (LSeries.term (logPowMul m (logMul f)) s n) :=
+  · have ih' : iteratedDeriv m (fun z ↦ term (logMul f) z n) =
+        fun s ↦ (-1) ^ m * (term (logPowMul m (logMul f)) s n) :=
       funext <| ih (logMul f)
-    rw [iteratedDeriv_succ', LSeries.term_deriv' f n, iteratedDeriv_neg, ih', neg_mul_eq_neg_mul,
+    rw [iteratedDeriv_succ', term_deriv' f n, iteratedDeriv_neg, ih', neg_mul_eq_neg_mul,
       logPowMul_succ', _root_.pow_succ, neg_one_mul]
 
 /-- If `re z` is greater than the abscissa of absolute convergence of `f`, then
@@ -233,7 +228,7 @@ lemma LSeries_iteratedDeriv {f : ℕ → ℂ} (n : ℕ) {z : ℂ}
 convergence. -/
 lemma LSeries.differentiableOn {f : ℕ → ℂ} :
     DifferentiableOn ℂ (LSeries f) {z | abscissaOfAbsConv f < z.re} :=
-  fun _ hz ↦ (LSeries.hasDerivAt hz).differentiableAt.differentiableWithinAt
+  fun _ hz ↦ (hasDerivAt hz).differentiableAt.differentiableWithinAt
 
 
 /-!
@@ -281,7 +276,7 @@ lemma term_convolution (f g : ℕ → ℂ) (s : ℂ) (n : ℕ) :
   rcases n.eq_zero_or_pos with rfl | hn
   · trans 0 -- show that both sides vanish when `n = 0`
     · -- by definition, the left hand sum is over the empty set
-      exact LSeries.term_zero ..
+      exact term_zero ..
     · -- the right hand sum is over the union below, but in each term, one factor is always zero
       have hS : m ⁻¹' {0} = {0} ×ˢ univ ∪ (univ \ {0}) ×ˢ {0} := by
         ext
@@ -292,26 +287,26 @@ lemma term_convolution (f g : ℕ → ℂ) (s : ℂ) (n : ℕ) :
         tsum_union_disjoint (Disjoint.set_prod_left disjoint_sdiff_right ..) ?_ ?_,
           -- (hsum.subtype _) (hsum.subtype _),
         tsum_setProd_singleton_left 0 _ h, tsum_setProd_singleton_right _ 0 h]
-      · simp only [h, LSeries.term_zero, zero_mul, tsum_zero, mul_zero, add_zero]
+      · simp only [h, term_zero, zero_mul, tsum_zero, mul_zero, add_zero]
       · simp only [h, Function.comp_def]
         convert summable_zero with p
-        rw [Set.mem_singleton_iff.mp p.prop.1, LSeries.term_zero, zero_mul]
+        rw [Set.mem_singleton_iff.mp p.prop.1, term_zero, zero_mul]
       · simp only [h, Function.comp_def]
         convert summable_zero with p
-        rw [Set.mem_singleton_iff.mp p.prop.2, LSeries.term_zero, mul_zero]
+        rw [Set.mem_singleton_iff.mp p.prop.2, term_zero, mul_zero]
   -- now `n > 0`
   have H : n.divisorsAntidiagonal = m ⁻¹' {n} := by
     ext x
     replace hn := hn.ne' -- for `tauto` below
     simp only [Finset.mem_coe, mem_divisorsAntidiagonal, m, mem_preimage, mem_singleton_iff]
     tauto
-  rw [← H, Finset.tsum_subtype' n.divisorsAntidiagonal h, LSeries.term_of_ne_zero hn.ne',
+  rw [← H, Finset.tsum_subtype' n.divisorsAntidiagonal h, term_of_ne_zero hn.ne',
     convolution_def, Finset.sum_div]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
   simp only [h]
   obtain ⟨hp, hn₀⟩ := mem_divisorsAntidiagonal.mp hp
   have ⟨hp₁, hp₂⟩ := mul_ne_zero_iff.mp <| hp.symm ▸ hn₀
-  rw [LSeries.term_of_ne_zero hp₁ f s, LSeries.term_of_ne_zero hp₂ g s, mul_comm_div, div_div,
+  rw [term_of_ne_zero hp₁ f s, term_of_ne_zero hp₂ g s, mul_comm_div, div_div,
     ← mul_div_assoc, ← natCast_mul_natCast_cpow, ← Nat.cast_mul, mul_comm p.2, hp]
 
 end LSeries
@@ -328,7 +323,7 @@ lemma LSeriesHasSum.convolution {f g : ℕ → ℂ} {s a b : ℂ} (hf : LSeriesH
   have hsum := summable_mul_of_summable_norm hf.summable.norm hg.summable.norm
   let m : ℕ × ℕ → ℕ := fun p ↦ p.1 * p.2
   convert (HasSum.mul hf hg hsum).tsum_fiberwise m with n
-  exact LSeries.term_convolution ..
+  exact term_convolution ..
 
 /-- The L-series of the convolution product `f ⍟ g` of two sequences `f` and `g`
 equals the product of their L-series, assuming both L-series converge. -/
