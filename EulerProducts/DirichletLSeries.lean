@@ -181,11 +181,6 @@ lemma LSeries_modOne_eq : L ↗χ₁ = L 1 := by
   refine LSeries_congr s fun n _ ↦ ?_
   simp only [MulChar.one_apply (isUnit_of_subsingleton (n : ZMod 1)), Pi.one_apply]
 
--- proved in Auxiliary.lean
-lemma _root_.Real.not_summable_indicator_one_div_natCast {m : ℕ} (hm : m ≠ 0) (k : ZMod m) :
-    ¬ Summable ({n : ℕ | (n : ZMod m) = k}.indicator fun n : ℕ ↦ (1 / n : ℝ)) := by
-  sorry
-
 lemma not_LSeriesSummable_at_one {N : ℕ} (hN : N ≠ 0) (χ : DirichletCharacter ℂ N) :
     ¬ LSeriesSummable ↗χ 1 := by
   by_contra! h
@@ -269,7 +264,8 @@ end DirichletCharacter
 section zeta
 
 /-!
-### The L-series of the arithmetic function ζ-/
+### The L-series of the arithmetic function ζ
+-/
 
 namespace ArithmeticFunction
 
