@@ -412,7 +412,7 @@ lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L ↗Λ s = - deriv (L 
     ← vonMangoldtℂ_eq_vonMangoldt,
     ← LSeries_mul hΛ hζ,
     ← neg_eq_iff_eq_neg, show ↗(ζ : ArithmeticFunction ℂ) = ↗ζ from rfl,
-     LSeries_deriv hs', vonMangoldtℂ_mul_zeta]
+     LSeries.deriv hs', vonMangoldtℂ_mul_zeta]
   congr
   ext ⟨- | n⟩
   · simp
