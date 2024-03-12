@@ -13,7 +13,11 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 @[inherit_doc]
 scoped[LSeries.notation] notation "L" => LSeries
 
-/-- We introduce notation `↗f` for `f` interpreted as a function `ℕ → ℂ`. -/
+/-- We introduce notation `↗f` for `f` interpreted as a function `ℕ → ℂ`.
+
+Let `R` be a ring with a coercion to `ℂ`. Then we can write `↗χ` when `χ : DirichletCharacter R`
+or `↗f` when `f : ArithmeticFunction R` or simply `f : N → R` with a coercion from `ℕ` to `N`
+as an argument to `LSeries`, `LSeriesHasSum`, `LSeriesSummable` etc. -/
 scoped[LSeries.notation] notation:max "↗" f:max => fun n : ℕ ↦ (f n : ℂ)
 
 open scoped LSeries.notation
@@ -63,8 +67,6 @@ lemma Complex.isOpen_rightHalfPlane (x : EReal) : IsOpen {z : ℂ | x < z.re} :=
 
 /-- The (point-wise) product of `log : ℕ → ℂ` with `f`. -/
 noncomputable abbrev LSeries.logMul (f : ℕ → ℂ) (n : ℕ) : ℂ := log n * f n
-
-open LSeries
 
 /-- A bound for the norm of the L-series terms of `f`, multiplied by `log`, in terms
 of the norm at a complex number with larger real part. -/

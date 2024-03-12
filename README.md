@@ -8,7 +8,10 @@ Current projects:
 * [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean): auxiliary lemmas
 * [__EulerProducts/Logarithm.lean__](EulerProducts/Logarithm.lean): proves a logarithmic version
   of the Euler product formula for completely multiplicative arithmetic functions
-* [__EulerProducts/LSeries.lean__](EulerProducts/LSeries.lean): convergence, derivatives, products
+* [__EulerProducts/LSeries.lean__](EulerProducts/LSeries.lean): derivatives and products
   of L-series
+* [__EulerProducts/DirichletLSeries.lean__](EulerProducts/DirichletLSeries.lean): results
+  on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
+  von Mangoldt functions)
 * [__EulerProducts/PNT.lean__](EulerProducts/PNT.lean): a reduction of the __Prime Number Theorem__
   (in the version $\psi(x) \sim x$) to a version of the __Wiener-Ikehara Tauberian Theorem__.
