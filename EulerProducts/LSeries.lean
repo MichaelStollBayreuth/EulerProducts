@@ -10,16 +10,6 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 # More results on L-series
 -/
 
-@[inherit_doc]
-scoped[LSeries.notation] notation "L" => LSeries
-
-/-- We introduce notation `↗f` for `f` interpreted as a function `ℕ → ℂ`.
-
-Let `R` be a ring with a coercion to `ℂ`. Then we can write `↗χ` when `χ : DirichletCharacter R`
-or `↗f` when `f : ArithmeticFunction R` or simply `f : N → R` with a coercion from `ℕ` to `N`
-as an argument to `LSeries`, `LSeriesHasSum`, `LSeriesSummable` etc. -/
-scoped[LSeries.notation] notation:max "↗" f:max => fun n : ℕ ↦ (f n : ℂ)
-
 open scoped LSeries.notation
 
 open Complex LSeries
