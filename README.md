@@ -1,6 +1,6 @@
 # EulerProducts
 
-An attempt at formalizing facts on Euler products in Lean
+An attempt at formalizing facts on Euler products and L-series more generally in Lean
 
 Some results have by now made it into Mathlib.
 
