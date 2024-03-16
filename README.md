@@ -10,6 +10,8 @@ Current projects:
   of the Euler product formula for completely multiplicative arithmetic functions
 * [__EulerProducts/LSeries.lean__](EulerProducts/LSeries.lean): derivatives and products
   of L-series
+* [__EulerProducts/LSeriesUnique.lean__](EulerProducts/LSeriesUnique.lean): a converging L-series
+  determines its coefficients
 * [__EulerProducts/DirichletLSeries.lean__](EulerProducts/DirichletLSeries.lean): results
   on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
   von Mangoldt functions)
