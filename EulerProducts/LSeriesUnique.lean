@@ -14,10 +14,6 @@ lemma LSeries_zero : LSeries 0 = 0 := by
 
 -- TODO: change argument order in `LSeries_congr` to have `s` last.
 
-lemma LSeries.abscissaOfAbsConv_congr {f g : ℕ → ℂ} (h : ∀ n ≠ 0, f n = g n) :
-    abscissaOfAbsConv f = abscissaOfAbsConv g :=
-  congr_arg sInf <| congr_arg _ <| Set.ext fun x ↦ LSeriesSummable_congr x h
-
 /-- If `F` is a binary operation on `ℕ → ℂ` with the property that the `LSeries` of `F f g`
 converges whenever the `LSeries` of `f` and `g` do, then the abscissa of absolute convergence
 of `F f g` is at most the maximum of the abscissa of absolute convergence of `f` and that of `g`. -/

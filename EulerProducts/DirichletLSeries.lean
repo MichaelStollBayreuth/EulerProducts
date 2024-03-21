@@ -1,8 +1,9 @@
 import EulerProducts.LSeries
 import Mathlib.NumberTheory.SumPrimeReciprocals
-import Mathlib.NumberTheory.DirichletCharacter.Bounds
-import Mathlib.NumberTheory.ZetaFunction
 import Mathlib.NumberTheory.VonMangoldt
+import Mathlib.NumberTheory.ZetaFunction
+import Mathlib.NumberTheory.DirichletCharacter.Bounds
+import Mathlib.NumberTheory.LSeries.Deriv
 
 open scoped LSeries.notation
 
@@ -384,14 +385,12 @@ lemma vonMangoldtℂ_mul_zeta :
 
 /-- The L-series of the von Mangoldt function `Λ` is summable at `s` when `re s > 1`. -/
 lemma LSeriesSummable_vonMangoldt {s : ℂ} (hs : 1 < s.re) : LSeriesSummable ↗Λ s := by
-  let s' : ℂ := 1 + (s.re - 1) / 2
-  have Hs : s'.re ∈ Set.Ioo 1 s.re := by
-    simp only [s', add_re, one_re, div_ofNat_re, sub_re, ofReal_re, Set.mem_Ioo]
-    constructor <;> linarith
-  have hf := (LSeriesSummable.one_iff_one_lt_re.mpr Hs.1).logMul_of_re_lt_re Hs.2
+  have hs' : abscissaOfAbsConv 1 < s.re := by
+    rw [abscissaOfAbsConv_one]
+    exact_mod_cast hs
+  have hf := LSeriesSummable_logMul_of_lt_re hs'
   rw [LSeriesSummable, ← summable_norm_iff] at hf ⊢
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hf
-  refine norm_term_le s ?_
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ norm_term_le s ?_) hf
   have hΛ : ‖↗Λ n‖ ≤ ‖Complex.log n‖ := by
     simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg vonMangoldt_nonneg,
       ← Complex.natCast_log, _root_.abs_of_nonneg <| Real.log_nat_cast_nonneg n]
@@ -412,7 +411,7 @@ lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L ↗Λ s = - deriv (L 
     ← vonMangoldtℂ_eq_vonMangoldt,
     ← LSeries_mul hΛ hζ,
     ← neg_eq_iff_eq_neg, show ↗(ζ : ArithmeticFunction ℂ) = ↗ζ from rfl,
-     LSeries.deriv hs', vonMangoldtℂ_mul_zeta]
+     LSeries_deriv hs', vonMangoldtℂ_mul_zeta]
   congr
   ext ⟨- | n⟩
   · simp
