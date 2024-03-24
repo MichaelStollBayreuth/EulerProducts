@@ -3,7 +3,16 @@ import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 
 /-!
-# More results on L-series
+# Dirichlet convolution of sequences and products of L-series
+
+We define the *Dirichlet convolution* `f ⍟ g` of two sequences `f g : ℕ → R` with values in a
+semiring `R` by `(f ⍟ g) n = ∑ (k * m = n), f k * g m` when `n ≠ 0` and `(f ⍟ g) 0 = 0`.
+Technically, this is done by transporting the existing definition for `ArithmeticFunction R`;
+see `LSeries.convolution`. We show that these definitions agree (`LSeries.convolution_def`).
+
+We then consider the case `R = ℂ` and show that `L (f ⍟ g) = L f * L g` on the common domain
+of convergence of the L-series `L f`  and `L g` of `f` and `g`; see `LSeries_convolution`
+and `LSeries_convolution'`.
 -/
 
 open scoped LSeries.notation
@@ -11,41 +20,66 @@ open scoped LSeries.notation
 open Complex LSeries
 
 /-!
-### Multiplication of L-series
+### Dirichlet convolution of two functions
 -/
 
 open BigOperators
 
-namespace LSeries
+/-- We turn any function `ℕ → R` into an `ArithmeticFunction R` by setting its value at `0`
+to be zero. -/
+def toArithmeticFunction {R : Type*} [Zero R] (f : ℕ → R) : ArithmeticFunction R where
+  toFun n := if n = 0 then 0 else f n
+  map_zero' := rfl
 
-/-- Dirichlet convolution of two sequences. -/
-noncomputable def convolution {R : Type*} [Semiring R] (f g : ℕ → R) : ℕ → R :=
-  fun n ↦ ∑ p in n.divisorsAntidiagonal, f p.1 * g p.2
+/-- If we consider an arithmetic function just as a function and turn it back into an
+arithmetic function, it is the same as before. -/
+@[simp]
+lemma ArithmeticFunction.toArithmeticFunction_eq_self {R : Type*} [Zero R]
+    (f : ArithmeticFunction R) :
+    toArithmeticFunction f = f := by
+  ext n
+  simp (config := {contextual := true}) [toArithmeticFunction, ArithmeticFunction.map_zero]
+
+/-- Dirichlet convolution of two sequences.
+
+We define this in terms of the already existing definition for arithmetic functions. -/
+noncomputable def LSeries.convolution {R : Type*} [Semiring R] (f g : ℕ → R) : ℕ → R :=
+  (toArithmeticFunction f * toArithmeticFunction g :)
 
 @[inherit_doc]
-scoped[LSeries.notation] infixl:70 " ⍟ " => convolution
+scoped[LSeries.notation] infixl:70 " ⍟ " => LSeries.convolution
 
 open scoped LSeries.notation
 
-lemma convolution_def {R : Type*} [Semiring R] (f g : ℕ → R) (n : ℕ) :
-    (f ⍟ g) n = ∑ p in n.divisorsAntidiagonal, f p.1 * g p.2 :=
-  rfl
+/-- The product of two arithmetic functions defines the same function as the Dirichlet convolution
+of the functions defined by them. -/
+lemma ArithmeticFunction.mul_to_convolution {R : Type*} [Semiring R] (f g : ArithmeticFunction R) :
+    f ⍟ g = (f * g :) := by
+  simp only [convolution, ArithmeticFunction.toArithmeticFunction_eq_self]
 
-lemma convolution_def' {R : Type*} [Semiring R] (f g : ℕ → R) :
-    f ⍟ g = fun n ↦ ∑ p in n.divisorsAntidiagonal, f p.1 * g p.2 :=
-  rfl
+namespace LSeries
+
+lemma convolution_def {R : Type*} [Semiring R] (f g : ℕ → R) :
+    f ⍟ g = fun n ↦ ∑ p in n.divisorsAntidiagonal, f p.1 * g p.2 := by
+  ext n
+  simp only [convolution, toArithmeticFunction, ArithmeticFunction.mul_apply,
+    ArithmeticFunction.coe_mk, mul_ite, mul_zero, ite_mul, zero_mul]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  obtain ⟨hp₁, hp₂⟩ := Nat.mem_divisorsAntidiagonal.mp hp
+  obtain ⟨h₁, h₂⟩ := mul_ne_zero_iff.mp (hp₁.symm ▸ hp₂)
+  simp only [h₂, ↓reduceIte, h₁]
 
 @[simp]
-lemma convolution_zero {R : Type*} [Semiring R] (f g : ℕ → R) : (f ⍟ g) 0 = 0 := by
-  simp only [convolution_def', Nat.divisorsAntidiagonal_zero, Finset.sum_empty]
+lemma convolution_map_zero {R : Type*} [Semiring R] (f g : ℕ → R) : (f ⍟ g) 0 = 0 := by
+  simp only [convolution_def, Nat.divisorsAntidiagonal_zero, Finset.sum_empty]
 
-lemma _root_.ArithmeticFunction.mul_to_convolution {R : Type*} [Semiring R]
-    (f g : ArithmeticFunction R) :
-    f ⍟ g = (f * g :) := by
-  ext
-  simp only [convolution_def, ArithmeticFunction.mul_apply]
+
+/-!
+### Multiplication of L-series
+-/
 
 open Set Nat in
+/-- We give an expression of the `LSeries.term` of the convolution of two functions. -/
 lemma term_convolution (f g : ℕ → ℂ) (s : ℂ) (n : ℕ) :
     term (f ⍟ g) s n =
       ∑' (b : (fun p : ℕ × ℕ ↦ p.1 * p.2) ⁻¹' {n}),
@@ -90,8 +124,6 @@ lemma term_convolution (f g : ℕ → ℂ) (s : ℂ) (n : ℕ) :
 
 end LSeries
 
-open scoped LSeries.notation
-
 open Set in
 /-- The L-series of the convolution product `f ⍟ g` of two sequences `f` and `g`
 equals the product of their L-series, assuming both L-series converge. -/
@@ -121,35 +153,43 @@ lemma LSeries_convolution' {f g : ℕ → ℂ} {s : ℂ}
 
 /-- The L-series of the convolution product `f ⍟ g` of two sequences `f` and `g`
 is summable when both L-series are summable. -/
-lemma LSeriesSummable_convolution {f g : ℕ → ℂ} {s : ℂ} (hf : LSeriesSummable f s)
+lemma LSeriesSummable.convolution {f g : ℕ → ℂ} {s : ℂ} (hf : LSeriesSummable f s)
     (hg : LSeriesSummable g s) :
     LSeriesSummable (f ⍟ g) s :=
   (LSeriesHasSum.convolution hf.LSeriesHasSum hg.LSeriesHasSum).LSeriesSummable
 
 namespace ArithmeticFunction
 
-lemma LSeriesHasSum.mul {f g : ArithmeticFunction ℂ} {s a b : ℂ} (hf : LSeriesHasSum ↗f s a)
-    (hg : LSeriesHasSum ↗g s b) :
-    LSeriesHasSum ↗(f * g) s (a * b) := by
-  rw [← mul_to_convolution]
-  exact LSeriesHasSum.convolution hf hg
+/-!
+### Versions for arithmetic functions
+-/
 
+/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`
+equals the product of their L-series, assuming both L-series converge. -/
+lemma LSeriesHasSum_mul {f g : ArithmeticFunction ℂ} {s a b : ℂ} (hf : LSeriesHasSum ↗f s a)
+    (hg : LSeriesHasSum ↗g s b) :
+    LSeriesHasSum ↗(f * g) s (a * b) :=
+  mul_to_convolution f g ▸ hf.convolution hg
+
+/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`
+equals the product of their L-series, assuming both L-series converge. -/
 lemma LSeries_mul {f g : ArithmeticFunction ℂ} {s : ℂ} (hf : LSeriesSummable ↗f s)
     (hg : LSeriesSummable ↗g s) :
-    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s := by
-  rw [← mul_to_convolution]
-  exact LSeries_convolution hf hg
+    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s :=
+  mul_to_convolution f g ▸ LSeries_convolution hf hg
 
+/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`
+equals the product of their L-series in their common half-plane of absolute convergence. -/
 lemma LSeries_mul' {f g : ArithmeticFunction ℂ} {s : ℂ}
     (hf : abscissaOfAbsConv ↗f < s.re) (hg : abscissaOfAbsConv ↗g < s.re) :
-    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s := by
-  rw [← mul_to_convolution]
-  exact LSeries_convolution' hf hg
+    LSeries ↗(f * g) s = LSeries ↗f s * LSeries ↗g s :=
+  mul_to_convolution f g ▸ LSeries_convolution' hf hg
 
+/-- The L-series of the (convolution) product of two `ℂ`-valued arithmetic functions `f` and `g`
+is summable when both L-series are summable. -/
 lemma LSeriesSummable_mul {f g : ArithmeticFunction ℂ} {s : ℂ} (hf : LSeriesSummable ↗f s)
     (hg : LSeriesSummable ↗g s) :
-    LSeriesSummable ↗(f * g) s := by
-  rw [← mul_to_convolution]
-  exact LSeriesSummable_convolution hf hg
+    LSeriesSummable ↗(f * g) s :=
+  mul_to_convolution f g ▸ hf.convolution hg
 
 end ArithmeticFunction

@@ -134,10 +134,10 @@ lemma convolution_mul_moebius {n : ℕ} (χ : DirichletCharacter ℂ n) :
     have H : (1 : ℕ → ℂ) ⍟ (μ ·) = (((ζ * μ :) ·) : ℕ → ℂ) := by
       ext n
       rcases eq_or_ne n 0 with rfl | hn
-      · simp only [convolution_def', divisorsAntidiagonal_zero, Pi.one_apply, one_mul,
+      · simp only [LSeries.convolution_def, divisorsAntidiagonal_zero, Pi.one_apply, one_mul,
           Finset.sum_empty, ArithmeticFunction.coe_zeta_mul_moebius, ArithmeticFunction.map_zero,
           Int.cast_zero]
-      simp only [convolution_def', Pi.one_apply, one_mul, ArithmeticFunction.mul_apply]
+      simp only [LSeries.convolution_def, Pi.one_apply, one_mul, ArithmeticFunction.mul_apply]
       norm_cast
       refine Finset.sum_congr rfl fun p hp ↦ ?_
       have : p.1 ≠ 0 := Nat.ne_zero_of_mul_ne_zero_left <|
