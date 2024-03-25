@@ -1,8 +1,8 @@
-import EulerProducts.LSeries
 import Mathlib.NumberTheory.SumPrimeReciprocals
 import Mathlib.NumberTheory.VonMangoldt
 import Mathlib.NumberTheory.ZetaFunction
 import Mathlib.NumberTheory.DirichletCharacter.Bounds
+import Mathlib.NumberTheory.LSeries.Convolution
 import Mathlib.NumberTheory.LSeries.Deriv
 
 open scoped LSeries.notation
@@ -236,7 +236,7 @@ lemma LSeries.mul_mu_eq_one {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
   rcases eq_or_ne N 0 with rfl | hN
   · rw [modZero_eq_delta, LSeries_delta, LSeries.delta_mul (by norm_cast), LSeries_delta,
      Pi.one_apply, one_mul]
-  rw [← LSeries_convolution ((LSeriesSummable_iff hN χ).mpr hs) ?_, convolution_mul_moebius,
+  rw [← LSeries_convolution' ((LSeriesSummable_iff hN χ).mpr hs) ?_, convolution_mul_moebius,
     LSeries_delta, Pi.one_apply]
   exact LSeriesSummable.mul χ <| ArithmeticFunction.moebius_LSeriesSummable_iff.mpr hs
 
@@ -321,11 +321,11 @@ lemma convolution_zeta_moebius : ↗ζ ⍟ ↗μ = δ := by
   have hμ : ↗μ = ↗(μ : ArithmeticFunction ℂ) := by
     simp only [intCoe_apply]
   ext
-  simp only [hμ, hζ, mul_to_convolution, coe_zeta_mul_coe_moebius, one_apply, delta]
+  simp only [hμ, hζ, coe_mul, coe_zeta_mul_coe_moebius, one_apply, delta]
 
 /-- The L-series of the constant sequence `1` and of the Möbius function are inverses. -/
 lemma _root_.LSeries_one_mul_Lseries_moebius {s : ℂ} (hs : 1 < s.re) : L 1 s * L ↗μ s = 1 := by
-  rw [← LSeries_zeta_eq, ← LSeries_convolution (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
+  rw [← LSeries_zeta_eq, ← LSeries_convolution' (zeta_LSeriesSummable_iff_one_lt_re.mpr hs)
     (moebius_LSeriesSummable_iff.mpr hs),
     convolution_zeta_moebius, LSeries_delta, Pi.one_apply]
 
@@ -409,7 +409,7 @@ lemma LSeries_vonMangoldt_eq {s : ℂ} (hs : 1 < s.re) : L ↗Λ s = - deriv (L 
     zeta_LSeriesSummable_iff_one_lt_re.mpr hs
   rw [eq_div_iff <| LSeries_zeta_ne_zero hs, show ↗ζ = ↗(ζ : ArithmeticFunction ℂ) from rfl,
     ← vonMangoldtℂ_eq_vonMangoldt,
-    ← LSeries_mul hΛ hζ,
+    ← LSeries_mul' hΛ hζ,
     ← neg_eq_iff_eq_neg, show ↗(ζ : ArithmeticFunction ℂ) = ↗ζ from rfl,
      LSeries_deriv hs', vonMangoldtℂ_mul_zeta]
   congr

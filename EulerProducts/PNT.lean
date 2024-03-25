@@ -307,7 +307,7 @@ lemma riemannZeta_isBigO_near_one_horizontal :
     have H : Tendsto (fun w ↦ w * ζ (1 + w)) (𝓝[≠] 0) (𝓝 1) := by
       convert Tendsto.comp (f := fun w ↦ 1 + w) riemannZeta_residue_one ?_ using 1
       · ext w
-        simp only [Function.comp_apply, add_sub_cancel']
+        simp only [Function.comp_apply, add_sub_cancel_left]
       · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
         convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;> simp
     exact ((isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
