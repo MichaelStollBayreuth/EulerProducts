@@ -72,6 +72,14 @@ lemma eulerProduct_of_completelyMultiplicative {f : ℕ → ℂ} (h₁ : f 1 = 1
             map_mul' := term_completelyMultiplicative hf s })
     hs.norm
 
+/-- The Euler product for the L-series of a completely multiplicative sequence `f`,
+logarithmic version -/
+lemma eulerProduct_of_completelyMultiplicative' {f : ℕ → ℂ} (h₁ : f 1 = 1)
+    (hf : ∀ m n, f (m * n) = f m * f n) {s : ℂ} (hs : LSeriesSummable f s) :
+    exp (∑' p : Nat.Primes, -log (1 - term f s p)) = L f s :=
+  exp_sum_primes_log_eq_tsum' (term_zero ..) (term_at_one h₁ s)
+    (term_completelyMultiplicative hf s) hs.norm
+
 end LSeries
 
 open LSeries

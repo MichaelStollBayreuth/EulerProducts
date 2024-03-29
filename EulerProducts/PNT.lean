@@ -73,7 +73,7 @@ lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletChar
       _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
       _ = _ := one_mul _
   refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
-    |>.of_norm.neg_log_one_sub
+    |>.of_norm.neg_clog_one_sub
   simp only [neg_re, neg_lt_neg_iff, hs]
 
 /-- A technical lemma showing that a certain linear combination of real parts of logarithms
