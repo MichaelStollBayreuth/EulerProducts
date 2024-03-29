@@ -8,6 +8,8 @@ Current projects:
 * [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean): auxiliary lemmas
 * [__EulerProducts/Logarithm.lean__](EulerProducts/Logarithm.lean): proves a logarithmic version
   of the Euler product formula for completely multiplicative arithmetic functions
+* [__EulerProducts/EulerProduct.lean__](EulerProducts/EulerProduct.lean): Euler products formulas
+  for L-series of weakly or completely multiplicative sequences
 * [__EulerProducts/LSeriesUnique.lean__](EulerProducts/LSeriesUnique.lean): a converging L-series
   determines its coefficients
 * [__EulerProducts/DirichletLSeries.lean__](EulerProducts/DirichletLSeries.lean): results
