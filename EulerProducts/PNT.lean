@@ -181,7 +181,8 @@ lemma norm_zeta_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
   simpa only [one_pow, norm_mul, norm_pow, DirichletCharacter.LSeries_modOne_eq,
     LSeries_one_eq_riemannZeta, h₀, h₁, h₂] using norm_dirichlet_product_ge_one χ₁ hx y
 
-open BigOperators Finset ZMod in
+-- not sure we need this
+/- open BigOperators Finset ZMod in
 lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re)
     {n : ℕ} (hn : N < n) :
     (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) * (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s))) =
@@ -233,11 +234,15 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
   rcases eq_or_ne n 0 with rfl | hn
   · simp only [term_zero, cast_zero, CharP.cast_eq_zero, ne_eq, neg_eq_zero,
     ne_zero_of_one_lt_re hs, not_false_eq_true, zero_cpow, mul_zero]
-  rw [LSeries.term_of_ne_zero hn, div_eq_mul_inv, cpow_neg]
+  rw [LSeries.term_of_ne_zero hn, div_eq_mul_inv, cpow_neg] -/
 
 end
 
 section Topology
+
+/-!
+### Some API additions
+-/
 
 open Filter
 
@@ -258,10 +263,6 @@ lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
   ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
 
 end Asymptotics
-
-/-!
-### Some API additions
--/
 
 open Topology Asymptotics
 
