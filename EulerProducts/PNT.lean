@@ -34,6 +34,8 @@ local notation (name := Dchar_one') "χ₁" => (1 : DirichletCharacter ℂ 1)
 
 section EulerProduct
 
+-- This gets moved to `NumberTheory.LSeries.EulerProduct`
+
 open LSeries Nat EulerProduct
 
 /-- A variant of the Euler product for Dirichlet L-series. -/

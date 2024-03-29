@@ -94,7 +94,30 @@ theorem LSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     LSeriesSummable_of_one_lt_re χ hs
   rw [term_of_ne_zero (prime_of_mem_primesBelow hp).ne_zero, cpow_neg, div_eq_mul_inv]
 
+/-- A variant of the Euler product for Dirichlet L-series. -/
+theorem LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
+  rw [LSeries]
+  convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
+    summable_dirichletSummand χ hs -- where does the `x✝: ℕ` come from??
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [term_zero, map_zero]
+  · simp [hn, dirichletSummandHom, div_eq_mul_inv, cpow_neg]
 
 end DirichletCharacter
+
+open DirichletCharacter
+
+/-- A variant of the Euler product for the L-series of `ζ`. -/
+theorem ArithmeticFunction.LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
+    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L 1 s := by
+  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' (1 : DirichletCharacter ℂ 1) hs using 7
+  rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
+
+/-- A variant of the Euler product for the Riemann zeta function. -/
+theorem riemannZeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
+    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = riemannZeta s :=
+  LSeries_one_eq_riemannZeta hs ▸ ArithmeticFunction.LSeries_zeta_eulerProduct' hs
 
 end eulerProduct
