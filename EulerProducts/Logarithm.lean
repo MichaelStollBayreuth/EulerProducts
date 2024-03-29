@@ -1,8 +1,6 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.NumberTheory.EulerProduct.Basic
-import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
--- import EulerProducts.Auxiliary
+import Mathlib.NumberTheory.EulerProduct.Basic
 
 /-!
 # Logarithms of Euler Products
@@ -12,15 +10,15 @@ Here we consider `f : ℕ →*₀ ℂ` and the goal is to prove that
 under suitable conditions on `f`.
 -/
 
-namespace Complex
+-- namespace Complex
 
-lemma norm_mul_ofNat_cpow_le {a s : ℂ} (n : ℕ) (ha : ‖a‖ ≤ 1) (hs : 1 < s.re) :
+/- lemma norm_mul_natCast_cpow_le {a s : ℂ} (n : ℕ) (ha : ‖a‖ ≤ 1) (hs : 1 < s.re) :
     ‖a * n ^ (-s)‖ ≤ (n : ℝ) ^ (-s.re) := by
   rw [norm_mul, norm_natCast_cpow_of_re_ne_zero n <| by rw [neg_re]; linarith only [hs]]
   conv => enter [2]; rw [← one_mul ((n : ℝ) ^ (-s.re))]
-  gcongr
+  gcongr -/
 
-lemma norm_ofNat_cpow_div_one_sub_mul_cpow_le {n : ℕ} {a s : ℂ} (hn : 1 < n) (ha : ‖a‖ ≤ 1)
+/- lemma norm_natCast_cpow_div_one_sub_mul_cpow_le {n : ℕ} {a s : ℂ} (hn : 1 < n) (ha : ‖a‖ ≤ 1)
     (hs : 1 < s.re) :
     ‖(n : ℂ) ^ (-s) / (1 - a * n ^ (-s))‖ ≤ 2 * (n : ℝ) ^ (-s.re) := by
   have hs₀ : (-s).re ≠ 0 := by rw [neg_re]; linarith only [hs]
@@ -44,21 +42,11 @@ lemma norm_ofNat_cpow_div_one_sub_mul_cpow_le {n : ℕ} {a s : ℂ} (hn : 1 < n)
   rw [norm_div, H, div_le_iff, mul_comm, ← mul_assoc]
   · refine le_mul_of_one_le_left (Real.rpow_nonneg n.cast_nonneg (-s.re)) ?_
     linarith only [h']
-  · linarith only [h']
-
-lemma hasDerivAt_neg_log_one_sub_mul_ofNat_cpow {n : ℕ} {a s : ℂ}
-    (h : 1 - a * n ^ (-s) ∈ slitPlane) (hs : s ≠ 0) :
-    HasDerivAt (fun z : ℂ ↦ -log (1 - a * n ^ (-z)))
-      (- (a * log n * n ^ (-s) / (1 - a * n ^ (-s)))) s := by
-  refine HasDerivAt.neg <| HasDerivAt.clog ?_ h
-  rw [show a * log n * n ^ (-s) = -(a * (n ^ (-s) * log n * -1)) by ring]
-  exact HasDerivAt.const_sub _ <| HasDerivAt.const_mul a <|
-    HasDerivAt.const_cpow (hasDerivAt_neg s) <| Or.inr <| neg_ne_zero.mpr hs
-
+  · linarith only [h'] -/
 
 open BigOperators
 
-lemma sum_primesBelow_eq_sum_range_indicator (f :  ℕ → ℂ) (n : ℕ) :
+lemma sum_primesBelow_eq_sum_range_indicator {R : Type*} [AddCommMonoid R] (f :  ℕ → R) (n : ℕ) :
     ∑ p in n.primesBelow, f p = ∑ m in Finset.range n, Set.indicator {p : ℕ | p.Prime} f m := by
   convert (Finset.sum_indicator_subset f Finset.mem_of_mem_filter).symm using 2 with _ _ m hm
    -- `with m hm` does not work (a bug)
@@ -71,9 +59,10 @@ lemma sum_primesBelow_eq_sum_range_indicator (f :  ℕ → ℂ) (n : ℕ) :
 
 open Filter Topology
 
-/-- If `f : ℕ → ℂ` is summable, then the limit as `n` tends to infinity of the sum of `f p`
+/-- If `f : ℕ → R` is summable, then the limit as `n` tends to infinity of the sum of `f p`
 over the primes `p < n` is the same as the sum of `f p` over all primes. -/
-lemma tendsto_sum_primesBelow_tsum {f : ℕ → ℂ} (hsum : Summable f) :
+lemma tendsto_sum_primesBelow_tsum {R : Type*} [AddCommGroup R] [UniformSpace R] [UniformAddGroup R]
+    [CompleteSpace R] [T2Space R] {f : ℕ → R} (hsum : Summable f) :
     Tendsto (fun n : ℕ ↦ ∑ p in n.primesBelow, f p) atTop (𝓝 (∑' p : Nat.Primes, f p)) := by
   rw [(show ∑' p : Nat.Primes, f p = ∑' p : {p : ℕ | p.Prime}, f p from rfl)]
   simp_rw [tsum_subtype, sum_primesBelow_eq_sum_range_indicator]
@@ -82,19 +71,16 @@ lemma tendsto_sum_primesBelow_tsum {f : ℕ → ℂ} (hsum : Summable f) :
 /-- If `f : ℕ → ℂ` is summable, then the limit as `n` tends to infinity of the product
 of `exp (f p)` over the primes `p < n` is the same as the exponential of the sum of `f p`
 over all primes. -/
-lemma exp_tsum_primes {f : ℕ → ℂ} (hsum : Summable f) :
+lemma Complex.exp_tsum_primes {f : ℕ → ℂ} (hsum : Summable f) :
     Tendsto (fun n : ℕ ↦ ∏ p in n.primesBelow, exp (f p)) atTop (𝓝 (exp (∑' p : Nat.Primes, f p)))
     := by
-  simp_rw [← exp_sum]
-  exact Tendsto.cexp <| tendsto_sum_primesBelow_tsum hsum
-
-end Complex
+  simpa only [← exp_sum] using Tendsto.cexp <| tendsto_sum_primesBelow_tsum hsum
 
 open Complex
 
 open Topology in
 /-- If `f : α → ℂ` is summable, then so is `n ↦ -log (1 - f n)`. -/
-lemma Summable.neg_log_one_sub {α  : Type*} {f : α → ℂ} (hsum : Summable f) :
+lemma Summable.neg_clog_one_sub {α  : Type*} {f : α → ℂ} (hsum : Summable f) :
     Summable (fun n ↦ -log (1 - f n)) := by
   let g (z : ℂ) : ℂ := -log (1 - z)
   have hg : DifferentiableAt ℂ g 0 :=
@@ -110,7 +96,7 @@ namespace EulerProduct
 theorem exp_sum_primes_log_eq_tsum {f : ℕ →*₀ ℂ} (hsum : Summable (‖f ·‖)) :
     exp (∑' p : Nat.Primes, -log (1 - f p)) = ∑' n : ℕ, f n := by
   have hs {p : ℕ} (hp : 1 < p) : ‖f p‖ < 1 := hsum.of_norm.norm_lt_one (f := f.toMonoidHom) hp
-  have H := Complex.exp_tsum_primes hsum.of_norm.neg_log_one_sub
+  have H := Complex.exp_tsum_primes hsum.of_norm.neg_clog_one_sub
   have help (n : ℕ) : n.primesBelow.prod (fun p ↦ cexp (-log (1 - f p))) =
       n.primesBelow.prod fun p ↦ (1 - f p)⁻¹ := by
     refine Finset.prod_congr rfl (fun p hp ↦ ?_)
@@ -119,3 +105,12 @@ theorem exp_sum_primes_log_eq_tsum {f : ℕ →*₀ ℂ} (hsum : Summable (‖f 
     exact fun h ↦ (norm_one (α := ℂ) ▸ h.symm ▸ hs (Nat.prime_of_mem_primesBelow hp).one_lt).false
   simp_rw [help] at H
   exact tendsto_nhds_unique H <| eulerProduct_completely_multiplicative hsum
+
+/-- A variant of the Euler Product formula in terms of the exponential of a sum of logarithms. -/
+theorem exp_sum_primes_log_eq_tsum' {f : ℕ → ℂ} (h₀ : f 0 = 0) (h₁ : f 1 = 1)
+    (hf : ∀ m n, f (m * n) = f m * f n) (hsum : Summable (‖f ·‖)) :
+    exp (∑' p : Nat.Primes, -log (1 - f p)) = ∑' n : ℕ, f n :=
+  exp_sum_primes_log_eq_tsum (f := {toFun := f, map_zero' := h₀, map_one' := h₁, map_mul' := hf})
+    hsum
+
+end EulerProduct
