@@ -14,11 +14,6 @@ open scoped LSeries.notation
 
 namespace DirichletCharacter
 
--- move to `NumberTheory.LSeries.Dirichlet` (and golf there)
-lemma LSeriesSummable_of_one_lt_re {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
-    LSeriesSummable ↗χ s :=
-  LSeriesSummable_of_bounded_of_one_lt_re (fun _ _ ↦ χ.norm_le_one _) hs
-
 end DirichletCharacter
 
 namespace LSeries

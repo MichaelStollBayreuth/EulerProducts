@@ -8,10 +8,6 @@ open LSeries Complex
 lemma Complex.cpow_natCast_add_one_ne_zero (n : ℕ) (z : ℂ) : (n + 1 : ℂ) ^ z ≠ 0 :=
   mt (cpow_eq_zero_iff ..).mp fun H ↦ by norm_cast at H; exact Nat.succ_ne_zero n H.1
 
-lemma LSeries_zero : LSeries 0 = 0 := by
-  ext
-  simp only [LSeries, term, Pi.zero_apply, zero_div, ite_self, tsum_zero]
-
 -- TODO: change argument order in `LSeries_congr` to have `s` last.
 
 /-- If `F` is a binary operation on `ℕ → ℂ` with the property that the `LSeries` of `F f g`
@@ -142,7 +138,7 @@ lemma LSeries.tendsto_atTop {f : ℕ → ℂ} (ha : abscissaOfAbsConv f < ⊤):
     Tendsto (fun x : ℝ ↦ LSeries f x) atTop (nhds (f 1)) := by
   let F (n : ℕ) : ℂ := if n = 0 then 0 else f n
   have hF₀ : F 0 = 0 := rfl
-  have hF (n : ℕ) (hn : n ≠ 0) : F n = f n := by simp only [hn, ↓reduceIte, F]
+  have hF {n : ℕ} (hn : n ≠ 0) : F n = f n := by simp only [hn, ↓reduceIte, F]
   have ha' : abscissaOfAbsConv F < ⊤ := (abscissaOfAbsConv_congr hF).symm ▸ ha
   simp_rw [← LSeries_congr _ hF]
   convert LSeries.tendsto_pow_mul_atTop (n := 0) (fun _ hm ↦ Nat.le_zero.mp hm ▸ hF₀) ha' using 1
@@ -165,7 +161,7 @@ lemma LSeries_eventually_eq_zero_iff' {f : ℕ → ℂ} :
   · refine ⟨fun H ↦ ?_, fun H ↦ eventually_of_forall fun x ↦ ?_⟩
     · let F (n : ℕ) : ℂ := if n = 0 then 0 else f n
       have hF₀ : F 0 = 0 := rfl
-      have hF (n : ℕ) (hn : n ≠ 0) : F n = f n := by simp only [hn, ↓reduceIte, F]
+      have hF {n : ℕ} (hn : n ≠ 0) : F n = f n := by simp only [hn, ↓reduceIte, F]
       suffices ∀ n, F n = 0 by
         peel hF with n hn h
         exact (this n ▸ h).symm
@@ -191,8 +187,8 @@ lemma LSeries_eventually_eq_zero_iff' {f : ℕ → ℂ} :
       | succ n =>
           simp only [succ_eq_add_one, cast_add, cast_one]
           exact LSeries.tendsto_pow_mul_atTop (fun m hm ↦ ih m <| lt_succ_of_le hm) <| Ne.lt_top ha
-    · simp only [LSeries_congr x H, show (fun _ : ℕ ↦ (0 : ℂ)) = 0 from rfl, LSeries_zero,
-        Pi.zero_apply]
+    · simp only [LSeries_congr x fun {n} ↦ H n, show (fun _ : ℕ ↦ (0 : ℂ)) = 0 from rfl,
+        LSeries_zero, Pi.zero_apply]
 
 open Nat in
 /-- Assuming `f 0 = 0`, the `LSeries` of `f` is zero if and only if either `f = 0` or the
@@ -253,6 +249,6 @@ if `f n = g n` whenever `n ≠ 0`. -/
 lemma LSeries_eq_iff_of_abscissaOfAbsConv_lt_top {f g : ℕ → ℂ} (hf : abscissaOfAbsConv f < ⊤)
     (hg : abscissaOfAbsConv g < ⊤) :
     LSeries f = LSeries g ↔ ∀ n ≠ 0, f n = g n := by
-  refine ⟨fun H n hn ↦ ?_, fun H ↦ funext (LSeries_congr · H)⟩
+  refine ⟨fun H n hn ↦ ?_, fun H ↦ funext (LSeries_congr · fun {n} ↦ H n)⟩
   refine eq_of_LSeries_eventually_eq hf hg ?_ hn
   exact Filter.eventually_of_forall fun x ↦ congr_fun H x

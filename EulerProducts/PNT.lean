@@ -1,5 +1,5 @@
 import EulerProducts.Logarithm
-import EulerProducts.DirichletLSeries
+import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Tactic.RewriteSearch
@@ -358,7 +358,7 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
     rcases eq_or_ne x 0 with rfl | h
     · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
     · field_simp [h]
-      rfl
+      ring
   conv at H => enter [3, x]; rw [help]
   conv at H =>
     enter [2, x]; rw [show 1 + x + I * ↑(2 * z.im) = 1 + x + 2 * I * z.im by simp; ring]
