@@ -1,6 +1,5 @@
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
--- import Mathlib.Analysis.SpecialFunctions.Pow.Complex
-import EulerProducts.DirichletLSeries
+import Mathlib.NumberTheory.LSeries.Dirichlet
 import EulerProducts.Logarithm
 
 /-!
@@ -19,13 +18,16 @@ end DirichletCharacter
 namespace LSeries
 
 -- Use this to golf `LSeries.term_convolution`
+lemma term_mul_aux (a b : ℂ) (m n : ℕ) (s : ℂ) :
+    (a / m ^ s) * (b / n ^ s) = a * b / (m * n) ^ s := by
+  rw [mul_comm_div, div_div, ← mul_div_assoc, mul_comm (m : ℂ), natCast_mul_natCast_cpow]
+
 lemma term_mul {f₁ f₂ f : ℕ → ℂ} {m n : ℕ} (h : f (m * n) = f₁ m * f₂ n) (s : ℂ) :
     term f s (m * n) = term f₁ s m * term f₂ s n := by
   rcases eq_or_ne (m * n) 0 with H | H
   · rcases mul_eq_zero.mp H with rfl | rfl <;> simp only [term_zero, mul_zero, zero_mul]
   · obtain ⟨hm, hn⟩ := mul_ne_zero_iff.mp H
-    simp only [ne_eq, H, not_false_eq_true, term_of_ne_zero, Nat.cast_mul, hm, hn, h]
-    rw [mul_comm_div, div_div, ← mul_div_assoc, ← natCast_mul_natCast_cpow, mul_comm (m : ℂ)]
+    simp only [ne_eq, H, not_false_eq_true, term_of_ne_zero, Nat.cast_mul, hm, hn, h, term_mul_aux]
 
 /-- Weak multiplicativity of `f : ℕ → ℂ` is inherited by the terms of its L-series. -/
 lemma term_multiplicative {f : ℕ → ℂ} (hf : ∀ {m n}, m.Coprime n → f (m * n) = f m * f n) (s : ℂ)
@@ -80,6 +82,13 @@ end LSeries
 open LSeries
 
 namespace DirichletCharacter
+
+lemma toFun_on_nat_map_one {N : ℕ} (χ : DirichletCharacter ℂ N) : ↗χ 1 = 1 := by
+  simp only [cast_one, map_one]
+
+lemma toFun_on_nat_map_mul {N : ℕ} (χ : DirichletCharacter ℂ N) (m n : ℕ) :
+    ↗χ (m * n) = ↗χ m * ↗χ n := by
+  simp only [cast_mul, map_mul]
 
 /-- The Euler product formula for a Dirichlet L-series -/
 theorem LSeries_eulerProduct {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
