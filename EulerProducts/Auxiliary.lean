@@ -175,7 +175,7 @@ lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : ℝ⦄ {
     refine DifferentiableAt.differentiableWithinAt ?_
     replace hf := ((hf x Hx).congr (fun _ hz ↦ H hz) (H Hx)).differentiableAt
       (Metric.isOpen_ball.mem_nhds Hx) |>.comp_ofReal
-    simp_rw [hd, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
+    simp_rw [hd, ← ofReal_sub, ← ofReal_natCast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
       ← ofReal_tsum] at hf
     exact DifferentiableAt.ofReal_comp_iff.mp hf
   · simp only [Function.comp_apply, ← H (Hz _ hx), hd, ofReal_tsum]
@@ -192,7 +192,7 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
   simp_rw [hd] at H
   refine ⟨fun x ↦ ∑' (n : ℕ), (↑n !)⁻¹ * (D n) * (x - c) ^ n, ?_, ?_⟩
   · have := hf.comp_ofReal
-    simp_rw [← H, ← ofReal_sub, ← ofReal_nat_cast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
+    simp_rw [← H, ← ofReal_sub, ← ofReal_natCast, ← ofReal_inv, ← ofReal_pow, ← ofReal_mul,
       ← ofReal_tsum] at this
     exact Differentiable.ofReal_comp_iff.mp this
   · ext x
@@ -214,7 +214,7 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
     · have := eq_re_of_ofReal_le (h n) ▸ h n
       norm_cast at this
     · rw [eq_re_of_ofReal_le (h n)]
-  simp_rw [← H, hD, ← ofReal_nat_cast, sub_zero, ← ofReal_pow, ← ofReal_inv, ← ofReal_mul,
+  simp_rw [← H, hD, ← ofReal_natCast, sub_zero, ← ofReal_pow, ← ofReal_inv, ← ofReal_mul,
     ← ofReal_tsum]
   norm_cast
   refine tsum_nonneg fun n ↦ ?_

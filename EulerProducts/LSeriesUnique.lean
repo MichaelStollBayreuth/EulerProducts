@@ -44,7 +44,7 @@ lemma foo (m n : ℕ) (z : ℂ) (x : ℝ) :
   congr
   simp_rw [div_eq_mul_inv]
   rw [show (n + 1 : ℂ)⁻¹ = (n + 1 : ℝ)⁻¹ by
-        simp only [ofReal_inv, ofReal_add, ofReal_nat_cast, ofReal_one],
+        simp only [ofReal_inv, ofReal_add, ofReal_natCast, ofReal_one],
     show (n + 1 : ℂ) = (n + 1 : ℝ) by norm_cast, show (m : ℂ) = (m : ℝ) by norm_cast,
     mul_cpow_ofReal_nonneg Hm Hn, mul_inv, mul_comm]
   congr
@@ -106,7 +106,7 @@ lemma LSeries.tendsto_pow_mul_atTop {f : ℕ → ℂ} {n : ℕ} (h : ∀ m ≤ n
     · have H₀ : (0 : ℝ) ≤ k / (n + 1) := by positivity
       have H₀' : (0 : ℝ) ≤ (n + 1) / k := by positivity
       have H₁ : (k / (n + 1) : ℂ) = (k / (n + 1) : ℝ) := by
-        simp only [ofReal_div, ofReal_nat_cast, ofReal_add, ofReal_one]
+        simp only [ofReal_div, ofReal_natCast, ofReal_add, ofReal_one]
       have H₂ : (n + 1) / k < (1 : ℝ) :=
         (div_lt_one <| by exact_mod_cast n.succ_pos.trans H).mpr <| by exact_mod_cast H
       simp only [Set.mem_setOf_eq, H, Set.indicator_of_mem, F]

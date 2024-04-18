@@ -92,7 +92,7 @@ lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} 
   have H₂ := hasSum_re <| hasSum_taylorSeries_neg_log hac₂
   rw [← ((H₀.add H₁).add H₂).tsum_eq]; clear H₀ H₁ H₂
   refine tsum_nonneg fun n ↦ ?_
-  simp only [mul_pow, ← ofReal_pow, div_nat_cast_re, ofReal_re, mul_re, ofReal_im, zero_mul,
+  simp only [mul_pow, ← ofReal_pow, div_natCast_re, ofReal_re, mul_re, ofReal_im, zero_mul,
     sub_zero]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
@@ -126,10 +126,10 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
     · congr 2
       rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
-        ofReal_cpow n.cast_nonneg (-x), ofReal_nat_cast]
+        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast]
       ring
     · rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
-        ofReal_cpow n.cast_nonneg (-x), ofReal_nat_cast,
+        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast,
         show -(2 * I * y) = (2 : ℕ) * (-I * y) by ring, cpow_nat_mul]
       ring_nf
   · simp [MulChar.map_nonunit _ hn']
