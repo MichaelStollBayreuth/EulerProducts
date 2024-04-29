@@ -32,7 +32,7 @@ the profiler to produce messages in the infoview.
 5. Remove the `set_option` line before the declaration.
 
 It may be the case that `<term>` again triggers a slow instance search, so this procedure
-may beed to be repeated.
+may need to be repeated.
 
 **Trade-off:** Littering files with local instances is not nice and goes somewhat against
 the purpose of the type class system.
