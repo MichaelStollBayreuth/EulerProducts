@@ -15,7 +15,7 @@ We explain how a slow Mathlib file can be made faster.
 Here we explain how one can try to speed up various parts of the code that cause
 the profiler to produce messages in the infoview.
 
-### typeclass inference of <name> took <a long time>
+### `typeclass inference of <name> took <a long time>`
 
 1. Add `set_option trace.Meta.synthInstance true in` immediately before the declaration
    causing the message.
@@ -36,14 +36,14 @@ may beed to be repeated.
 **Trade-off:** Littering files with local instances is not nice and goes somewhat against
 the purpose of the type class system.
 
-### simp took <a long time>
+### `simp took <a long time>`
 
 Replace the relevant `simp/simpa` call by `simp?/simpa?` and click on the `Try this:`
 suggestion to replace it by a `simp/simpa only` call.
 
 **Trade-off:** Proofs can get several dense lines longer.
 
-### elaboration took <a long time>
+### `elaboration took <a long time>`
 
 Look for `_`s in the declaration that triggers it, find out what they are filled by,
 and replace them by the corresponding explicit arguments.
@@ -51,14 +51,14 @@ and replace them by the corresponding explicit arguments.
 **Trade-off:** If the explicit arguments are long, this makes the statement longer
 and potentially harder to read.
 
-### compilation of <name> took <a long time>
+### `compilation of <name> took <a long time>`
 
 Try to add `noncomputable` before the definition.
 
 **Trade-off:** Definition is no longer kernel-reducible, but this should not be a
 problem in most cases.
 
-### tactic execution of <tactic> took <a long time>
+### `tactic execution of <tactic> took <a long time>`
 
 Try to replace the slow tactic by calls to simpler ones.
 
