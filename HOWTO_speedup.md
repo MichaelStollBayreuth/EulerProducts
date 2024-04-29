@@ -20,7 +20,7 @@ the profiler to produce messages in the infoview.
 1. Add `set_option trace.Meta.synthInstance true in` immediately before the declaration
    causing the message.
 2. Look at the generated instance synthesis trace in the infoview and find the instance(s)
-   of <name> that are slow.
+   of `<name>` that are slow.
 3. Use `#synth <name> <args>` before the declaration (possibly temporarily adding `variable`s
    to the context if needed) to obtain a suitable term providing the instance.
 4. Add a line
