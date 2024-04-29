@@ -5,7 +5,8 @@ package «EulerProducts» where
   -- Settings applied to both builds and interactive editing
   leanOptions := #[
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
-    ⟨`pp.proofs.withType, false⟩
+    ⟨`pp.proofs.withType, false⟩ --,
+    -- ⟨`profiler, true⟩
   ]
   -- add any additional package configuration options here
 
