@@ -29,6 +29,7 @@ the profiler to produce messages in the infoview.
    If the instance needs some local context from within the proof, add
    `have/let <some name> <possibly some args> : <name> <args> := <term>` at a suitable
    place in the proof instead.
+5. Remove the `set_option` line before the declaration.
 
 It may be the case that `<term>` again triggers a slow instance search, so this procedure
 may beed to be repeated.
