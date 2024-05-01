@@ -2,13 +2,17 @@
 
 We explain how a slow Mathlib file can be made faster.
 
-1. Add a line `set_option profiler true` after the `import` statements.
+1. The first step is to find out which parts of the code are slow. To do so, 
+   add a line `set_option profiler true` after the `import` statements.
    This will produce lines of the form `<blah> took <number>ms` (or even `<number>s`)
    in the infoview, recording steps that took at least `100ms` (the lower bound in ms
    can be adapted via `set_option profiler.threshold <num>`).
 2. For each such line, try to make the corresponding step faster following the
    instructions below.
-3. Remove the profiler options again and PR!
+3. The previous step can potentially be repeated with a lowered setting of
+   `profiler.threshold`, to find and speed up things that are not very slow,
+   but also not very fast. This will eventually deliver diminshing returns, however.
+4. Remove the profiler options again and PR!
 
 ## Dealing with specific slow steps
 
@@ -37,10 +41,15 @@ may need to be repeated.
 **Trade-off:** Littering files with local instances is not nice and goes somewhat against
 the purpose of the type class system.
 
+Of course, an even better solution would be to find out *what* causes the type class search
+to be slow in the cases discovered and then find a fix for that. This would likely benefit
+many other files throughout Mathlib.
+
 ### `simp took <a long time>`
 
 Replace the relevant `simp/simpa` call by `simp?/simpa?` and click on the `Try this:`
-suggestion to replace it by a `simp/simpa only` call.
+suggestion to replace it by a `simp/simpa only` call. In some cases it is also possible
+to prune the list of lemmas to some extent.
 
 **Trade-off:** Proofs can get several dense lines longer.
 
@@ -63,7 +72,7 @@ problem in most cases.
 
 Try to replace the slow tactic by calls to simpler ones.
 
-For example, a slow `nontriviality ... using ...` can be replaced by
+* For example, a slow `nontriviality ... using ...` can be replaced by
 ```lean
   rcases subsingleton_or_nontrivial ... with H | H
   · -- get `Subsingleton` case out of the way
@@ -71,7 +80,7 @@ For example, a slow `nontriviality ... using ...` can be replaced by
   -- now we have `Nontrivial ...`
 ```
 
-A slow `convert` can be avoided by doing the rewrites that are done following it
+* A slow `convert` can be avoided by doing the rewrites that are done following it
 first and then using `refine` or `exact`.
 
 **Trade-off:** The proof may get a bit longer and more pedestrian.
