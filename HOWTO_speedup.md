@@ -1,6 +1,8 @@
 # How to speed up a Mathlib file
 
-We explain how a slow Mathlib file can be made faster.
+We explain how a slow Mathlib file can be made faster. These notes are based on
+the experiment carried out in Mathlib PR
+(#12412)[https://github.com/leanprover-community/mathlib4/pull/12412].
 
 1. The first step is to find out which parts of the code are slow. To do so, 
    add a line `set_option profiler true` after the `import` statements.
