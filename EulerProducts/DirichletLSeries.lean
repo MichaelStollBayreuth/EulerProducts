@@ -1,6 +1,6 @@
 import Mathlib.NumberTheory.SumPrimeReciprocals
 import Mathlib.NumberTheory.VonMangoldt
-import Mathlib.NumberTheory.ZetaFunction
+import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.NumberTheory.LSeries.Convolution
 import Mathlib.NumberTheory.LSeries.Deriv
