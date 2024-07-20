@@ -209,8 +209,8 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
   have H := taylorSeries_eq_of_entire' 0 z hf
   have hz' := eq_re_of_ofReal_le hz
   rw [hz'] at hz H ⊢
-  obtain ⟨D, hD⟩ : ∃ D : ℕ → ℝ, ∀ n, 0 ≤ D n ∧ iteratedDeriv n f 0 = D n
-  · refine ⟨fun n ↦ (iteratedDeriv n f 0).re, fun n ↦ ⟨?_, ?_⟩⟩
+  obtain ⟨D, hD⟩ : ∃ D : ℕ → ℝ, ∀ n, 0 ≤ D n ∧ iteratedDeriv n f 0 = D n := by
+    refine ⟨fun n ↦ (iteratedDeriv n f 0).re, fun n ↦ ⟨?_, ?_⟩⟩
     · have := eq_re_of_ofReal_le (h n) ▸ h n
       norm_cast at this
     · rw [eq_re_of_ofReal_le (h n)]
