@@ -1,5 +1,5 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.NumberTheory.EulerProduct.Basic
 
 /-!

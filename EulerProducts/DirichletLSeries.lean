@@ -1,9 +1,3 @@
-import Mathlib.NumberTheory.SumPrimeReciprocals
-import Mathlib.NumberTheory.VonMangoldt
-import Mathlib.NumberTheory.LSeries.RiemannZeta
-import Mathlib.NumberTheory.DirichletCharacter.Bounds
-import Mathlib.NumberTheory.LSeries.Convolution
-import Mathlib.NumberTheory.LSeries.Deriv
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
 

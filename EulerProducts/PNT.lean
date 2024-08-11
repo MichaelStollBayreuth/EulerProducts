@@ -1,8 +1,8 @@
 import EulerProducts.Logarithm
-import Mathlib.NumberTheory.LSeries.Dirichlet
-import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import Mathlib.Tactic.RewriteSearch
+import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import Mathlib.NumberTheory.LSeries.Dirichlet
+-- import Mathlib.Tactic.RewriteSearch
 
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
@@ -449,3 +449,4 @@ theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
     specialize @hnv s
     simp at *
     tauto
+#min_imports
