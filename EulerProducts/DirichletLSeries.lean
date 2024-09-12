@@ -36,7 +36,7 @@ open ArithmeticFunction in
 lemma LSeriesSummable.mul_moebius {f : ℕ → ℂ} {s : ℂ} (hf : LSeriesSummable f s) :
     LSeriesSummable (f * ↗μ) s := by
   refine hf.mul_bounded (c := 1) fun n ↦ ?_
-  simp only [Complex.norm_int]
+  simp only [Complex.norm_intCast]
   exact_mod_cast abs_moebius_le_one
 
 

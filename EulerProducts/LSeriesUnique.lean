@@ -156,9 +156,9 @@ for all `n ≠ 0` or the L-series converges nowhere. -/
 lemma LSeries_eventually_eq_zero_iff' {f : ℕ → ℂ} :
     (fun x : ℝ ↦ LSeries f x) =ᶠ[atTop] 0 ↔ (∀ n ≠ 0, f n = 0) ∨ abscissaOfAbsConv f = ⊤ := by
   by_cases h : abscissaOfAbsConv f = ⊤ <;> simp only [h, or_true, or_false, iff_true]
-  · refine eventually_of_forall ?_
+  · refine Eventually.of_forall ?_
     simp only [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top h, Pi.zero_apply, forall_const]
-  · refine ⟨fun H ↦ ?_, fun H ↦ eventually_of_forall fun x ↦ ?_⟩
+  · refine ⟨fun H ↦ ?_, fun H ↦ Eventually.of_forall fun x ↦ ?_⟩
     · let F (n : ℕ) : ℂ := if n = 0 then 0 else f n
       have hF₀ : F 0 = 0 := rfl
       have hF {n : ℕ} (hn : n ≠ 0) : F n = f n := by simp only [hn, ↓reduceIte, F]
@@ -251,4 +251,4 @@ lemma LSeries_eq_iff_of_abscissaOfAbsConv_lt_top {f g : ℕ → ℂ} (hf : absci
     LSeries f = LSeries g ↔ ∀ n ≠ 0, f n = g n := by
   refine ⟨fun H n hn ↦ ?_, fun H ↦ funext (LSeries_congr · fun {n} ↦ H n)⟩
   refine eq_of_LSeries_eventually_eq hf hg ?_ hn
-  exact Filter.eventually_of_forall fun x ↦ congr_fun H x
+  exact Filter.Eventually.of_forall fun x ↦ congr_fun H x
