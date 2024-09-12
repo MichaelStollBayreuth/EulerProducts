@@ -33,10 +33,10 @@ lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {
     (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
   rw [isBigO_iff', isBigO_iff']
   refine ⟨fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩, fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩⟩ <;>
-  { refine H.congr <| Eventually.mp hf <| eventually_of_forall fun x hx ↦ ?_
+  { refine H.congr <| Eventually.mp hf <| Eventually.of_forall fun x hx ↦ ?_
     rw [norm_mul, norm_div, ← mul_div_assoc, mul_comm]
     have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
-    rw [le_div_iff hx', mul_comm] }
+    rw [le_div_iff₀ hx', mul_comm] }
 
 lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
     (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
@@ -63,7 +63,7 @@ lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
   simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
   specialize hf 1 zero_lt_one
   refine ⟨‖f z‖ + 1, by positivity, ?_⟩
-  refine Eventually.mp hf <| eventually_of_forall fun w hw ↦ le_of_lt ?_
+  refine Eventually.mp hf <| Eventually.of_forall fun w hw ↦ le_of_lt ?_
   calc ‖f (w + z)‖
     _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
