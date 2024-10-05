@@ -28,6 +28,7 @@ open Filter
 
 namespace Asymptotics
 
+-- https://github.com/leanprover-community/mathlib4/pull/17394
 lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
     (hf : ∀ᶠ x in l, f x ≠ 0) :
     (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
@@ -38,9 +39,11 @@ lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {
     have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
     rw [le_div_iff₀ hx', mul_comm] }
 
-lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
-    (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
-  ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
+-- https://github.com/leanprover-community/mathlib4/pull/17394
+open Topology in
+lemma isLittleO_id_one {E'' : Type*} {F'' : Type*} [NormedAddCommGroup E''] [NormedAddCommGroup F'']
+    [One F''] [NeZero (1 : F'')] : (fun x : E'' => x) =o[𝓝 0] (1 : E'' → F'') :=
+  isLittleO_id_const one_ne_zero
 
 end Asymptotics
 

@@ -1,3 +1,4 @@
+import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
@@ -238,68 +239,6 @@ lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs
 
 end
 
-section Topology
-
-/-!
-### Some API additions
--/
-
-open Filter
-
-namespace Asymptotics
-
-lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
-    (hf : ∀ᶠ x in l, f x ≠ 0) :
-    (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
-  rw [isBigO_iff', isBigO_iff']
-  refine ⟨fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩, fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩⟩ <;>
-  { refine H.congr <| Eventually.mp hf <| Eventually.of_forall fun x hx ↦ ?_
-    rw [norm_mul, norm_div, ← mul_div_assoc, mul_comm]
-    have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
-    rw [le_div_iff₀ hx', mul_comm] }
-
-lemma isLittleO_id_nhdsWithin {F : Type*} [NormedField F] (s : Set F) :
-    (id : F → F) =o[nhdsWithin 0 s] (fun _ ↦ (1 : F)) :=
-  ((isLittleO_one_iff F).mpr tendsto_id).mono nhdsWithin_le_nhds
-
-end Asymptotics
-
-open Topology Asymptotics
-
-lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
-    (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
-  rw [← zero_add z] at hf
-  simpa only [zero_add, hz, sub_zero]
-    using (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
-
-lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
-    (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
-  rw [isBigO_iff']
-  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0 := by
-    convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
-    · simp
-    · simp [Function.comp_def, hf]
-  simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
-  specialize hf 1 zero_lt_one
-  refine ⟨‖f z‖ + 1, by positivity, ?_⟩
-  refine Eventually.mp hf <| Eventually.of_forall fun w hw ↦ le_of_lt ?_
-  calc ‖f (w + z)‖
-    _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
-    _ < ‖f z‖ + 1 := add_lt_add_left hw _
-    _ = _ := by simp only [norm_one, mul_one]
-
-lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
-  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
-    Continuous.tendsto Complex.continuous_ofReal x
-
-lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
-  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
-    ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
-
-end Topology
-
 section
 
 open Filter Topology Homeomorph Asymptotics
@@ -365,7 +304,7 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
   replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
   refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <|
-    isLittleO_id_nhdsWithin (Set.Ioi 0)
+    isLittleO_id_one.mono nhdsWithin_le_nhds
   simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
   exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
