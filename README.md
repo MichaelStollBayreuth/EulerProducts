@@ -19,4 +19,6 @@ Current projects:
   von Mangoldt functions)
 * [__EulerProducts/PNT.lean__](EulerProducts/blob/main/EulerProducts/PNT.lean):
   a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
-  __Wiener-Ikehara Tauberian Theorem__.
+  __Wiener-Ikehara Tauberian Theorem__. This now also contains a proof of the non-vanishing
+  of Dirichlet L-functions of nontrivial characters along the line `Re s = 1`. This is material
+  that was created in the framework of the [__DirichletNonvanishing__](https://github.com/CBirkbeck/DirichletNonvanishing) project.
