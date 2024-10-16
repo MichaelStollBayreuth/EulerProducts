@@ -29,6 +29,12 @@ def WienerIkeharaTheorem : Prop :=
 
 open Complex
 
+-- A helper lemma used in some proofs below
+lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
+    1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
+  simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
+    ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
+
 /-- We use `ζ` to denote the Riemann zeta function. -/
 local notation (name := rzeta) "ζ" => riemannZeta
 
@@ -106,10 +112,12 @@ lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (
     0 ≤ 2 * a ^ n * ((z ^ n).re + 1) ^ 2 := by positivity
     _ = _  := by ring
 
+namespace DirichletCharacter
+
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
 has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
-lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n)
-    {x y : ℝ} (hx : 1 < x) :
+lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x y : ℝ}
+    (hx : 1 < x) :
     0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
@@ -124,7 +132,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
       simp
     rw [MulChar.one_apply hn', one_mul]
-    convert re_log_comb_nonneg ha₀ ha₁ hz using 6
+    convert _root_.re_log_comb_nonneg ha₀ ha₁ hz using 6
     · congr 2
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
     · congr 2
@@ -136,14 +144,6 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
         show -(2 * I * y) = (2 : ℕ) * (-I * y) by ring, cpow_nat_mul]
       ring_nf
   · simp [MulChar.map_nonunit _ hn']
-
--- A helper lemma used in the two proofs below
-lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
-    1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
-  simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
-    ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
-
-namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
@@ -250,10 +250,9 @@ lemma LFunction_one_eq_mul_riemannZeta {s : ℂ} (hs : s ≠ 1) :
 /-- The L function of the trivial Dirichlet character mod `N` has a simple pole with
 residue `∏ p ∈ N.primeFactors, (1 - p⁻¹)` at `s = 1`. -/
 lemma LFunction_one_residue_one :
-  Filter.Tendsto (fun s ↦ (s - 1) * LFunction_one N s) (nhdsWithin 1 {1}ᶜ)
-    (nhds <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
-  -- need to use that `s ≠ 1`
-  have H : (fun s ↦ (s - 1) * LFunction_one N s) =ᶠ[nhdsWithin 1 {1}ᶜ]
+  Filter.Tendsto (fun s ↦ (s - 1) * LFunction_one N s) (𝓝[≠] 1)
+    (𝓝 <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
+  have H : (fun s ↦ (s - 1) * LFunction_one N s) =ᶠ[𝓝[≠] 1]
         fun s ↦ (∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))) * ((s - 1) * riemannZeta s) := by
     refine Set.EqOn.eventuallyEq_nhdsWithin fun s hs ↦ ?_
     rw [mul_left_comm, LFunction_one_eq_mul_riemannZeta hs]
@@ -269,7 +268,7 @@ open Nat ArithmeticFunction
 
 /-- For positive `x` and nonzero `y` we have that
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
-lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x : ℝ} (hx : 0 < x)
+lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x : ℝ} (hx : 0 < x)
     (y : ℝ) :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
@@ -283,26 +282,25 @@ lemma norm_dirichlet_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x
     (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
     (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
-  rw [← DirichletCharacter.LSeries_eulerProduct' _ h₀,
-    ← DirichletCharacter.LSeries_eulerProduct' χ h₁,
-    ← DirichletCharacter.LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add,
-    ← exp_add, norm_eq_abs, abs_exp]
+  rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁,
+    ← LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add,
+    norm_eq_abs, abs_exp]
   simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff]
   rw [re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₀,
     re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₁,
     re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
     ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
-  convert tsum_nonneg fun p : Nat.Primes ↦ re_log_comb_nonneg_dirichlet χ p.prop.two_le h₀
+  convert tsum_nonneg fun p : Nat.Primes ↦ χ.re_log_comb_nonneg p.prop.two_le h₀
   rw [sq, sq, MulChar.mul_apply]
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
-/-- A variant of `norm_dirichlet_product_ge_one` in terms of the L functions. -/
+/-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
 lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     ‖LFunction_one N (1 + x) ^ 3 * χ.LFunction (1 + x + I * y) ^ 4 *
       (χ ^ 2).LFunction (1 + x + 2 * I * y)‖ ≥ 1 := by
-  convert norm_dirichlet_product_ge_one χ hx y using 3
+  convert norm_LSeries_product_ge_one χ hx y using 3
   · congr 2
     · refine DirichletCharacter.LFunction_eq_LSeries 1 ?_
       simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx]
@@ -397,7 +395,6 @@ theorem Lfunction_ne_zero_of_re_eq_one (χ : DirichletCharacter ℂ N) (t : ℝ)
 end DirichletCharacter
 
 open DirichletCharacter in
-open Complex BigOperators Filter Topology Homeomorph Asymptotics in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
   refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero_of_one_lt_re
