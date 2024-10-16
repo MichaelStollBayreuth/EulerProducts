@@ -1,5 +1,6 @@
 import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
+import EulerProducts.NonvanishingQuadratic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 import Mathlib.NumberTheory.LSeries.Dirichlet
@@ -23,7 +24,7 @@ def WienerIkeharaTheorem : Prop :=
     Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
 /-!
-### The Riemann Zeta Function does not vanish on Re(s) = 1
+### The L-function of a Dirichlet character does not vanish on Re(s) = 1
 -/
 
 open Complex
@@ -351,7 +352,7 @@ lemma LFunction_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1
 
 /-- The L function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
 or `χ^2 ≠ 1`. -/
-theorem LFunction_nonvanishing_easy {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
+theorem LFunction_ne_zero_of_re_eq_one_of_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
     χ.LFunction (1 + I * t) ≠ 0 := by
   intro Hz
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
@@ -387,13 +388,24 @@ theorem LFunction_nonvanishing_easy {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
   simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
   exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
+/-- If `χ` is a Dirichlet character, then `L(χ, 1 + I*t)` does not vanish for `t ∈ ℝ`
+except when `χ` is trivial and `t = 0` (then `L(χ, s)` has a simple pole at `s = 1`). -/
+theorem Lfunction_ne_zero_of_re_eq_one (χ : DirichletCharacter ℂ N) (t : ℝ) (hχt : χ ≠ 1 ∨ t ≠ 0) :
+    χ.LFunction (1 + I * t) ≠ 0 := by
+  by_cases h : χ ^ 2 = 1 ∧ t = 0
+  · simp only [ne_eq, h.2, not_true_eq_false, or_false] at hχt
+    rw [h.2, ofReal_zero, mul_zero, add_zero]
+    exact LFunction_at_one_ne_zero_of_quadratic h.1 hχt
+  · exact LFunction_ne_zero_of_re_eq_one_of_not_quadratic <| not_and_or.mp h
+
 end DirichletCharacter
 
+open DirichletCharacter in
 open Complex BigOperators Filter Topology Homeomorph Asymptotics in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
   refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero_of_one_lt_re
-  rw [← DirichletCharacter.LFunction_modOne_eq (χ := 1)] at Hz
+  rw [← LFunction_modOne_eq (χ := 1)] at Hz
   have hz₀ : z.im ≠ 0 := by
     rw [← re_add_im z, ← h, ofReal_one] at hz
     simpa only [ne_eq, add_right_eq_self, mul_eq_zero, ofReal_eq_zero, I_ne_zero, or_false]
@@ -403,7 +415,7 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
     push_cast
     simp only [add_im, one_im, mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero,
       add_zero, zero_add]
-  exact DirichletCharacter.LFunction_nonvanishing_easy (N := 1) (.inr hz₀) (hzeq ▸ Hz)
+  exact LFunction_ne_zero_of_re_eq_one_of_not_quadratic (N := 1) (.inr hz₀) (hzeq ▸ Hz)
 
 /-!
 ### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
