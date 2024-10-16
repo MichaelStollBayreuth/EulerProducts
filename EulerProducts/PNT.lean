@@ -84,7 +84,7 @@ lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletChar
 /-- A technical lemma showing that a certain linear combination of real parts of logarithms
 is nonnegative. This is used to show non-vanishing of the Riemann zeta function and of
 Dirichlet L-series on the line `re s = 1`. -/
-lemma re_log_comb_nonneg' {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
+lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
   have hac₀ : ‖(a : ℂ)‖ < 1 := by
     simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
@@ -124,7 +124,7 @@ lemma re_log_comb_nonneg_dirichlet {N : ℕ} (χ : DirichletCharacter ℂ N) {n 
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
       simp
     rw [MulChar.one_apply hn', one_mul]
-    convert re_log_comb_nonneg' ha₀ ha₁ hz using 6
+    convert re_log_comb_nonneg ha₀ ha₁ hz using 6
     · congr 2
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
     · congr 2
@@ -142,10 +142,6 @@ lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
     1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
-
-open Complex in
-lemma continuous_cpow_natCast_neg (n : ℕ) [NeZero n] : Continuous fun s : ℂ ↦ (n : ℂ) ^ (-s) :=
-  Continuous.const_cpow continuous_neg (.inl <| NeZero.ne (n : ℂ))
 
 namespace DirichletCharacter
 

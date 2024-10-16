@@ -7,6 +7,10 @@ import Mathlib.NumberTheory.LSeries.Deriv
 ### Auxiliary lemmas
 -/
 
+open Complex in
+lemma continuous_cpow_natCast_neg (n : ℕ) [NeZero n] : Continuous fun s : ℂ ↦ (n : ℂ) ^ (-s) :=
+  Continuous.const_cpow continuous_neg (.inl <| NeZero.ne (n : ℂ))
+
 -- not really needed here
 
 namespace Complex
