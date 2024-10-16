@@ -17,8 +17,11 @@ Current projects:
 * [__EulerProducts/DirichletLSeries.lean__](EulerProducts/blob/main/EulerProducts/DirichletLSeries.lean):
   results on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
   von Mangoldt functions)
+* [__EulerProducts/NonvanishingQuadratic.lean__](EulerProducts/blob/main/EulerProducts/NonvanishingQuadratic.lean):
+  This contains a proof of the non-vanishing of the L-function of a nontrivial quadratic
+  Dirichlet character at 1.
 * [__EulerProducts/PNT.lean__](EulerProducts/blob/main/EulerProducts/PNT.lean):
   a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
-  __Wiener-Ikehara Tauberian Theorem__. This now also contains a proof of the non-vanishing
+  __Wiener-Ikehara Tauberian Theorem__. This also contains a proof of the non-vanishing
   of Dirichlet L-functions of nontrivial characters along the line `Re s = 1`. This is material
   that was created in the framework of the [__DirichletNonvanishing__](https://github.com/CBirkbeck/DirichletNonvanishing) project.
