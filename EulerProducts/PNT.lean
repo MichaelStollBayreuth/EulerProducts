@@ -28,7 +28,7 @@ def WienerIkeharaTheorem : Prop :=
 
 open Complex
 
-/-- We use `ζ` to denote the Rieman zeta function. -/
+/-- We use `ζ` to denote the Riemann zeta function. -/
 local notation (name := rzeta) "ζ" => riemannZeta
 
 /-- We use `χ₁` to denote the (trivial) Dirichlet character modulo `1`. -/
