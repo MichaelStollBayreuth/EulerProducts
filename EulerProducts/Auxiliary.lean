@@ -1,7 +1,7 @@
-import Mathlib.Order.CompletePartialOrder
-import Mathlib.RingTheory.HopfAlgebra
-import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.NumberTheory.ArithmeticFunction
+import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
 ### Auxiliary lemmas
@@ -11,15 +11,51 @@ import Mathlib.Analysis.Complex.TaylorSeries
 
 namespace Complex
 
-lemma summable_re {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).re :=
+lemma summable_re {α : Type _} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).re :=
   (Complex.hasSum_re h.hasSum).summable
 
-lemma summable_im {α : Type u_1} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).im :=
+lemma summable_im {α : Type _} {f : α → ℂ} (h : Summable f) : Summable fun x ↦ (f x).im :=
   (Complex.hasSum_im h.hasSum).summable
 
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
+open scoped ComplexOrder
+
+lemma inv_natCast_pow_ofReal_pos {n : ℕ} (hn : n ≠ 0) (x : ℝ) : 0 < ((n : ℂ) ^ (x : ℂ))⁻¹ := by
+  refine RCLike.inv_pos_of_pos ?_
+  rw [show (n : ℂ) ^ (x : ℂ) = (n : ℝ) ^ (x : ℂ) from rfl, ← ofReal_cpow n.cast_nonneg']
+  positivity
+
 end Complex
+
+namespace ArithmeticFunction
+
+open Complex
+
+open scoped ComplexOrder
+
+/-- If all values of a `ℂ`-valued arithmetic function are nonnegative reals and `x` is a
+real number in the domain of absolute convergence, then the `n`th iterated derivative
+of the associated L-series is nonnegative real when `n` is even and nonpositive real
+when `n` is odd. -/
+lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ)
+    (hn : ∀ n, 0 ≤ a n) {x : ℝ} (h : LSeries.abscissaOfAbsConv (a ·) < x) (n : ℕ) :
+    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries (a ·)) x := by
+  rw [LSeries_iteratedDeriv _ h, LSeries, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩,
+    one_mul]
+  refine tsum_nonneg fun k ↦ ?_
+  rw [LSeries.term_def]
+  split
+  · exact le_rfl
+  · refine mul_nonneg ?_ <| (inv_natCast_pow_ofReal_pos (by assumption) x).le
+    induction n with
+    | zero => simp only [Function.iterate_zero, id_eq]; exact hn k
+    | succ n IH =>
+        rw [Function.iterate_succ_apply']
+        refine mul_nonneg ?_ IH
+        simp only [← natCast_log, zero_le_real, Real.log_natCast_nonneg]
+
+end ArithmeticFunction
 
 
 section Topology
@@ -28,22 +64,7 @@ open Filter
 
 namespace Asymptotics
 
--- https://github.com/leanprover-community/mathlib4/pull/17394
-lemma isBigO_mul_iff_isBigO_div {α F : Type*} [NormedField F] {l : Filter α} {f g h : α → F}
-    (hf : ∀ᶠ x in l, f x ≠ 0) :
-    (fun x ↦ f x * g x) =O[l] h ↔ g =O[l] (fun x ↦ h x / f x) := by
-  rw [isBigO_iff', isBigO_iff']
-  refine ⟨fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩, fun ⟨c, hc, H⟩ ↦ ⟨c, hc, ?_⟩⟩ <;>
-  { refine H.congr <| Eventually.mp hf <| Eventually.of_forall fun x hx ↦ ?_
-    rw [norm_mul, norm_div, ← mul_div_assoc, mul_comm]
-    have hx' : ‖f x‖ > 0 := norm_pos_iff.mpr hx
-    rw [le_div_iff₀ hx', mul_comm] }
 
--- https://github.com/leanprover-community/mathlib4/pull/17394
-open Topology in
-lemma isLittleO_id_one {E'' : Type*} {F'' : Type*} [NormedAddCommGroup E''] [NormedAddCommGroup F'']
-    [One F''] [NeZero (1 : F'')] : (fun x : E'' => x) =o[𝓝 0] (1 : E'' → F'') :=
-  isLittleO_id_const one_ne_zero
 
 end Asymptotics
 
@@ -87,16 +108,16 @@ end Topology
 namespace Complex
 -- see https://leanprover.zulipchat.com/#narrow/stream/217875-Is-there-code-for-X.3F/topic/Differentiability.20of.20the.20natural.20map.20.E2.84.9D.20.E2.86.92.20.E2.84.82/near/418095234
 
-lemma hasDerivAt_ofReal (x : ℝ) : HasDerivAt ofReal' 1 x :=
+lemma hasDerivAt_ofReal (x : ℝ) : HasDerivAt ofReal 1 x :=
   HasDerivAt.ofReal_comp <| hasDerivAt_id x
 
-lemma deriv_ofReal (x : ℝ) : deriv ofReal' x = 1 :=
+lemma deriv_ofReal (x : ℝ) : deriv ofReal x = 1 :=
   (hasDerivAt_ofReal x).deriv
 
-lemma differentiableAt_ofReal (x : ℝ) : DifferentiableAt ℝ ofReal' x :=
+lemma differentiableAt_ofReal (x : ℝ) : DifferentiableAt ℝ ofReal x :=
   (hasDerivAt_ofReal x).differentiableAt
 
-lemma differentiable_ofReal : Differentiable ℝ ofReal' :=
+lemma differentiable_ofReal : Differentiable ℝ ofReal :=
   ofRealCLM.differentiable
 
 -- #find_home hasDerivAt_ofReal -- [Mathlib.Analysis.SpecialFunctions.NonIntegrable]
@@ -154,6 +175,38 @@ lemma deriv.ofReal_comp {z : ℝ} {f : ℝ → ℝ} :
     rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt hf',
       Complex.ofReal_zero]
 
+section iteratedDeriv
+
+variable {𝕜 F} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+-- the lemmas in this section should go to Mathlib.Analysis.Calculus.Deriv.Shift
+lemma iteratedDeriv_comp_const_add (n : ℕ) (f : 𝕜 → F) (s : 𝕜) :
+    iteratedDeriv n (fun z ↦ f (s + z)) = fun t ↦ iteratedDeriv n f (s + t) := by
+  induction n with
+  | zero => simp only [iteratedDeriv_zero]
+  | succ n IH =>
+      simp only [iteratedDeriv_succ, IH]
+      ext1 z
+      exact deriv_comp_const_add (iteratedDeriv n f) s z
+
+lemma iteratedDeriv_comp_add_const (n : ℕ) (f : 𝕜 → F) (s : 𝕜) :
+    iteratedDeriv n (fun z ↦ f (z + s)) = fun t ↦ iteratedDeriv n f (t + s) := by
+  induction n with
+  | zero => simp only [iteratedDeriv_zero]
+  | succ n IH =>
+      simp only [iteratedDeriv_succ, IH]
+      ext1 z
+      exact deriv_comp_add_const (iteratedDeriv n f) s z
+
+lemma iteratedDeriv_eq_on_open (n : ℕ) {f g : 𝕜 → F} {s : Set 𝕜} (hs : IsOpen s) (x : s)
+    (hfg : Set.EqOn f g s) : iteratedDeriv n f x = iteratedDeriv n g x := by
+  induction' n with n IH generalizing f g
+  · simpa only [iteratedDeriv_zero] using hfg x.2
+  · simp only [iteratedDeriv_succ']
+    exact IH fun y hy ↦ Filter.EventuallyEq.deriv_eq <|
+      Filter.eventuallyEq_iff_exists_mem.mpr ⟨s, IsOpen.mem_nhds hs hy, hfg⟩
+
+end iteratedDeriv
 
 namespace Complex
 
@@ -166,7 +219,7 @@ lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : ℝ⦄ {
     (hf : DifferentiableOn ℂ f (Metric.ball (c : ℂ) r)) ⦃D : ℕ → ℝ⦄
     (hd : ∀ n, iteratedDeriv n f c = D n) :
     ∃ F : ℝ → ℝ, DifferentiableOn ℝ F (Set.Ioo (c - r) (c + r)) ∧
-      Set.EqOn (f ∘ ofReal') (ofReal' ∘ F) (Set.Ioo (c - r) (c + r)) := by
+      Set.EqOn (f ∘ ofReal) (ofReal ∘ F) (Set.Ioo (c - r) (c + r)) := by
   have Hz : ∀ x ∈ Set.Ioo (c - r) (c + r), (x : ℂ) ∈ Metric.ball (c : ℂ) r := by
     intro x hx
     refine Metric.mem_ball.mpr ?_
@@ -190,7 +243,7 @@ derivatives at a real point `c` are real can be given by a real differentiable f
 on the real line. -/
 lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable ℂ f) {c : ℝ} {D : ℕ → ℝ}
     (hd : ∀ n, iteratedDeriv n f c = D n) :
-    ∃ F : ℝ → ℝ, Differentiable ℝ F ∧ (f ∘ ofReal') = (ofReal' ∘ F) := by
+    ∃ F : ℝ → ℝ, Differentiable ℝ F ∧ (f ∘ ofReal) = (ofReal ∘ F) := by
   have H (z : ℂ) := taylorSeries_eq_of_entire' c z hf
   simp_rw [hd] at H
   refine ⟨fun x ↦ ∑' (n : ℕ), (↑n !)⁻¹ * (D n) * (x - c) ^ n, ?_, ?_⟩
@@ -199,9 +252,9 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
       ← ofReal_tsum] at this
     exact Differentiable.ofReal_comp_iff.mp this
   · ext x
-    simp only [Function.comp_apply, ofReal_eq_coe, ← H, ofReal_tsum]
-    push_cast
-    rfl
+    simp only [Function.comp_apply, ← H, ofReal_tsum, ofReal_mul, ofReal_inv, ofReal_natCast,
+      ofReal_pow, ofReal_sub]
+
 
 open scoped ComplexOrder
 
@@ -228,7 +281,7 @@ theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable �
 /-- An entire function whose iterated derivatives at zero are all nonnegative real is
 monotonic on the nonnegative real axis. -/
 theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal') (Set.Ici (0 : ℝ)) := by
+    (h : ∀ n, 0 ≤ iteratedDeriv n f 0) : MonotoneOn (f ∘ ofReal) (Set.Ici (0 : ℝ)) := by
   let D : ℕ → ℝ := fun n ↦ (iteratedDeriv n f 0).re
   have hD (n : ℕ) : iteratedDeriv n f 0 = D n := by
     refine Complex.ext rfl ?_
@@ -248,7 +301,7 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
     exact hx.le
   have H := nonneg_of_iteratedDeriv_nonneg hf' hD' hx
   rw [← deriv.comp_ofReal hf.differentiableAt] at H
-  change 0 ≤ deriv (f ∘ ofReal') x at H
+  change 0 ≤ deriv (f ∘ ofReal) x at H
   erw [hF, deriv.ofReal_comp] at H
   norm_cast at H
 
@@ -268,6 +321,18 @@ theorem at_zero_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
       exact deriv_sub_const (f 0)
   exact sub_nonneg.mp <| nonneg_of_iteratedDeriv_nonneg (hf.sub_const (f 0)) h' hz
 
+/-- An entire function whose iterated derivatives at `s`` are all nonnegative real (except
+possibly the value itself) has values of the form `f s + nonneg. real` along the set `s + ℝ≥0`. -/
+theorem apply_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {s : ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n ≠ 0, 0 ≤ iteratedDeriv n f s) {z : ℂ} (hz : s ≤ z) : f s ≤ f z := by
+  let g := fun z ↦ f (s + z)
+  convert at_zero_le_of_iteratedDeriv_nonneg (f := g) ?_ (fun n hn ↦ ?_) ?_ using 1
+  · simp only [add_zero, g]
+  · rw [show z = s + (-s + z) by ring]
+  · exact Differentiable.comp hf <| Differentiable.const_add differentiable_id s
+  · simpa only [iteratedDeriv_comp_const_add, add_zero, g] using h n hn
+  · exact le_neg_add_iff_le.mpr hz
+
 /-- An entire function whose iterated derivatives at zero are all real with alternating signs
 (except possibly the value itself) has values of the form `f 0 + nonneg. real` along the nonpositive
 real axis. -/
@@ -279,5 +344,18 @@ theorem at_zero_le_of_iteratedDeriv_alternating {f : ℂ → ℂ} (hf : Differen
   · simp only [F, neg_zero]
   · simp only [F, neg_neg]
   · simpa only [F, iteratedDeriv_comp_neg, neg_zero] using h n hn
+
+/-- An entire function whose iterated derivatives at `s` are all real with alternating signs
+(except possibly the value itself) has values of the form `f s + nonneg. real` along the
+set `s - ℝ≥0`. -/
+theorem apply_le_of_iteratedDeriv_alternating {f : ℂ → ℂ} {s : ℂ} (hf : Differentiable ℂ f)
+    (h : ∀ n ≠ 0, 0 ≤ (-1) ^ n * iteratedDeriv n f s) {z : ℂ} (hz : z ≤ s) : f s ≤ f z := by
+  let g := fun z ↦ f (s + z)
+  convert at_zero_le_of_iteratedDeriv_alternating (f := g) ?_ (fun n hn ↦ ?_) ?_ using 1
+  · simp only [add_zero, g]
+  · rw [show z = s + (-s + z) by ring]
+  · exact Differentiable.comp hf <| Differentiable.const_add differentiable_id s
+  · simpa only [iteratedDeriv_comp_const_add, add_zero, g] using h n hn
+  · exact neg_add_nonpos_iff.mpr hz
 
 end Complex
