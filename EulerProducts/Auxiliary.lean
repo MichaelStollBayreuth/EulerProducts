@@ -262,6 +262,8 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
 
 open scoped ComplexOrder
 
+-- The following has been streamlined (and renamed) to prepare a Mathlib PR --> Positivity.lean
+
 /-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
 real values for nonnegative real arguments. -/
 theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
