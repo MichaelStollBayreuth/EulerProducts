@@ -32,19 +32,19 @@ lemma inv_natCast_pow_ofReal_pos {n : ℕ} (hn : n ≠ 0) (x : ℝ) : 0 < ((n : 
 
 end Complex
 
-namespace ArithmeticFunction
-
 open Complex
 
 open scoped ComplexOrder
+
+namespace LSeries
 
 /-- If all values of a `ℂ`-valued arithmetic function are nonnegative reals and `x` is a
 real number in the domain of absolute convergence, then the `n`th iterated derivative
 of the associated L-series is nonnegative real when `n` is even and nonpositive real
 when `n` is odd. -/
-lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ)
-    (hn : ∀ n, 0 ≤ a n) {x : ℝ} (h : LSeries.abscissaOfAbsConv (a ·) < x) (n : ℕ) :
-    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries (a ·)) x := by
+lemma iteratedDeriv_alternating (a : ℕ → ℂ) (hn : 0 ≤ a) {x : ℝ}
+    (h : LSeries.abscissaOfAbsConv a < x) (n : ℕ) :
+    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries a) x := by
   rw [LSeries_iteratedDeriv _ h, LSeries, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩,
     one_mul]
   refine tsum_nonneg fun k ↦ ?_
@@ -58,6 +58,19 @@ lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ)
         rw [Function.iterate_succ_apply']
         refine mul_nonneg ?_ IH
         simp only [← natCast_log, zero_le_real, Real.log_natCast_nonneg]
+
+end LSeries
+
+namespace ArithmeticFunction
+
+/-- If all values of a `ℂ`-valued arithmetic function are nonnegative reals and `x` is a
+real number in the domain of absolute convergence, then the `n`th iterated derivative
+of the associated L-series is nonnegative real when `n` is even and nonpositive real
+when `n` is odd. -/
+lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ)
+    (hn : ∀ n, 0 ≤ a n) {x : ℝ} (h : LSeries.abscissaOfAbsConv (a ·) < x) (n : ℕ) :
+    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries (a ·)) x :=
+  LSeries.iteratedDeriv_alternating (a ·) hn h n
 
 end ArithmeticFunction
 
@@ -263,6 +276,7 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
 open scoped ComplexOrder
 
 -- The following has been streamlined (and renamed) to prepare a Mathlib PR --> Positivity.lean
+-- see #17862
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real has nonnegative
 real values for nonnegative real arguments. -/
