@@ -216,8 +216,8 @@ namespace Complex
 
 open Nat
 
-/-- A function that is complex differentiable on the closed ball of radius `r` around `c`,
-where `c` is real, and all whose iterated derivatives at `c` are real can be give by a real
+/-- A function that is complex differentiable on the open ball of radius `r` around `c`,
+where `c` is real, and all whose iterated derivatives at `c` are real can be given by a real
 differentiable function on the real open interval from `c-r` to `c+r`. -/
 lemma realValued_of_iteratedDeriv_real_on_ball {f : ℂ → ℂ} ⦃r : ℝ⦄ {c : ℝ}
     (hf : DifferentiableOn ℂ f (Metric.ball (c : ℂ) r)) ⦃D : ℕ → ℝ⦄
