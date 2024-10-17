@@ -45,7 +45,7 @@ namespace DifferentiableOn
 
 /-- An function that is holomorphic on the open disk around `c` with radius `r` and whose iterated
 derivatives at `c` are all nonnegative real has nonnegative real values on `c + [0,r)`. -/
-theorem nonneg_of_differentiableOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ} {r : ℝ}
+theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ} {r : ℝ}
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) (h : ∀ n, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄
     (hz₁ : c ≤ z) (hz₂ : z ∈ Metric.ball c r):
     0 ≤ f z := by
@@ -70,9 +70,9 @@ namespace Differentiable
 
 /-- An entire function whose iterated derivatives at `c` are all nonnegative real has nonnegative
 real values on `c + ℝ≥0`. -/
-theorem nonneg_of_differentiable_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f)
     {c : ℂ} (h : ∀ n, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄ (hz : c ≤ z) : 0 ≤ f z := by
-  refine hf.differentiableOn.nonneg_of_differentiableOn_of_iteratedDeriv_nonneg
+  refine hf.differentiableOn.nonneg_of_iteratedDeriv_nonneg
     (r := (z - c).re + 1) h hz ?_
   rw [← sub_nonneg] at hz
   have : (z - c) = (z - c).re := eq_re_of_ofReal_le hz
@@ -83,7 +83,7 @@ theorem nonneg_of_differentiable_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf :
 
 /-- An entire function whose iterated derivatives at `c` are all nonnegative real (except
 possibly the value itself) has values of the form `f c + nonneg. real` on the set `c + ℝ≥0`. -/
-theorem apply_le_of_differentiable_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ}
+theorem apply_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ}
     (hf : Differentiable ℂ f) (h : ∀ n ≠ 0, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄ (hz : c ≤ z) :
     f c ≤ f z := by
   have h' (n : ℕ) : 0 ≤ iteratedDeriv n (f · - f c) c := by
@@ -93,17 +93,17 @@ theorem apply_le_of_differentiable_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c 
       specialize h (n + 1) n.succ_ne_zero
       rw [iteratedDeriv_succ'] at h ⊢
       rwa [funext_iff.mpr <| fun x ↦ deriv_sub_const (f := f) (x := x) (f c)]
-  exact sub_nonneg.mp <| nonneg_of_differentiable_of_iteratedDeriv_nonneg (hf.sub_const _) h' hz
+  exact sub_nonneg.mp <| nonneg_of_iteratedDeriv_nonneg (hf.sub_const _) h' hz
 
 /-- An entire function whose iterated derivatives at `c` are all real with alternating signs
 (except possibly the value itself) has values of the form `f c + nonneg. real` along the
 set `c - ℝ≥0`. -/
-theorem apply_le_of_differentiable_of_iteratedDeriv_alternating {f : ℂ → ℂ} {c : ℂ}
+theorem apply_le_of_iteratedDeriv_alternating {f : ℂ → ℂ} {c : ℂ}
     (hf : Differentiable ℂ f) (h : ∀ n ≠ 0, 0 ≤ (-1) ^ n * iteratedDeriv n f c) ⦃z : ℂ⦄
     (hz : z ≤ c) :
     f c ≤ f z := by
   let F : ℂ → ℂ := fun z ↦ f (-z)
-  convert apply_le_of_differentiable_of_iteratedDeriv_nonneg (f := F) (c := -c) (z := -z)
+  convert apply_le_of_iteratedDeriv_nonneg (f := F) (c := -c) (z := -z)
     (hf.comp <| differentiable_neg) (fun n hn ↦ ?_) (neg_le_neg_iff.mpr hz) using 1
   · simp only [neg_neg, F]
   · simp only [neg_neg, F]

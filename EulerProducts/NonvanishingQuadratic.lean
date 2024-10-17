@@ -163,7 +163,7 @@ lemma BadChar.F_two_pos (B : BadChar N) : 0 < B.F 2 := by
 theorem BadChar.elim (B : BadChar N) : False := by
   refine (B.F_two_pos.trans_le <|
     B.F_neg_two ▸
-      B.F_differentiable.apply_le_of_differentiable_of_iteratedDeriv_alternating
+      B.F_differentiable.apply_le_of_iteratedDeriv_alternating
         (fun n _ ↦ ?_) (by norm_num)).false
   have hs : IsOpen {s : ℂ | 1 < s.re} := by refine isOpen_lt ?_ ?_ <;> fun_prop
   convert B.e.iteratedDeriv_LSeries_alternating B.e_nonneg B.abscissa n using 2
