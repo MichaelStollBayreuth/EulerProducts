@@ -5,7 +5,7 @@ An attempt at formalizing facts on Euler products and L-series more generally in
 Some results have by now made it into Mathlib.
 
 Current projects:
-* [__EulerProducts/Auxiliary.lean__](EulerProducts/blob/main/EulerProducts/Auxiliary.lean):
+* [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean):
   auxiliary lemmas
 * [__EulerProducts/Logarithm.lean__](EulerProducts/blob/main/EulerProducts/Logarithm.lean):
   proves a logarithmic version of the Euler product formula for completely multiplicative 
