@@ -20,6 +20,8 @@ Current projects:
 * [__EulerProducts/NonvanishingQuadratic.lean__](EulerProducts/blob/main/EulerProducts/NonvanishingQuadratic.lean):
   This contains a proof of the non-vanishing of the L-function of a nontrivial quadratic
   Dirichlet character at 1.
+* [__EulerProducts/Orthogonality.lean__](EulerProducts/blob/main/EulerProducts/Orthogonality.lean):
+  A proof of the orthogonality relation of Dirichlet characters of given modulus.
 * [__EulerProducts/PNT.lean__](EulerProducts/blob/main/EulerProducts/PNT.lean):
   a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
   __Wiener-Ikehara Tauberian Theorem__. This also contains a proof of the non-vanishing
