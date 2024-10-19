@@ -152,7 +152,7 @@ open Complex BigOperators Filter Topology Homeomorph Asymptotics
 open scoped LSeries.notation
 
 noncomputable
-abbrev LFunction_one (N : ℕ) [NeZero N] := (1 : DirichletCharacter ℂ N).LFunction
+abbrev LFunction_triv_char (N : ℕ) [NeZero N] := (1 : DirichletCharacter ℂ N).LFunction
 
 /-- If `χ` is a Dirichlet character and its level `M` divides `N`, then we obtain the L-series
 of `χ` considered as a Dirichlet character of level `N` from the L-series of `χ` by multiplying
@@ -241,21 +241,21 @@ lemma LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N)
 
 /-- The L function of the trivial Dirichlet character mod `N` is obtained from the Riemann
 zeta function by multiplying with `∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))`. -/
-lemma LFunction_one_eq_mul_riemannZeta {s : ℂ} (hs : s ≠ 1) :
-    LFunction_one N s = (∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))) * riemannZeta s := by
-  rw [← LFunction_modOne_eq (χ := 1), LFunction_one, ← changeLevel_one N.one_dvd, mul_comm]
+lemma LFunction_triv_char_eq_mul_riemannZeta {s : ℂ} (hs : s ≠ 1) :
+    LFunction_triv_char N s = (∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))) * riemannZeta s := by
+  rw [← LFunction_modOne_eq (χ := 1), LFunction_triv_char, ← changeLevel_one N.one_dvd, mul_comm]
   convert LFunction_changeLevel N.one_dvd 1 (.inr hs) using 4 with p
   rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
 
 /-- The L function of the trivial Dirichlet character mod `N` has a simple pole with
 residue `∏ p ∈ N.primeFactors, (1 - p⁻¹)` at `s = 1`. -/
-lemma LFunction_one_residue_one :
-  Filter.Tendsto (fun s ↦ (s - 1) * LFunction_one N s) (𝓝[≠] 1)
+lemma LFunction_triv_char_residue_one :
+  Filter.Tendsto (fun s ↦ (s - 1) * LFunction_triv_char N s) (𝓝[≠] 1)
     (𝓝 <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
-  have H : (fun s ↦ (s - 1) * LFunction_one N s) =ᶠ[𝓝[≠] 1]
+  have H : (fun s ↦ (s - 1) * LFunction_triv_char N s) =ᶠ[𝓝[≠] 1]
         fun s ↦ (∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))) * ((s - 1) * riemannZeta s) := by
     refine Set.EqOn.eventuallyEq_nhdsWithin fun s hs ↦ ?_
-    rw [mul_left_comm, LFunction_one_eq_mul_riemannZeta hs]
+    rw [mul_left_comm, LFunction_triv_char_eq_mul_riemannZeta hs]
   rw [tendsto_congr' H]
   conv => enter [3, 1]; rw [← mul_one <| Finset.prod ..]; enter [1, 2, p]; rw [← cpow_neg_one]
   convert Tendsto.mul (f := fun s ↦ ∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s)))
@@ -298,7 +298,7 @@ variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
 /-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
 lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
-    ‖LFunction_one N (1 + x) ^ 3 * χ.LFunction (1 + x + I * y) ^ 4 *
+    ‖LFunction_triv_char N (1 + x) ^ 3 * χ.LFunction (1 + x + I * y) ^ 4 *
       (χ ^ 2).LFunction (1 + x + 2 * I * y)‖ ≥ 1 := by
   convert norm_LSeries_product_ge_one χ hx y using 3
   · congr 2
@@ -311,12 +311,12 @@ lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     simp only [add_re, one_re, ofReal_re, mul_re, re_ofNat, I_re, mul_zero, im_ofNat, I_im, mul_one,
       sub_self, zero_mul, mul_im, add_zero, ofReal_im, lt_add_iff_pos_right, hx]
 
-lemma LFunction_one_isBigO_near_one_horizontal :
-    (fun x : ℝ ↦ LFunction_one N (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
-  have : (fun w : ℂ ↦ LFunction_one N (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
-    have H : Tendsto (fun w ↦ w * LFunction_one N (1 + w)) (𝓝[≠] 0)
+lemma LFunction_triv_char_isBigO_near_one_horizontal :
+    (fun x : ℝ ↦ LFunction_triv_char N (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
+  have : (fun w : ℂ ↦ LFunction_triv_char N (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
+    have H : Tendsto (fun w ↦ w * LFunction_triv_char N (1 + w)) (𝓝[≠] 0)
                (𝓝 <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
-      convert Tendsto.comp (f := fun w ↦ 1 + w) (LFunction_one_residue_one (N := N)) ?_ using 1
+      convert Tendsto.comp (f := fun w ↦ 1 + w) (LFunction_triv_char_residue_one (N := N)) ?_ using 1
       · ext w
         simp only [Function.comp_apply, add_sub_cancel_left]
       · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
@@ -350,7 +350,7 @@ theorem LFunction_ne_zero_of_re_eq_one_of_not_quadratic {t : ℝ} (h : χ ^ 2 �
     χ.LFunction (1 + I * t) ≠ 0 := by
   intro Hz
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
-      (fun x ↦ LFunction_one N (1 + x) ^ 3 * χ.LFunction (1 + x + I * t) ^ 4 *
+      (fun x ↦ LFunction_triv_char N (1 + x) ^ 3 * χ.LFunction (1 + x + I * t) ^ 4 *
                    (χ ^ 2).LFunction (1 + x + 2 * I * t)) :=
     IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
       fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_LFunction_product_ge_one hx t).le
@@ -364,7 +364,7 @@ theorem LFunction_ne_zero_of_re_eq_one_of_not_quadratic {t : ℝ} (h : χ ^ 2 �
     rcases h with h | h
     · exact .inr h
     · exact .inl <| mul_ne_zero two_ne_zero h
-  have H := ((LFunction_one_isBigO_near_one_horizontal (N := N)).pow 3).mul
+  have H := ((LFunction_triv_char_isBigO_near_one_horizontal (N := N)).pow 3).mul
     ((LFunction_isBigO_near_root_horizontal hz₁ Hz).pow 4)|>.mul <|
     LFunction_isBigO_of_ne_one_horizontal hz₂
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
@@ -385,30 +385,141 @@ theorem LFunction_ne_zero_of_re_eq_one_of_not_quadratic {t : ℝ} (h : χ ^ 2 �
 /-- If `χ` is a Dirichlet character, then `L(χ, 1 + I*t)` does not vanish for `t ∈ ℝ`
 except when `χ` is trivial and `t = 0` (then `L(χ, s)` has a simple pole at `s = 1`). -/
 theorem Lfunction_ne_zero_of_re_eq_one (χ : DirichletCharacter ℂ N) (t : ℝ) (hχt : χ ≠ 1 ∨ t ≠ 0) :
-    χ.LFunction (1 + I * t) ≠ 0 := by
+    LFunction χ (1 + I * t) ≠ 0 := by
   by_cases h : χ ^ 2 = 1 ∧ t = 0
   · simp only [ne_eq, h.2, not_true_eq_false, or_false] at hχt
     rw [h.2, ofReal_zero, mul_zero, add_zero]
     exact LFunction_at_one_ne_zero_of_quadratic h.1 hχt
   · exact LFunction_ne_zero_of_re_eq_one_of_not_quadratic <| not_and_or.mp h
 
+/-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
+except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
+theorem Lfunction_ne_zero_of_one_le_re (χ : DirichletCharacter ℂ N) ⦃s : ℂ⦄ (hχs : χ ≠ 1 ∨ s ≠ 1)
+    (hs : 1 ≤ s.re) :
+    LFunction χ s ≠ 0 := by
+  rcases hs.eq_or_lt with hs | hs
+  · have hseq : s = 1 + I * s.im := by
+      rw [mul_comm I, ← re_add_im s, ← hs]
+      push_cast
+      simp only [add_im, one_im, mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero,
+        add_zero, zero_add]
+    rw [hseq]
+    apply Lfunction_ne_zero_of_re_eq_one
+    rcases hχs with h | h
+    · exact .inl h
+    · refine .inr ?_
+      rw [← re_add_im s, ← hs, ofReal_one] at h
+      simpa only [ne_eq, add_right_eq_self, _root_.mul_eq_zero, ofReal_eq_zero, I_ne_zero,
+        or_false] using h
+  · exact LFunction_eq_LSeries χ hs ▸ LSeries_ne_zero_of_one_lt_re χ hs
+
 end DirichletCharacter
 
 open DirichletCharacter in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
-  refine hz'.eq_or_lt.elim (fun h Hz ↦ ?_) riemannZeta_ne_zero_of_one_lt_re
-  rw [← LFunction_modOne_eq (χ := 1)] at Hz
-  have hz₀ : z.im ≠ 0 := by
-    rw [← re_add_im z, ← h, ofReal_one] at hz
-    simpa only [ne_eq, add_right_eq_self, mul_eq_zero, ofReal_eq_zero, I_ne_zero, or_false]
-      using hz
-  have hzeq : z = 1 + I * z.im := by
-    rw [mul_comm I, ← re_add_im z, ← h]
-    push_cast
-    simp only [add_im, one_im, mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero,
-      add_zero, zero_add]
-  exact LFunction_ne_zero_of_re_eq_one_of_not_quadratic (N := 1) (.inr hz₀) (hzeq ▸ Hz)
+  rw [← LFunction_modOne_eq (χ := 1)]
+  exact Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ 1) (.inr hz) hz'
+
+/-!
+### The logarithmic derivative of the L-function of a trivial character has a simple pole at s = 1 with residue -1
+
+We show that `s ↦ L'(χ) s / L(χ) s + 1 / (s - 1)` (or rather, its negative, which is the function
+we need for the Wiener-Ikehara Theorem) is continuous outside the zeros of `L(χ)` when `χ`
+is a trivial Dirichlet character.
+-/
+
+namespace DirichletCharacter
+
+section trivial
+
+variable (n : ℕ) [NeZero n]
+
+/-- The function obtained by "multiplying away" the pole of `L(χ)` for a trivial Dirichlet
+character `χ`. Its (negative) logarithmic derivative is used in the Wiener-Ikehara Theorem
+to prove the Prime Number Theorem version of Dirichlet's Theorem on primes in arithmetic
+progressions. -/
+noncomputable def LFunction_triv_char₁ : ℂ → ℂ :=
+  Function.update (fun z ↦ LFunction_triv_char n z * (z - 1)) 1
+    (∏ p ∈ n.primeFactors, (1 - (p : ℂ)⁻¹))
+
+lemma LFunction_triv_char₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) :
+    LFunction_triv_char₁ n z = LFunction_triv_char n z * (z - 1) := by
+  simp [LFunction_triv_char₁, hz]
+
+lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunction_triv_char₁ n) := by
+  rw [← differentiableOn_univ,
+    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem,
+    LFunction_triv_char₁]
+  refine ⟨DifferentiableOn.congr (f := fun z ↦ LFunction_triv_char n z * (z - 1))
+    (fun z hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
+    continuousWithinAt_compl_self.mp ?_⟩
+  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
+    exact (differentiableAt_LFunction _ z (.inl hz)).mul <| (differentiableAt_id').sub <|
+      differentiableAt_const _
+  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
+    simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
+  · conv in (_ * _) => rw [mul_comm]
+    simp only [continuousWithinAt_compl_self, continuousAt_update_same]
+    exact LFunction_triv_char_residue_one
+
+lemma deriv_LFunction_triv_char₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
+    deriv (LFunction_triv_char₁ n) z =
+      deriv (LFunction_triv_char n) z * (z - 1) + LFunction_triv_char n z := by
+  have H : deriv (LFunction_triv_char₁ n) z =
+      deriv (fun w ↦ LFunction_triv_char n w * (w - 1)) z := by
+    refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
+    refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
+    simp only [LFunction_triv_char₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true,
+      Function.update_noteq]
+  rw [H, deriv_mul (differentiableAt_LFunction _ z (.inl hz)) <| differentiableAt_id'.sub <|
+    differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
+
+lemma neg_logDeriv_LFunction_triv_char₁_eq {z : ℂ} (hz₁ : z ≠ 1)
+    (hz₂ : LFunction_triv_char n z ≠ 0) :
+    -deriv (LFunction_triv_char₁ n) z / LFunction_triv_char₁ n z =
+      -deriv (LFunction_triv_char n) z / LFunction_triv_char n z - 1 / (z - 1) := by
+  rw [deriv_LFunction_triv_char₁_apply_of_ne_one n hz₁, LFunction_triv_char₁_apply_of_ne_one n hz₁]
+  field_simp [sub_ne_zero.mpr hz₁]
+  ring
+
+lemma continuousOn_neg_logDeriv_LFunction_triv_char₁ :
+    ContinuousOn (fun z ↦ -deriv (LFunction_triv_char₁ n) z / LFunction_triv_char₁ n z)
+      {z | z = 1 ∨ LFunction_triv_char n z ≠ 0} := by
+  simp_rw [neg_div]
+  refine (((LFunction_triv_char₁_differentiable n).contDiff.continuous_deriv le_rfl).continuousOn.div
+    (LFunction_triv_char₁_differentiable n).continuous.continuousOn fun w hw ↦ ?_).neg
+  rcases eq_or_ne w 1 with rfl | hw'
+  · simp only [LFunction_triv_char₁, Function.update_same]
+    refine Finset.prod_ne_zero_iff.mpr fun p hp ↦ ?_
+    rw [sub_ne_zero, ne_eq, one_eq_inv]
+    exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_one
+  · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
+    simp only [LFunction_triv_char₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
+      false_or]
+    exact sub_ne_zero.mpr hw'
+
+end trivial
+
+section nontrivial
+
+variable {n : ℕ} [NeZero n] {χ : DirichletCharacter ℂ n}
+
+/-- The negative logarithmic derivative of a Dirichlet L-function is continuous away from
+the zeros of the L-function. -/
+lemma continuousOn_neg_logDeriv_LFunction_nontriv_char (hχ : χ ≠ 1) :
+    ContinuousOn (fun z ↦ -deriv (LFunction χ) z / LFunction χ z)
+      {z | LFunction χ z ≠ 0} := by
+  simp_rw [neg_div]
+  have h₁ := differentiable_LFunction hχ
+  exact ((h₁.contDiff.continuous_deriv le_rfl).continuousOn.div
+    h₁.continuous.continuousOn fun w hw ↦ hw).neg
+
+end nontrivial
+
+end DirichletCharacter
+
+section zeta
 
 /-!
 ### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
@@ -422,50 +533,27 @@ derivative is the function used in the Wiener-Ikehara Theorem to prove the Prime
 Theorem. -/
 noncomputable def ζ₁ : ℂ → ℂ := Function.update (fun z ↦ ζ z * (z - 1)) 1 1
 
-lemma ζ₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) : ζ₁ z = ζ z * (z - 1) := by
-  simp [ζ₁, hz]
+open DirichletCharacter
 
-lemma ζ₁_differentiable : Differentiable ℂ ζ₁ := by
-  rw [← differentiableOn_univ,
-    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem, ζ₁]
-  refine ⟨DifferentiableOn.congr (f := fun z ↦ ζ z * (z - 1))
-    (fun _ hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
-    continuousWithinAt_compl_self.mp ?_⟩
-  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
-    exact (differentiableAt_riemannZeta hz).mul <| (differentiableAt_id').sub <|
-      differentiableAt_const 1
-  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
-    simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
-  · conv in (_ * _) => rw [mul_comm]
-    simp only [continuousWithinAt_compl_self, continuousAt_update_same]
-    exact riemannZeta_residue_one
+lemma riemannZeta_eq_LFunction_triv_char_one : ζ = LFunction_triv_char 1 :=
+  LFunction_modOne_eq.symm
 
-lemma deriv_ζ₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
-    deriv ζ₁ z = deriv ζ z * (z - 1) + ζ z := by
-  have H : deriv ζ₁ z = deriv (fun w ↦ ζ w * (w - 1)) z := by
-    refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
-    refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
-    simp only [ζ₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true, Function.update_noteq]
-  rw [H, deriv_mul (differentiableAt_riemannZeta hz) <| differentiableAt_id'.sub <|
-    differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
+lemma ζ₁_eq_LFunction_triv_char₁_one : ζ₁ = LFunction_triv_char₁ 1 := by
+  ext1
+  simp only [ζ₁, LFunction_triv_char₁, LFunction_modOne_eq, Nat.primeFactors_one,
+    Finset.prod_empty]
 
 lemma neg_logDeriv_ζ₁_eq {z : ℂ} (hz₁ : z ≠ 1) (hz₂ : ζ z ≠ 0) :
     -deriv ζ₁ z / ζ₁ z = -deriv ζ z / ζ z - 1 / (z - 1) := by
-  rw [ζ₁_apply_of_ne_one hz₁, deriv_ζ₁_apply_of_ne_one hz₁]
-  field_simp [sub_ne_zero.mpr hz₁]
-  ring
+  simp only [ζ₁_eq_LFunction_triv_char₁_one, riemannZeta_eq_LFunction_triv_char_one] at hz₂ ⊢
+  exact neg_logDeriv_LFunction_triv_char₁_eq 1 hz₁ hz₂
 
 lemma continuousOn_neg_logDeriv_ζ₁ :
     ContinuousOn (fun z ↦ -deriv ζ₁ z / ζ₁ z) {z | z = 1 ∨ ζ z ≠ 0} := by
-  simp_rw [neg_div]
-  refine ((ζ₁_differentiable.contDiff.continuous_deriv le_rfl).continuousOn.div
-    ζ₁_differentiable.continuous.continuousOn fun w hw ↦ ?_).neg
-  rcases eq_or_ne w 1 with rfl | hw'
-  · simp only [ζ₁, Function.update_same, ne_eq, one_ne_zero, not_false_eq_true]
-  · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
-    simp only [ζ₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
-      false_or]
-    exact sub_ne_zero.mpr hw'
+  simp only [ζ₁_eq_LFunction_triv_char₁_one, riemannZeta_eq_LFunction_triv_char_one]
+  exact continuousOn_neg_logDeriv_LFunction_triv_char₁ 1
+
+end zeta
 
 /-!
 ### Derivation of the Prime Number Theorem from the Wiener-Ikehara Theorem
@@ -488,58 +576,3 @@ theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
     specialize @hnv s
     simp at *
     tauto
-
--- not sure we need this
-/- open BigOperators Finset ZMod in
-lemma prod_primesBelow_mul_eq_prod_primesBelow {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re)
-    {n : ℕ} (hn : N < n) :
-    (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) * (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s))) =
-        ∏ p in primesBelow n, (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹ := by
-  letI ε : DirichletCharacter ℂ N := 1
-  rw [mul_comm]
-  have hd : Disjoint N.primeFactors (n.primesBelow.filter (· ∉ N.primeFactors)) := by
-    convert disjoint_filter_filter_neg N.primeFactors n.primesBelow (· ∈ N.primeFactors)
-    rw [filter_mem_eq_inter, inter_self]
-  have hdeq : disjUnion _ _ hd = primesBelow n := by
-    simp only [disjUnion_eq_union]
-    ext p
-    simp only [mem_union, mem_filter]
-    refine ⟨fun H' ↦ H'.elim (fun H ↦ ?_) fun H ↦ H.1, fun _ ↦ by tauto⟩
-    exact mem_primesBelow.mpr ⟨(le_of_mem_primeFactors H).trans_lt hn, prime_of_mem_primeFactors H⟩
-  have H₁ := hdeq ▸ prod_disjUnion (f := fun p : ℕ ↦ (1 - ε p * (p : ℂ) ^ (-s))⁻¹) hd
-  have H₂ := hdeq ▸ prod_disjUnion (f := fun p : ℕ ↦ (1 - (p : ℂ) ^ (-s))⁻¹) hd
-  have H₃ : ∏ p in N.primeFactors, (1 - ε p * (p : ℂ) ^ (-s))⁻¹ = 1 := by
-    refine prod_eq_one fun p hp ↦ ?_
-    rw [MulChar.map_nonunit _ <| not_isUnit_of_mem_primeFactors hp, zero_mul, sub_zero, inv_one]
-  rw [H₁, H₂, H₃, one_mul, ← mul_assoc, ← prod_mul_distrib]; clear H₁ H₂ H₃
-  conv => enter [2]; rw [← one_mul (∏ p in (n.primesBelow.filter _), _)]
-  congr 1
-  · exact prod_eq_one fun p hp ↦
-      mul_inv_cancel <| one_sub_prime_cpow_ne_zero (prime_of_mem_primeFactors hp) hs
-  · refine prod_congr rfl fun p hp ↦ ?_
-    simp only [mem_primeFactors, ne_eq, hN, not_false_eq_true, and_true, not_and, mem_filter] at hp
-    have hp₁ := (mem_primesBelow.mp hp.1).2
-    rw [MulChar.one_apply <| isUnit_prime_of_not_dvd hp₁ <| hp.2 hp₁, one_mul]
-
-open BigOperators in
-lemma LSeries.exists_extension_of_trivial {N : ℕ} (hN : N ≠ 0) {s : ℂ} (hs : 1 < s.re) :
-    L ↗(1 : DirichletCharacter ℂ N) s = ζ s * ∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
-  have Hζ := (riemannZeta_eulerProduct hs).mul_const (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))
-  have HL := dirichletLSeries_eulerProduct (1 : DirichletCharacter ℂ N) hs
-  have Hev : (fun n : ℕ ↦ (∏ p in primesBelow n, (1 - (p : ℂ) ^ (-s))⁻¹) *
-    (∏ p in N.primeFactors, (1 - (p : ℂ) ^ (-s)))) =ᶠ[Filter.atTop]
-      (fun n : ℕ ↦ ∏ p in primesBelow n,
-        (1 - (1 : DirichletCharacter ℂ N) p * (p : ℂ) ^ (-s))⁻¹) := by
-    refine Filter.eventuallyEq_of_mem (s := {n | N < n}) ?_
-      fun _ ↦ prod_primesBelow_mul_eq_prod_primesBelow hN hs
-    simp only [Filter.mem_atTop_sets, Set.mem_setOf_eq]
-    exact ⟨N + 1, fun _ hm ↦ hm⟩
-  convert (tendsto_nhds_unique (Filter.Tendsto.congr' Hev Hζ) HL).symm using 1
-  rw [LSeries]
-  congr
-  funext n
-  simp only [dirichletSummandHom, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [term_zero, cast_zero, CharP.cast_eq_zero, ne_eq, neg_eq_zero,
-    ne_zero_of_one_lt_re hs, not_false_eq_true, zero_cpow, mul_zero]
-  rw [LSeries.term_of_ne_zero hn, div_eq_mul_inv, cpow_neg] -/
