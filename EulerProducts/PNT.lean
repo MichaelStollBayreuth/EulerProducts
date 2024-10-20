@@ -1,13 +1,9 @@
-import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
 import EulerProducts.NonvanishingQuadratic
 import EulerProducts.Orthogonality
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
-import Mathlib.NumberTheory.LSeries.Dirichlet
-import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
--- import Mathlib.Tactic.RewriteSearch
 
 section LSeries
 

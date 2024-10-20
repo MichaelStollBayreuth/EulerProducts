@@ -1,5 +1,5 @@
 import Mathlib.Analysis.Complex.TaylorSeries
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Analysis.Complex.Positivity
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.NumberTheory.LSeries.Deriv
 
@@ -192,39 +192,6 @@ lemma deriv.ofReal_comp {z : ℝ} {f : ℝ → ℝ} :
     rw [deriv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt hf',
       Complex.ofReal_zero]
 
-section iteratedDeriv
-
-variable {𝕜 F} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
--- the lemmas in this section should go to Mathlib.Analysis.Calculus.Deriv.Shift
-lemma iteratedDeriv_comp_const_add (n : ℕ) (f : 𝕜 → F) (s : 𝕜) :
-    iteratedDeriv n (fun z ↦ f (s + z)) = fun t ↦ iteratedDeriv n f (s + t) := by
-  induction n with
-  | zero => simp only [iteratedDeriv_zero]
-  | succ n IH =>
-      simp only [iteratedDeriv_succ, IH]
-      ext1 z
-      exact deriv_comp_const_add (iteratedDeriv n f) s z
-
-lemma iteratedDeriv_comp_add_const (n : ℕ) (f : 𝕜 → F) (s : 𝕜) :
-    iteratedDeriv n (fun z ↦ f (z + s)) = fun t ↦ iteratedDeriv n f (t + s) := by
-  induction n with
-  | zero => simp only [iteratedDeriv_zero]
-  | succ n IH =>
-      simp only [iteratedDeriv_succ, IH]
-      ext1 z
-      exact deriv_comp_add_const (iteratedDeriv n f) s z
-
-lemma iteratedDeriv_eq_on_open (n : ℕ) {f g : 𝕜 → F} {s : Set 𝕜} (hs : IsOpen s) (x : s)
-    (hfg : Set.EqOn f g s) : iteratedDeriv n f x = iteratedDeriv n g x := by
-  induction' n with n IH generalizing f g
-  · simpa only [iteratedDeriv_zero] using hfg x.2
-  · simp only [iteratedDeriv_succ']
-    exact IH fun y hy ↦ Filter.EventuallyEq.deriv_eq <|
-      Filter.eventuallyEq_iff_exists_mem.mpr ⟨s, IsOpen.mem_nhds hs hy, hfg⟩
-
-end iteratedDeriv
-
 namespace Complex
 
 open Nat
@@ -275,75 +242,6 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
 end Complex
 
 open scoped ComplexOrder
-
--- The following has been streamlined (and renamed) to prepare a Mathlib PR --> Positivity.lean
--- see #17862
-
-open Complex
-
-open scoped ComplexOrder
-
-namespace DifferentiableOn
-
-/-- A function that is holomorphic on the open disk around `c` with radius `r` and whose iterated
-derivatives at `c` are all nonnegative real has nonnegative real values on `c + [0,r)`. -/
-theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ} {r : ℝ}
-    (hf : DifferentiableOn ℂ f (Metric.ball c r)) (h : ∀ n, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄
-    (hz₁ : c ≤ z) (hz₂ : z ∈ Metric.ball c r):
-    0 ≤ f z := by
-  have H := taylorSeries_eq_on_ball' hz₂ hf
-  rw [← sub_nonneg] at hz₁
-  have hz' := eq_re_of_ofReal_le hz₁
-  rw [hz'] at hz₁ H
-  refine H ▸ tsum_nonneg fun n ↦ ?_
-  rw [← ofReal_natCast, ← ofReal_pow, ← ofReal_inv, eq_re_of_ofReal_le (h n), ← ofReal_mul,
-    ← ofReal_mul]
-  norm_cast at hz₁ ⊢
-  have := zero_re ▸ (Complex.le_def.mp (h n)).1
-  positivity
-
-end DifferentiableOn
-
-namespace Differentiable
-
-/-- An entire function whose iterated derivatives at `c` are all nonnegative real has nonnegative
-real values on `c + ℝ≥0`. -/
-theorem nonneg_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiable ℂ f) {c : ℂ}
-    (h : ∀ n, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄ (hz : c ≤ z) :
-    0 ≤ f z := by
-  refine hf.differentiableOn.nonneg_of_iteratedDeriv_nonneg (r := (z - c).re + 1) h hz ?_
-  rw [← sub_nonneg] at hz
-  rw [Metric.mem_ball, dist_eq, eq_re_of_ofReal_le hz]
-  simpa only [Complex.abs_of_nonneg (nonneg_iff.mp hz).1] using lt_add_one _
-
-/-- An entire function whose iterated derivatives at `c` are all nonnegative real (except
-possibly the value itself) has values of the form `f c + nonneg. real` on the set `c + ℝ≥0`. -/
-theorem apply_le_of_iteratedDeriv_nonneg {f : ℂ → ℂ} {c : ℂ} (hf : Differentiable ℂ f)
-    (h : ∀ n ≠ 0, 0 ≤ iteratedDeriv n f c) ⦃z : ℂ⦄ (hz : c ≤ z) :
-    f c ≤ f z := by
-  have h' (n : ℕ) : 0 ≤ iteratedDeriv n (f · - f c) c := by
-    cases n with
-    | zero => simp only [iteratedDeriv_zero, sub_self, le_refl]
-    | succ n =>
-      specialize h (n + 1) n.succ_ne_zero
-      rw [iteratedDeriv_succ'] at h ⊢
-      rwa [funext fun x ↦ deriv_sub_const (f := f) (x := x) (f c)]
-  exact sub_nonneg.mp <| nonneg_of_iteratedDeriv_nonneg (hf.sub_const _) h' hz
-
-/-- An entire function whose iterated derivatives at `c` are all real with alternating signs
-(except possibly the value itself) has values of the form `f c + nonneg. real` along the
-set `c - ℝ≥0`. -/
-theorem apply_le_of_iteratedDeriv_alternating {f : ℂ → ℂ} {c : ℂ} (hf : Differentiable ℂ f)
-    (h : ∀ n ≠ 0, 0 ≤ (-1) ^ n * iteratedDeriv n f c) ⦃z : ℂ⦄ (hz : z ≤ c) :
-    f c ≤ f z := by
-  convert apply_le_of_iteratedDeriv_nonneg (f := fun z ↦ f (-z))
-    (hf.comp <| differentiable_neg) (fun n hn ↦ ?_) (neg_le_neg_iff.mpr hz) using 1
-  · simp only [neg_neg]
-  · simp only [neg_neg]
-  · simpa only [iteratedDeriv_comp_neg, neg_neg, smul_eq_mul] using h n hn
-
-end Differentiable
-
 
 /-- An entire function whose iterated derivatives at zero are all nonnegative real is
 monotonic on the nonnegative real axis. -/

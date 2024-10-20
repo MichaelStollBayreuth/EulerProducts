@@ -1,7 +1,6 @@
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import EulerProducts.Auxiliary
-import EulerProducts.Positivity
 
 /-!
 # Non-vanishing of `L(χ, 1)` for nontrivial quadratic characters `χ`
@@ -167,7 +166,8 @@ theorem BadChar.elim (B : BadChar N) : False := by
         (fun n _ ↦ ?_) (by norm_num)).false
   have hs : IsOpen {s : ℂ | 1 < s.re} := by refine isOpen_lt ?_ ?_ <;> fun_prop
   convert B.e.iteratedDeriv_LSeries_alternating B.e_nonneg B.abscissa n using 2
-  convert iteratedDeriv_eq_on_open n hs ⟨2, ?_⟩ fun _ ↦ B.F_eq_LSeries
+  refine Set.EqOn.iteratedDeriv_of_isOpen (fun _ ↦ B.F_eq_LSeries) hs n
+    (?_ : 2 ∈ {s : ℂ | 1 < s.re})
   simp only [Set.mem_setOf_eq, re_ofNat, Nat.one_lt_ofNat]
 
 end
