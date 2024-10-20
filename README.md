@@ -26,4 +26,5 @@ Current projects:
   a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
   __Wiener-Ikehara Tauberian Theorem__. This also contains a proof of the non-vanishing
   of Dirichlet L-functions of nontrivial characters along the line `Re s = 1`. This is material
-  that was created in the framework of the [__DirichletNonvanishing__](https://github.com/CBirkbeck/DirichletNonvanishing) project.
+  that was created in the framework of the [__DirichletNonvanishing__](https://github.com/CBirkbeck/DirichletNonvanishing) project. The non-vanishing is then used to give a proof (the reduction) of 
+  *Dirichlet's Theorem* (to the Wiener-Ikehara Theorem), in a PNT-like version.
