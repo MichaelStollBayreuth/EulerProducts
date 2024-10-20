@@ -2,30 +2,35 @@ import Mathlib.GroupTheory.FiniteAbelian
 import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Basic
 
-/-- The group of group homomorphisms from a finite cyclic group `G` of order `n` into another
-group `G'` is isomorphic to the group of `n`th roots of unity in `G'`. -/
-noncomputable def MonoidHom.equiv_rootsOfUnity  (G : Type*) [CommGroup G] [Fintype G] [DecidableEq G]
-    (G' : Type*) [CommGroup G'] [inst_cyc : IsCyclic G]  :
+/-- The isomorphism from the group of group homomorphisms from a finite cyclic group `G` of order
+`n` into another group `G'` to the group of `n`th roots of unity in `G'` determined by a generator
+of `G`. -/
+noncomputable
+def IsCyclic.monoidHom_mulEquiv_rootsOfUnity_of_generator {G : Type*} [CommGroup G] [Fintype G]
+    {g : G} (hg : ∀ (x : G), x ∈ Subgroup.zpowers g) (G' : Type*) [CommGroup G'] :
     (G →* G') ≃* rootsOfUnity ⟨Fintype.card G, Fintype.card_pos⟩ G' where
-  toFun φ :=
-    ⟨(IsUnit.map φ <| Group.isUnit _ : IsUnit <| φ <| Classical.choose inst_cyc.exists_generator).unit, by
-      simp only [mem_rootsOfUnity, PNat.mk_coe, Units.ext_iff, Units.val_pow_eq_pow_val,
-        IsUnit.unit_spec, Units.val_one]
-      rw [← map_pow, pow_card_eq_one, map_one]⟩
-  invFun ζ := monoidHomOfForallMemZpowers (Classical.choose_spec inst_cyc.exists_generator)
-    (g' := (ζ.val : G')) <| by
-      rw [orderOf_dvd_iff_pow_eq_one, ← Units.val_pow_eq_pow_val, Units.val_eq_one,
-        orderOf_eq_card_of_forall_mem_zpowers <| Classical.choose_spec inst_cyc.exists_generator]
-      exact ζ.prop
-  left_inv φ :=
-    (MonoidHom.eq_iff_eq_on_generator (Classical.choose_spec inst_cyc.exists_generator) _ φ).mpr
-      (by simp only [IsUnit.unit_spec, monoidHomOfForallMemZpowers_apply_gen])
-  right_inv ζ := by
-    ext
+  toFun φ := ⟨(IsUnit.map φ <| Group.isUnit _ : IsUnit <| φ g).unit, by
+    simp only [mem_rootsOfUnity, PNat.mk_coe, Units.ext_iff, Units.val_pow_eq_pow_val,
+      IsUnit.unit_spec, ← map_pow, pow_card_eq_one, map_one, Units.val_one]⟩
+  invFun ζ := monoidHomOfForallMemZpowers hg (g' := (ζ.val : G')) <| by
+    simpa only [orderOf_eq_card_of_forall_mem_zpowers hg, orderOf_dvd_iff_pow_eq_one, ←
+      Units.val_pow_eq_pow_val, Units.val_eq_one] using ζ.prop
+  left_inv φ := (MonoidHom.eq_iff_eq_on_generator hg _ φ).mpr <| by
+    simp only [IsUnit.unit_spec, monoidHomOfForallMemZpowers_apply_gen]
+  right_inv φ := by
+    ext1
     simp only [monoidHomOfForallMemZpowers_apply_gen, IsUnit.unit_of_val_units]
   map_mul' x y := by
-    simp only [mul_apply, MulMemClass.mk_mul_mk, Subtype.mk.injEq, Units.ext_iff,
+    simp only [MonoidHom.mul_apply, MulMemClass.mk_mul_mk, Subtype.mk.injEq, Units.ext_iff,
       IsUnit.unit_spec, Units.val_mul]
+
+/-- The group of group homomorphisms from a finite cyclic group `G` of order `n` into another
+group `G'` is isomorphic to the group of `n`th roots of unity in `G'`. -/
+lemma IsCyclic.monoidHom_mulEquiv_rootsOfUnity  (G : Type*) [CommGroup G] [Fintype G]
+    [inst_cyc : IsCyclic G] (G' : Type*) [CommGroup G'] :
+    Nonempty <| (G →* G') ≃* rootsOfUnity ⟨Fintype.card G, Fintype.card_pos⟩ G' := by
+  obtain ⟨g, hg⟩ := inst_cyc.exists_generator
+  exact ⟨monoidHom_mulEquiv_rootsOfUnity_of_generator hg G'⟩
 
 /-- The canonical isomorphism of a finite direct sum of additive commutative monoids
 and the corresponding finite product. -/
@@ -166,7 +171,7 @@ lemma CommGroup.monoidHom_equiv_self_of_isCyclic (G R : Type*) [CommGroup G] [Fi
   classical
   have : Fintype G := Fintype.ofFinite G
   let n : ℕ+ := ⟨Fintype.card G, Fintype.card_pos⟩
-  let e := MonoidHom.equiv_rootsOfUnity G Rˣ
+  let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Rˣ).some
   have hcyc := rootsOfUnity.isCyclic R n
   have hord : Fintype.card (rootsOfUnity n R) = Fintype.card G := by
     obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R (Fintype.card G)
