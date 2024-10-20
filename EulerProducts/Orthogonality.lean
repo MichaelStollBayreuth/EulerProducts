@@ -6,6 +6,11 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 ### Auxiliary results
 -/
 
+instance ZMod.units_fintype (n : ℕ) : Fintype (ZMod n)ˣ := by
+  match n with
+  | 0 =>     exact UnitsInt.fintype
+  | m + 1 => infer_instance
+
 /-- The canonical isomorphism from the `n`th roots of unity in`Mˣ`
 to the `n`th roots of unity in `M`. -/
 def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
@@ -145,7 +150,7 @@ def monoidHomMulEquivRootsOfUnityOfGenerator {G : Type*} [CommGroup G] [Fintype 
       IsUnit.unit_spec, Units.val_mul]
 
 /-- The group of group homomorphisms from a finite cyclic group `G` of order `n` into another
-group `G'` is isomorphic to the group of `n`th roots of unity in `G'`. -/
+group `G'` is (noncanonically) isomorphic to the group of `n`th roots of unity in `G'`. -/
 lemma monoidHom_mulEquiv_rootsOfUnity  (G : Type*) [CommGroup G] [Fintype G]
     [inst_cyc : IsCyclic G] (G' : Type*) [CommGroup G'] :
     Nonempty <| (G →* G') ≃* rootsOfUnity ⟨Fintype.card G, Fintype.card_pos⟩ G' := by
@@ -249,7 +254,7 @@ theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [F
 
 /-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Rˣ`
 of `R`-valued characters when `R` is a ring that has all roots of unity. -/
-theorem monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
+theorem monoidHom_mulEquiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
     [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
     Nonempty (G ≃* (G →* Rˣ)) := by
   classical
@@ -264,8 +269,16 @@ theorem monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [
 
 end CommGroup
 
--- #######################################################################
 
+/-!
+### Results for multiplicative characters
+
+We provide instances for `Finite (MulChar M R)` and `Fintype (MulChar M R)`
+when `M` is a finite commutative monoid and `R` is an integral domain.
+
+We also show that `MulChar M R` and `Mˣ` have the same cardinality when `R` has
+all roots of unity.
+-/
 
 namespace MulChar
 
@@ -300,8 +313,8 @@ lemma exists_apply_ne_one_iff_exists_monoidHom {M R : Type*} [CommMonoid M]
     simpa only [ofUnitHom_eq, equivToUnitHom_symm_coe, Units.val_eq_one] using hφ
 
 /-- If `M` is a finite commutative monoid and `R` is a ring that has all roots of unity,
-then for each `a ≠ 1` in `M`, there exists a multiplicative
-character `χ : M → R` such that `χ a ≠ 1`. -/
+then for each `a ≠ 1` in `M`, there exists a multiplicative character `χ : M → R` such that
+`χ a ≠ 1`. -/
 theorem exists_apply_ne_one_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
     [DecidableEq M] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : M} (ha : a ≠ 1) :
     ∃ χ : MulChar M R, χ a ≠ 1 := by
@@ -319,24 +332,17 @@ theorem exists_apply_ne_one_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [
 /-- The cardinality of the group of `R` valued multiplicative characters on a finite commutative
 monoid `M` is the same as that of its unit group `Mˣ` when `R` is a ring that has all roots
 of unity. -/
-lemma card_mulChar_eq_card_units_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
+lemma card_eq_card_units_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
     [DecidableEq M] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
     Fintype.card (MulChar M R) = Fintype.card Mˣ := by
-  let e := (CommGroup.monoidHom_equiv_self_of_hasAllRootsOfUnity Mˣ R).some.toEquiv
+  let e := (CommGroup.monoidHom_mulEquiv_self_of_hasAllRootsOfUnity Mˣ R).some.toEquiv
   have : Finite (Mˣ →* Rˣ) := Finite.of_equiv _ e
   have : Fintype (Mˣ →* Rˣ) := Fintype.ofFinite (Mˣ →* Rˣ)
-  exact (Fintype.card_congr <| MulChar.equivToUnitHom (R := M) (R' := R)).trans (Fintype.card_congr e).symm
+  exact (Fintype.card_congr <| MulChar.equivToUnitHom).trans (Fintype.card_congr e).symm
 
 end MulChar
 
-namespace ZMod
-
-instance units_fintype (n : ℕ) : Fintype (ZMod n)ˣ := by
-  match n with
-  | 0 =>     exact UnitsInt.fintype
-  | m + 1 => infer_instance
-
-end ZMod
+-- #######################################################################
 
 namespace DirichletCharacter
 
@@ -378,7 +384,7 @@ roots of unity. -/
 lemma card_eq_totient_of_hasAllRootsOfUnity :
     Fintype.card (DirichletCharacter R n) = n.totient := by
   rw [← ZMod.card_units_eq_totient n]
-  convert MulChar.card_mulChar_eq_card_units_of_hasAllRootsOfUnity (ZMod n) R
+  convert card_eq_card_units_of_hasAllRootsOfUnity (ZMod n) R
 
 /-- If `R` is a ring that has all roots of unity and `n ≠ 0`, then for each
 `a ≠ 1` in `ZMod n`, there exists a Dirichlet character `χ` mod `n` wiht values in `R`
