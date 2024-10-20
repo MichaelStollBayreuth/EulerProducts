@@ -342,21 +342,28 @@ lemma card_eq_card_units_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fin
 
 end MulChar
 
--- #######################################################################
+
+/-!
+### Results for Dirichlet characters
+
+The goal of this section is to show that `∑ χ : DirichletCharacter R n, χ a` vanishes
+if `a ≠ 1` and takes the value `n.totient` otherwise.
+-/
 
 namespace DirichletCharacter
 
 section general
+
+noncomputable
+instance inhabited (R : Type*) [CommMonoidWithZero R] (n : ℕ) :
+    Inhabited (DirichletCharacter R n) where
+  default := 1
 
 variable {n : ℕ} {R : Type*} [CommRing R] [IsDomain R]
 
 instance finite : Finite (DirichletCharacter R n) := MulChar.finite ..
 
 noncomputable instance fintype : Fintype (DirichletCharacter R n) := Fintype.ofFinite _
-
-noncomputable
-instance inhabited : Inhabited (DirichletCharacter R n) where
-  default := 1
 
 lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 := by
@@ -366,7 +373,7 @@ lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R
   refine Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ (fun χ' ↦ ?_)
   simp only [MulChar.coeToFun_mul, Pi.mul_apply]
 
-lemma sum_characters_eq_zero_iff {a : ZMod n} [CharZero R]
+lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
     (h : ∀ a : ZMod n, a ≠ 1 → ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 ↔ a ≠ 1 := by
   refine ⟨fun H ha ↦ ?_, fun H ↦ sum_characters_eq_zero_aux <| h a H⟩
@@ -379,30 +386,29 @@ end general
 variable {R : Type*} [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {n : ℕ} [NeZero n]
 
 variable (n) in
-/-- There are `φ(n)` Dirichlet characters mod `n` with values in a ring that has all
+/-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has all
 roots of unity. -/
 lemma card_eq_totient_of_hasAllRootsOfUnity :
     Fintype.card (DirichletCharacter R n) = n.totient := by
   rw [← ZMod.card_units_eq_totient n]
-  convert card_eq_card_units_of_hasAllRootsOfUnity (ZMod n) R
+  convert MulChar.card_eq_card_units_of_hasAllRootsOfUnity (ZMod n) R
 
 /-- If `R` is a ring that has all roots of unity and `n ≠ 0`, then for each
-`a ≠ 1` in `ZMod n`, there exists a Dirichlet character `χ` mod `n` wiht values in `R`
+`a ≠ 1` in `ZMod n`, there exists a Dirichlet character `χ` mod `n` with values in `R`
 such that `χ a ≠ 1`. -/
 theorem exists_apply_ne_one_of_hasAllRootsOfUnity ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∃ χ : DirichletCharacter R n, χ a ≠ 1 :=
   MulChar.exists_apply_ne_one_of_hasAllRootsOfUnity (ZMod n) R ha
 
-/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for each
-`a ≠ 1` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n` with values
-in `R` vanishes. -/
+/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for each `a ≠ 1` in `ZMod n`,
+the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes. -/
 theorem sum_characters_eq_zero ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 :=
   sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasAllRootsOfUnity ha
 
-/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for
-`a` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n` with values
-in `R` vanishes if `a ≠ 1` and has the value `φ(n)` if `a = 1`. -/
+/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for `a` in `ZMod n`,
+the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes if `a ≠ 1`
+and has the value `n.totient` if `a = 1`. -/
 theorem sum_characters_eq (a : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a = if a = 1 then (n.totient : R) else 0 := by
   split_ifs with ha
@@ -412,7 +418,7 @@ theorem sum_characters_eq (a : ZMod n) :
 
 /-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
-mod `n` with values in `R` vanihses if `a ≠ b` and has the value `φ(n)` if `a = b`. -/
+mod `n` with values in `R` vanihses if `a ≠ b` and has the value `n.totient` if `a = b`. -/
 theorem sum_char_inv_mul_char_eq {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a⁻¹ * χ b = if a = b then n.totient else 0 := by
   convert sum_characters_eq (a⁻¹ * b) using 2 with χ
