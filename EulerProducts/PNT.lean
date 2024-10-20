@@ -1,11 +1,70 @@
 import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
 import EulerProducts.NonvanishingQuadratic
+import EulerProducts.Orthogonality
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
+import Mathlib.NumberTheory.LSeries.Linearity
 -- import Mathlib.Tactic.RewriteSearch
+
+section LSeries
+
+-- This should go to `Mathlib.NumberTheory.LSeries.Linearity`
+
+open LSeries
+
+variable {ι : Type*} [DecidableEq ι] {s : ℂ} {f : ι → ℕ → ℂ} (S : Finset ι)
+
+lemma LSeries.term_sum_apply (s : ℂ) (n : ℕ) :
+    term (∑ i ∈ S, f i) s n  = ∑ i ∈ S, term (f i) s n := by
+  induction S using Finset.induction_on with
+  | empty =>
+    simp only [term, Finset.sum_apply, Finset.sum_empty, zero_div, ite_self, Finset.sum_ite_irrel,
+      Finset.sum_const_zero]
+  | insert hi IH  =>
+    simp only [Finset.sum_insert hi, term_add_apply, IH]
+
+lemma LSeries.term_sum (s : ℂ) : term (∑ i ∈ S, f i) s  = ∑ i ∈ S, term (f i) s := by
+  ext1
+  rw [Finset.sum_apply]
+  exact term_sum_apply S s _
+
+lemma LSeriesHasSum.sum {a : ι → ℂ} (hf : ∀ i ∈ S, LSeriesHasSum (f i) s (a i)) :
+    LSeriesHasSum (∑ i ∈ S, f i) s (∑ i ∈ S, a i) := by
+  simpa only [LSeriesHasSum, term_sum, Finset.sum_fn S fun i ↦ term (f i) s]
+    using hasSum_sum hf
+
+lemma LSeriesSummable.sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
+    LSeriesSummable (∑ i ∈ S, f i) s := by
+  simpa only [LSeriesSummable, ← term_sum_apply] using summable_sum hf
+
+@[simp]
+lemma LSeries_sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
+    LSeries (∑ i ∈ S, f i) s = ∑ i ∈ S, LSeries (f i) s := by
+  simpa only [LSeries, term_sum, Finset.sum_apply]
+    using tsum_sum hf
+
+variable [Fintype ι]
+
+/-- The version of `LSeriesHasSum.sum` for `Fintype.sum`. -/
+lemma LSeriesHasSum.sum' {a : ι → ℂ} (hf : ∀ i, LSeriesHasSum (f i) s (a i)) :
+    LSeriesHasSum (∑ i : ι, f i) s (∑ i : ι, a i) :=
+  LSeriesHasSum.sum Finset.univ fun i _ ↦ hf i
+
+/-- The version of `LSeriesSummable.sum` for `Fintype.sum`. -/
+lemma LSeriesSummable.sum' (hf : ∀ i, LSeriesSummable (f i) s) :
+    LSeriesSummable (∑ i : ι, f i) s :=
+  LSeriesSummable.sum Finset.univ fun i _ ↦ hf i
+
+/-- The version of `LSeries_sum` for `Fintype.sum`. -/
+@[simp]
+lemma LSeries_sum' (hf : ∀ i, LSeriesSummable (f i) s) :
+    LSeries (∑ i : ι, f i) s = ∑ i : ι, LSeries (f i) s :=
+  LSeries_sum Finset.univ fun i _ ↦ hf i
+
+end LSeries
 
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
@@ -113,6 +172,15 @@ lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (
     _ = _  := by ring
 
 namespace DirichletCharacter
+
+lemma deriv_LFunction_eq_deriv_LSeries {n : ℕ} [NeZero n] (χ : DirichletCharacter ℂ n) {s : ℂ}
+    (hs : 1 < s.re) :
+    deriv (LFunction χ) s = deriv (LSeries ↗χ) s :=  by
+  refine Filter.EventuallyEq.deriv_eq ?_
+  have h : {z | 1 < z.re} ∈ nhds s :=
+    (isOpen_lt continuous_const continuous_re).mem_nhds hs
+  filter_upwards [h] with z hz
+  exact LFunction_eq_LSeries χ hz
 
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
 has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
@@ -499,6 +567,13 @@ lemma continuousOn_neg_logDeriv_LFunction_triv_char₁ :
       false_or]
     exact sub_ne_zero.mpr hw'
 
+lemma eq_one_or_LFunction_triv_char_ne_zero_of_one_le_re :
+    {s : ℂ | 1 ≤ s.re} ⊆ {s | s = 1 ∨ LFunction (1 : DirichletCharacter ℂ n) s ≠ 0} := by
+  intro s hs
+  simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
+  have := Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ n) (s := s)
+  tauto
+
 end trivial
 
 section nontrivial
@@ -514,6 +589,13 @@ lemma continuousOn_neg_logDeriv_LFunction_nontriv_char (hχ : χ ≠ 1) :
   have h₁ := differentiable_LFunction hχ
   exact ((h₁.contDiff.continuous_deriv le_rfl).continuousOn.div
     h₁.continuous.continuousOn fun w hw ↦ hw).neg
+
+lemma LFunction_nontriv_char_ne_zero_of_one_le_re (hχ : χ ≠ 1) :
+    {s : ℂ | 1 ≤ s.re} ⊆ {s | LFunction χ s ≠ 0} := by
+  intro s hs
+  simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
+  have := Lfunction_ne_zero_of_one_le_re χ (s := s)
+  tauto
 
 end nontrivial
 
@@ -556,14 +638,101 @@ lemma continuousOn_neg_logDeriv_ζ₁ :
 end zeta
 
 /-!
-### Derivation of the Prime Number Theorem from the Wiener-Ikehara Theorem
+### Proof of Lemma 9
+
+We prove Lemma 9 of
+[Section 2 in the PNT+ Project](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/sect0002.html).
 -/
 
-open Filter Nat ArithmeticFunction in
-/-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
+section arith_prog
+
+open scoped ArithmeticFunction.vonMangoldt
+open DirichletCharacter
+
+variable {q : ℕ} [NeZero q] {a : ZMod q}
+
+/-- Lemma 9 of Section 2 of PNT+: The L-series of the von Mangoldt function restricted to the
+prime residue class `a` mod `q` as a linear combination of logarithmic derivatives of
+L functions of the Dirichlet characters mod `q`. -/
+lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
+     LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s =
+      -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
+        (deriv (LFunction χ) s / LFunction χ s) := by
+  simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg, ←
+    Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
+  rw [eq_inv_mul_iff_mul_eq₀<|  mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
+  simp only [← LSeries_smul]
+  classical
+  rw [← LSeries_sum' <| fun χ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
+  refine LSeries_congr s fun {n} _ ↦ ?_
+  simp only [Pi.smul_apply, smul_eq_mul, Finset.sum_apply, Pi.mul_apply, Set.indicator_apply]
+  conv_lhs => rw [← one_mul (Λ n : ℂ), ← zero_mul (Λ n : ℂ), ← ite_mul]
+  simp only [← mul_assoc, ← Finset.sum_mul, mul_ite, mul_one, mul_zero, Set.mem_setOf_eq]
+  congrm (?_ * (Λ n : ℂ))
+  simpa only [Nat.cast_ite, Nat.cast_zero, eq_comm (a := a)]
+    using (sum_char_inv_mul_char_eq (R := ℂ) ha n).symm
+
+variable (q a) in
+open Classical in
+/-- The function `F` used in the Wiener-Ikehara Theorem to prove Dirichlet's Theorem. -/
+noncomputable
+def weakDirichlet_auxFun (s : ℂ) : ℂ :=
+  (q.totient : ℂ)⁻¹ * (-deriv (LFunction_triv_char₁ q) s / LFunction_triv_char₁ q s -
+    ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
+
+lemma weakDirichlet_auxFun_prop (ha : IsUnit a) :
+    Set.EqOn (weakDirichlet_auxFun q a)
+      (fun s ↦ LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s - (q.totient : ℂ)⁻¹ / (s - 1))
+      {s | 1 < s.re} := by
+  classical
+  intro s hs
+  simp only [Set.mem_setOf_eq] at hs
+  simp only [WeakPNT_character ha hs]
+  rw [weakDirichlet_auxFun, neg_div, ← neg_add', mul_neg, ← neg_mul,
+    div_eq_mul_one_div (q.totient : ℂ)⁻¹, sub_eq_add_neg, ← neg_mul, ← mul_add]
+  congrm (_ * ?_)
+  -- this should be easier, but `IsUnit.inv ha` does not work here
+  have ha' : IsUnit a⁻¹ := isUnit_of_dvd_one ⟨a, (ZMod.inv_mul_of_unit a ha).symm⟩
+  rw [Fintype.sum_eq_add_sum_compl 1, MulChar.one_apply ha', one_mul, add_right_comm]
+  simp only [mul_div_assoc]
+  congrm (?_ + _)
+  have hs₁ : s ≠ 1 := by
+    rintro rfl
+    simp only [one_re, lt_self_iff_false] at hs
+  rw [deriv_LFunction_triv_char₁_apply_of_ne_one _ hs₁, LFunction_triv_char₁_apply_of_ne_one _ hs₁]
+  simp only [LFunction_triv_char]
+  rw [add_div, mul_div_mul_right _ _ (sub_ne_zero_of_ne hs₁)]
+  conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
+  rw [mul_div_mul_left _ _ <| Lfunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
+
+/-- (A version of) Proposition 2 of Section 2 of PNT+: the L-series of the von Mangoldt function
+restricted to the prime residue class `a` mod `q` is continuous on `s.re ≥ 1` except
+for a single pole at `s = 1` with residue `(q.totient)⁻¹`.-/
+lemma continuousOn_weakDirichlet_auxFun :
+    ContinuousOn (weakDirichlet_auxFun q a) {s | 1 ≤ s.re} := by
+  rw [show weakDirichlet_auxFun q a = fun s ↦ _ from rfl]
+  simp only [weakDirichlet_auxFun, sub_eq_add_neg]
+  refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
+  · exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_triv_char₁ q)
+      (eq_one_or_LFunction_triv_char_ne_zero_of_one_le_re q)
+  · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
+    refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
+    replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
+    exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_nontriv_char hχ)
+      (LFunction_nontriv_char_ne_zero_of_one_le_re hχ)
+
+end arith_prog
+
+/-!
+### Derivation of the Prime Number Theorem and Dirichlet's Theorem from the Wiener-Ikehara Theorem
+-/
+
+open Filter ArithmeticFunction Topology
+
+/- /-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
 `ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
-theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
-    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (nhds 1) := by
+theorem PNT_vonMangoldt' (WIT : WienerIkeharaTheorem) :
+    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (𝓝 1) := by
   have hnv := riemannZeta_ne_zero_of_one_le_re
   refine WIT (F := fun z ↦ -deriv ζ₁ z / ζ₁ z) (fun _ ↦ vonMangoldt_nonneg) (fun s hs ↦ ?_) ?_
   · have hs₁ : s ≠ 1 := by
@@ -575,4 +744,35 @@ theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
   · refine continuousOn_neg_logDeriv_ζ₁.mono fun s _ ↦ ?_
     specialize @hnv s
     simp at *
-    tauto
+    tauto -/
+
+/--  The *Wiener-Ikehara Theorem* implies *Dirichlet's Theorem* in the form that
+`ψ x ∼ q.totient⁻¹ * x`, where `ψ x = ∑ n < x ∧ n ≡ a mod q, Λ n`
+and `Λ` is the von Mangoldt function.
+
+This is Theorem 2 in Section 2 of PNT+ (but using the `WIT` stub defined here). -/
+theorem Dirichlet_vonMangoldt (WIT : WienerIkeharaTheorem) {q : ℕ} [NeZero q] {a : ZMod q}
+    (ha : IsUnit a) :
+    Tendsto (fun N : ℕ ↦ (((Finset.range N).filter (fun n : ℕ ↦ (n : ZMod q) = a)).sum Λ) / N)
+      atTop (𝓝 <| (q.totient : ℝ)⁻¹) := by
+  classical
+  have H N : ((Finset.range N).filter (fun n : ℕ ↦ (n : ZMod q) = a)).sum Λ =
+      (Finset.range N).sum ({n : ℕ | (n : ZMod q) = a}.indicator Λ) :=
+    (Finset.sum_indicator_eq_sum_filter _ _ (fun _ ↦ {n : ℕ | n = a}) _).symm
+  simp only [H]
+  refine WIT (F := weakDirichlet_auxFun q a) (fun n ↦ ?_) ?_ ?_
+  · exact Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
+  · convert weakDirichlet_auxFun_prop ha with s n
+    · by_cases hn : n = a
+      · simp only [Set.mem_setOf_eq, hn, Set.indicator_of_mem]
+      · simp only [Set.mem_setOf_eq, hn, not_false_eq_true, Set.indicator_of_not_mem, ofReal_zero]
+    · rw [ofReal_inv, ofReal_natCast]
+  · exact continuousOn_weakDirichlet_auxFun
+
+/-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
+`ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
+theorem PNT_vonMangoldt (WIT : WienerIkeharaTheorem) :
+    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (𝓝 1) := by
+  convert Dirichlet_vonMangoldt WIT (q := 1) (a := 1) isUnit_one with n
+  · exact (Finset.filter_true_of_mem fun _ _ ↦ Subsingleton.eq_one _).symm
+  · simp only [Nat.totient_one, Nat.cast_one, inv_one]
