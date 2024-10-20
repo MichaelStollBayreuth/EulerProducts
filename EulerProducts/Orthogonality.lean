@@ -214,8 +214,12 @@ lemma ZMod.exists_monoidHom_apply_ne_one (R : Type*) [CommRing R] [IsDomain R] [
 ### Results for general finite abelian groups
 -/
 
+namespace CommGroup
+
+open MonoidHom
+
 private
-lemma MonoidHom.exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
+lemma exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
     (H : ∀ n : ℕ, n ≠ 0 → ∀ a : ZMod n, a ≠ 0 →
        ∃ φ : Multiplicative (ZMod n) →* R, φ (Multiplicative.ofAdd a) ≠ 1)
     {a : G} (ha : a ≠ 1) :
@@ -237,17 +241,15 @@ lemma MonoidHom.exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [
 /-- If `G` is a finite commutative group and `R` is a ring with all roots of unity,
 then for each `a ≠ 1` in `G`, there exists a group homomorphism
 `φ : G → Rˣ` such that `φ a ≠ 1`. -/
-theorem MonoidHom.exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
+theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
     [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* Rˣ, φ a ≠ 1 :=
   exists_apply_ne_one_aux G Rˣ
     (fun n hn _ ↦ have : NeZero n := ⟨hn⟩; ZMod.exists_monoidHom_apply_ne_one R n) ha
 
--- #######################################################################
-
 /-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Rˣ`
 of `R`-valued characters when `R` is a ring that has all roots of unity. -/
-theorem CommGroup.monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
+theorem monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
     [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
     Nonempty (G ≃* (G →* Rˣ)) := by
   classical
@@ -259,6 +261,11 @@ theorem CommGroup.monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [Comm
   let E i := (IsCyclic.monoidHom_equiv_self (Multiplicative (ZMod (n i))) R).some
   let E' := MulEquiv.piCongrRight E
   exact ⟨e.trans E'.symm|>.trans e'.symm|>.trans e''.symm⟩
+
+end CommGroup
+
+-- #######################################################################
+
 
 namespace MulChar
 
@@ -302,7 +309,7 @@ theorem exists_apply_ne_one_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [
   . let a' : Mˣ := hu.unit -- `a` as a unit
     have ha' : a = a' := rfl
     refine (exists_apply_ne_one_iff_exists_monoidHom (R := R) a').mpr ?_
-    refine MonoidHom.exists_apply_ne_one_of_hasAllRootsOfUnity Mˣ R ?_
+    refine CommGroup.exists_apply_ne_one_of_hasAllRootsOfUnity Mˣ R ?_
     contrapose! ha
     rw [ha', ha, Units.val_eq_one]
   · use 1
