@@ -143,12 +143,48 @@ lemma exists_apply_ne_one (G R : Type*) [CommGroup G] [IsCyclic G]
   obtain ⟨l, rfl⟩ := (hφg.pow_eq_one_iff_dvd k).mp ha
   rw [← hk, pow_mul, pow_card_eq_one, one_pow]
 
+/-- The group of group homomorphims from a finite cyclic group `G` of order `n` into the
+group of units of a ring `R` with all roots of unity is isomorphic to `G` -/
+lemma monoidHom_equiv_self (G R : Type*) [CommGroup G] [Finite G]
+    [IsCyclic G] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
+    Nonempty ((G →* Rˣ) ≃* G) := by
+  classical
+  have : Fintype G := Fintype.ofFinite G
+  let n : ℕ+ := ⟨Fintype.card G, Fintype.card_pos⟩
+  let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Rˣ).some
+  have hcyc := rootsOfUnity.isCyclic R n
+  have hord : Fintype.card (rootsOfUnity n R) = Fintype.card G := by
+    obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R (Fintype.card G)
+    have hζ' : IsPrimitiveRoot ζ n := by
+      simp only [PNat.mk_coe, hζ, n]
+    exact hζ'.card_rootsOfUnity
+  simp only [← Nat.card_eq_fintype_card] at hord
+  let e' := mulEquivOfCyclicCardEq hord
+  let e'' := rootsOfUnityUnitsMulEquiv R n
+  exact ⟨(e.trans e'').trans e'⟩
+
 end IsCyclic
+
+lemma ZMod.exists_monoidHom_apply_ne_one (R : Type*) [CommRing R] [IsDomain R] [HasAllRootsOfUnity R]
+    (n : ℕ) [NeZero n] {a : ZMod n} (ha : a ≠ 0) :
+    ∃ φ : Multiplicative (ZMod n) →* Rˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
+  have hn : n ≠ 0 := NeZero.ne n
+  obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R n
+  let nn : ℕ+ := ⟨n, Nat.pos_of_ne_zero hn⟩
+  have hnn : nn = n := rfl
+  let ζ' := (hnn ▸ hζ).toRootsOfUnity.1 -- `ζ` as a unit
+  have hζ' : IsPrimitiveRoot ζ' n := IsPrimitiveRoot.coe_units_iff.mp hζ
+  have hc : Fintype.card (Multiplicative (ZMod n)) = n := by
+    simp only [Fintype.card_multiplicative, ZMod.card]
+  exact IsCyclic.exists_apply_ne_one (Multiplicative (ZMod n)) Rˣ (hc ▸ hζ') <|
+    by simp only [ne_eq, ofAdd_eq_one, ha, not_false_eq_true]
+
 
 /-!
 ### Results for general finite abelian groups
 -/
 
+private
 lemma MonoidHom.exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
     (H : ∀ n : ℕ, n ≠ 0 → ∀ a : ZMod n, a ≠ 0 →
        ∃ φ : Multiplicative (ZMod n) →* R, φ (Multiplicative.ofAdd a) ≠ 1)
@@ -168,20 +204,6 @@ lemma MonoidHom.exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [
   use x.comp e
   simpa only [coe_comp, coe_coe, Function.comp_apply, Pi.evalMonoidHom_apply, ne_eq, x]
 
-lemma exists_monoidHom_apply_ne_one (R : Type*) [CommRing R] [IsDomain R] [HasAllRootsOfUnity R]
-    (n : ℕ) [NeZero n] {a : ZMod n} (ha : a ≠ 0) :
-    ∃ φ : Multiplicative (ZMod n) →* Rˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
-  have hn : n ≠ 0 := NeZero.ne n
-  obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R n
-  let nn : ℕ+ := ⟨n, Nat.pos_of_ne_zero hn⟩
-  have hnn : nn = n := rfl
-  let ζ' := (hnn ▸ hζ).toRootsOfUnity.1 -- `ζ` as a unit
-  have hζ' : IsPrimitiveRoot ζ' n := IsPrimitiveRoot.coe_units_iff.mp hζ
-  have hc : Fintype.card (Multiplicative (ZMod n)) = n := by
-    simp only [Fintype.card_multiplicative, ZMod.card]
-  exact IsCyclic.exists_apply_ne_one (Multiplicative (ZMod n)) Rˣ (hc ▸ hζ') <|
-    by simp only [ne_eq, ofAdd_eq_one, ha, not_false_eq_true]
-
 /-- If `G` is a finite commutative group and `R` is a ring with all roots of unity,
 then for each `a ≠ 1` in `G`, there exists a group homomorphism
 `φ : G → Rˣ` such that `φ a ≠ 1`. -/
@@ -189,29 +211,9 @@ theorem MonoidHom.exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommG
     [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* Rˣ, φ a ≠ 1 :=
   exists_apply_ne_one_aux G Rˣ
-    (fun n hn _ ↦ have : NeZero n := ⟨hn⟩; exists_monoidHom_apply_ne_one R n) ha
+    (fun n hn _ ↦ have : NeZero n := ⟨hn⟩; ZMod.exists_monoidHom_apply_ne_one R n) ha
 
 -- #######################################################################
-
-/-- The group of group homomorphims from a finite cyclic group `G` of order `n` into the
-group of units of a ring `R` with all roots of unity is isomorphic to `G` -/
-lemma CommGroup.monoidHom_equiv_self_of_isCyclic (G R : Type*) [CommGroup G] [Finite G]
-    [IsCyclic G] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
-    Nonempty ((G →* Rˣ) ≃* G) := by
-  classical
-  have : Fintype G := Fintype.ofFinite G
-  let n : ℕ+ := ⟨Fintype.card G, Fintype.card_pos⟩
-  let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Rˣ).some
-  have hcyc := rootsOfUnity.isCyclic R n
-  have hord : Fintype.card (rootsOfUnity n R) = Fintype.card G := by
-    obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R (Fintype.card G)
-    have hζ' : IsPrimitiveRoot ζ n := by
-      simp only [PNat.mk_coe, hζ, n]
-    exact hζ'.card_rootsOfUnity
-  simp only [← Nat.card_eq_fintype_card] at hord
-  let e' := mulEquivOfCyclicCardEq hord
-  let e'' := rootsOfUnityUnitsMulEquiv R n
-  exact ⟨(e.trans e'').trans e'⟩
 
 /-- The canonical isomoorphism between the monoid of homomorphisms from a finite product of
 commutative monoids to another commutative monoid and the product of the homomrphism monoids. -/
@@ -254,7 +256,7 @@ theorem CommGroup.monoidHom_equiv_self_of_hasAllRootsOfUnity (G R : Type*) [Comm
   let e' := Pi.monoidHomMulEquiv (fun i ↦ Multiplicative (ZMod (n i))) Rˣ
   let e'' := MulEquiv.monoidHomCongr e (MulEquiv.refl Rˣ)
   have : ∀ i, NeZero (n i) := fun i ↦ NeZero.of_gt (h₁ i)
-  let E i := (CommGroup.monoidHom_equiv_self_of_isCyclic (Multiplicative (ZMod (n i))) R).some
+  let E i := (IsCyclic.monoidHom_equiv_self (Multiplicative (ZMod (n i))) R).some
   let E' := MulEquiv.piCongrRight E
   exact ⟨e.trans E'.symm|>.trans e'.symm|>.trans e''.symm⟩
 
