@@ -3,6 +3,55 @@ import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Basic
 
 /-!
+### Auxiliary results
+-/
+
+/-- The canonical isomorphism from the `n`th roots of unity in`Mˣ`
+to the `n`th roots of unity in `M`. -/
+def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
+    rootsOfUnity n Mˣ ≃* rootsOfUnity n M where
+      toFun ζ := ⟨ζ.val, (mem_rootsOfUnity ..).mpr <| (mem_rootsOfUnity' ..).mp ζ.prop⟩
+      invFun ζ := ⟨toUnits ζ.val, by
+        simp only [mem_rootsOfUnity, ← map_pow, MulEquivClass.map_eq_one_iff]
+        exact (mem_rootsOfUnity ..).mp ζ.prop⟩
+      left_inv ζ := by simp only [toUnits_val_apply, Subtype.coe_eta]
+      right_inv ζ := by simp only [val_toUnits_apply, Subtype.coe_eta]
+      map_mul' ζ ζ' := by simp only [Subgroup.coe_mul, Units.val_mul, MulMemClass.mk_mul_mk]
+
+
+/-!
+### Commutative rings that have all roots of unity
+-/
+
+/-- This is a type class recording that an integral domain `R` contains primitive `n`th
+roots of unity for all `n`. Such rings are useful as targets of `MulChar`s. -/
+class HasAllRootsOfUnity (R : Type*) [CommRing R] [IsDomain R] where
+  hasAllRootsOfUnity (n : ℕ) [NeZero n] : ∃ ζ : R, IsPrimitiveRoot ζ n
+
+lemma HasAllRootsOfUnity.exists_prim_root (R : Type*) [CommRing R] [IsDomain R]
+    [HasAllRootsOfUnity R] (n : ℕ) [NeZero n] :
+    ∃ ζ : R, IsPrimitiveRoot ζ n :=
+  HasAllRootsOfUnity.hasAllRootsOfUnity n
+
+namespace IsAlgClosed
+
+/-- An algebraically closed field of characteristic zero contains primitive `n`th roots of unity
+for all `n`. -/
+lemma exists_primitiveRoot (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ) [NeZero n] :
+    ∃ ζ : F, IsPrimitiveRoot ζ n :=
+  have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
+  this ▸ IsCyclotomicExtension.exists_prim_root F rfl
+
+instance hasAllRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] :
+    HasAllRootsOfUnity F where
+  hasAllRootsOfUnity n inst :=
+    have : NeZero n := inst
+    have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
+    this ▸ IsCyclotomicExtension.exists_prim_root F rfl
+
+end IsAlgClosed
+
+/-!
 ### The multiplicative version of the classification theorem for finite abelian groups
 -/
 
@@ -73,26 +122,6 @@ lemma monoidHom_mulEquiv_rootsOfUnity  (G : Type*) [CommGroup G] [Fintype G]
   obtain ⟨g, hg⟩ := inst_cyc.exists_generator
   exact ⟨monoidHomMulEquivRootsOfUnityOfGenerator hg G'⟩
 
-open MonoidHom in
-lemma exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
-    (H : ∀ n : ℕ, n ≠ 0 → ∀ a : ZMod n, a ≠ 0 →
-       ∃ φ : Multiplicative (ZMod n) →* R, φ (Multiplicative.ofAdd a) ≠ 1)
-    {a : G} (ha : a ≠ 1) :
-    ∃ φ : G →* R, φ a ≠ 1 := by
-  obtain ⟨ι, _, n, h₁, h₂⟩ := CommGroup.equiv_prod_multiplicative_zmod G
-  let e := h₂.some
-  obtain ⟨i, hi⟩ : ∃ i : ι, e a i ≠ 1 := by
-    contrapose! ha
-    suffices e a = 1 from (MulEquiv.map_eq_one_iff e).mp this
-    exact funext ha
-  have hi' : Multiplicative.toAdd (e a i) ≠ 0 := by
-    simp only [ne_eq, toAdd_eq_zero, hi, not_false_eq_true]
-  obtain ⟨φi, hφi⟩ := H (n i) (Nat.not_eq_zero_of_lt (h₁ i)) (Multiplicative.toAdd <| e a i) hi'
-  simp only [ofAdd_toAdd] at hφi
-  let x := φi.comp (Pi.evalMonoidHom (fun (i : ι) ↦ Multiplicative (ZMod (n i))) i)
-  use x.comp e
-  simpa only [coe_comp, coe_coe, Function.comp_apply, Pi.evalMonoidHom_apply, ne_eq, x]
-
 lemma exists_apply_ne_one (G R : Type*) [CommGroup G] [IsCyclic G]
     [Fintype G] [CommGroup R] ⦃ζ : R⦄ (hζ : IsPrimitiveRoot ζ (Fintype.card G)) ⦃a : G⦄
     (ha : a ≠ 1) :
@@ -116,31 +145,28 @@ lemma exists_apply_ne_one (G R : Type*) [CommGroup G] [IsCyclic G]
 
 end IsCyclic
 
--- #######################################################################
+/-!
+### Results for general finite abelian groups
+-/
 
-class HasAllRootsOfUnity (R : Type*) [CommRing R] [IsDomain R] where
-  hasAllRootsOfUnity (n : ℕ) [NeZero n] : ∃ ζ : R, IsPrimitiveRoot ζ n
-
-lemma HasAllRootsOfUnity.exists_prim_root (R : Type*) [CommRing R] [IsDomain R]
-    [HasAllRootsOfUnity R] (n : ℕ) [NeZero n] :
-    ∃ ζ : R, IsPrimitiveRoot ζ n :=
-  HasAllRootsOfUnity.hasAllRootsOfUnity n
-
-namespace IsAlgClosed
-
-lemma exists_primitiveRoot (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ) [NeZero n] :
-    ∃ ζ : F, IsPrimitiveRoot ζ n :=
-  have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
-  this ▸ IsCyclotomicExtension.exists_prim_root F rfl
-
-instance hasAllRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] :
-    HasAllRootsOfUnity F where
-  hasAllRootsOfUnity n inst :=
-    have : NeZero n := inst
-    have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
-    this ▸ IsCyclotomicExtension.exists_prim_root F rfl
-
-end IsAlgClosed
+lemma MonoidHom.exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
+    (H : ∀ n : ℕ, n ≠ 0 → ∀ a : ZMod n, a ≠ 0 →
+       ∃ φ : Multiplicative (ZMod n) →* R, φ (Multiplicative.ofAdd a) ≠ 1)
+    {a : G} (ha : a ≠ 1) :
+    ∃ φ : G →* R, φ a ≠ 1 := by
+  obtain ⟨ι, _, n, h₁, h₂⟩ := CommGroup.equiv_prod_multiplicative_zmod G
+  let e := h₂.some
+  obtain ⟨i, hi⟩ : ∃ i : ι, e a i ≠ 1 := by
+    contrapose! ha
+    suffices e a = 1 from (MulEquiv.map_eq_one_iff e).mp this
+    exact funext ha
+  have hi' : Multiplicative.toAdd (e a i) ≠ 0 := by
+    simp only [ne_eq, toAdd_eq_zero, hi, not_false_eq_true]
+  obtain ⟨φi, hφi⟩ := H (n i) (Nat.not_eq_zero_of_lt (h₁ i)) (Multiplicative.toAdd <| e a i) hi'
+  simp only [ofAdd_toAdd] at hφi
+  let x := φi.comp (Pi.evalMonoidHom (fun (i : ι) ↦ Multiplicative (ZMod (n i))) i)
+  use x.comp e
+  simpa only [coe_comp, coe_coe, Function.comp_apply, Pi.evalMonoidHom_apply, ne_eq, x]
 
 lemma exists_monoidHom_apply_ne_one (R : Type*) [CommRing R] [IsDomain R] [HasAllRootsOfUnity R]
     (n : ℕ) [NeZero n] {a : ZMod n} (ha : a ≠ 0) :
@@ -162,20 +188,10 @@ then for each `a ≠ 1` in `G`, there exists a group homomorphism
 theorem MonoidHom.exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
     [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* Rˣ, φ a ≠ 1 :=
-  IsCyclic.exists_apply_ne_one_aux G Rˣ
+  exists_apply_ne_one_aux G Rˣ
     (fun n hn _ ↦ have : NeZero n := ⟨hn⟩; exists_monoidHom_apply_ne_one R n) ha
 
-/-- The canonical isomorphism from the `n`th roots of unity im `Mˣ`
-to the `n`th roots of unity in `M`. -/
-def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
-    rootsOfUnity n Mˣ ≃* rootsOfUnity n M where
-      toFun ζ := ⟨ζ.val, (mem_rootsOfUnity ..).mpr <| (mem_rootsOfUnity' ..).mp ζ.prop⟩
-      invFun ζ := ⟨toUnits ζ.val, by
-        simp only [mem_rootsOfUnity, ← map_pow, MulEquivClass.map_eq_one_iff]
-        exact (mem_rootsOfUnity ..).mp ζ.prop⟩
-      left_inv ζ := by simp only [toUnits_val_apply, Subtype.coe_eta]
-      right_inv ζ := by simp only [val_toUnits_apply, Subtype.coe_eta]
-      map_mul' ζ ζ' := by simp only [Subgroup.coe_mul, Units.val_mul, MulMemClass.mk_mul_mk]
+-- #######################################################################
 
 /-- The group of group homomorphims from a finite cyclic group `G` of order `n` into the
 group of units of a ring `R` with all roots of unity is isomorphic to `G` -/
