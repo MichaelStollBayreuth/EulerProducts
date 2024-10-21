@@ -167,10 +167,11 @@ theorem BadChar.elim (B : BadChar N) : False := by
   have hs : IsOpen {s : ℂ | 1 < s.re} := by refine isOpen_lt ?_ ?_ <;> fun_prop
   convert B.e.iteratedDeriv_LSeries_alternating B.e_nonneg B.abscissa n using 2
   refine Set.EqOn.iteratedDeriv_of_isOpen (fun _ ↦ B.F_eq_LSeries) hs n
-    (?_ : 2 ∈ {s : ℂ | 1 < s.re})
+    (?_ : 2 ∈ {s : ℂ | 1 < s.re}) -- needed to avoid `Real.lt` from showing up...
   simp only [Set.mem_setOf_eq, re_ofNat, Nat.one_lt_ofNat]
 
 end
+
 
 section final
 
