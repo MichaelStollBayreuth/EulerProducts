@@ -23,6 +23,7 @@ lemma summable_im {α : Type _} {f : α → ℂ} (h : Summable f) : Summable fun
 
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
+-- see Mathlib PR #18031
 open scoped ComplexOrder
 
 lemma inv_natCast_pow_ofReal_pos {n : ℕ} (hn : n ≠ 0) (x : ℝ) : 0 < ((n : ℂ) ^ (x : ℂ))⁻¹ := by
@@ -131,6 +132,7 @@ lemma LSeries_positive_of_eq_differentiable {a : ArithmeticFunction ℂ} (ha₀ 
 
 end ArithmeticFunction
 
+--
 
 section Topology
 
