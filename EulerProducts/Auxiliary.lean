@@ -88,8 +88,8 @@ lemma positive {a : ℕ → ℂ} (ha₀ : 0 ≤ a) (ha₁ : 0 < a 1) {x : ℝ} (
 /-- If all values of `a : ℕ → ℂ` are nonnegative reals and `a 1`
 is positive, and the L-series of `a` agrees with an entire function `f` on some open
 right half-plane where it converges, then `f` is real and positive on `ℝ`. -/
-lemma positive_of_eq_differentiable {a : ℕ → ℂ} (ha₀ : 0 ≤ a) (ha₁ : 0 < a 1)
-    {f : ℂ → ℂ} (hf : Differentiable ℂ f) {x : ℝ} (hx : abscissaOfAbsConv a < x)
+lemma positive_of_eq_differentiable {a : ℕ → ℂ} (ha₀ : 0 ≤ a) (ha₁ : 0 < a 1) {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) {x : ℝ} (hx : abscissaOfAbsConv a < x)
     (hf' : {s | x < s.re}.EqOn f (LSeries a)) (y : ℝ) :
     0 < f y := by
   have hxy : x < max x y + 1 := (le_max_left x y).trans_lt (lt_add_one _)
@@ -115,8 +115,8 @@ namespace ArithmeticFunction
 real number in the domain of absolute convergence, then the `n`th iterated derivative
 of the associated L-series is nonnegative real when `n` is even and nonpositive real
 when `n` is odd. -/
-lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ)
-    (hn : ∀ n, 0 ≤ a n) {x : ℝ} (h : LSeries.abscissaOfAbsConv a < x) (n : ℕ) :
+lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ) (hn : ∀ n, 0 ≤ a n) {x : ℝ}
+    (h : LSeries.abscissaOfAbsConv a < x) (n : ℕ) :
     0 ≤ (-1) ^ n * iteratedDeriv n (LSeries (a ·)) x :=
   LSeries.iteratedDeriv_alternating hn h n
 
