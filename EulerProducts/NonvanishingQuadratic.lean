@@ -148,27 +148,13 @@ lemma BadChar.e_one_eq_one (B : BadChar N) : B.e 1 = 1 := by
     ite_mul, zero_mul, one_mul, Finset.sum_singleton, Prod.snd_one, one_ne_zero, ↓reduceIte,
     Prod.fst_one, map_one]
 
-lemma BadChar.F_two_pos (B : BadChar N) : 0 < B.F 2 := by
-  rw [B.F_eq_LSeries (by norm_num), LSeries]
-  refine tsum_pos (B.e_summable (by norm_num)) (fun n ↦ ?_) 1 ?_ ; swap
-  · simp only [LSeries.term_def, one_ne_zero, ↓reduceIte, e_one_eq_one, Nat.cast_one, cpow_ofNat,
-      one_pow, ne_eq, not_false_eq_true, div_self, zero_lt_one]
-  · simp only [LSeries.term_def, cpow_ofNat]
-    split
-    · simp only [le_refl]
-    · exact mul_nonneg (B.e_nonneg n) <| (RCLike.inv_pos_of_pos (by positivity)).le
-
 /-- The goal: bad characters do not exist. -/
 theorem BadChar.elim (B : BadChar N) : False := by
-  refine (B.F_two_pos.trans_le <|
-    B.F_neg_two ▸
-      B.F_differentiable.apply_le_of_iteratedDeriv_alternating
-        (fun n _ ↦ ?_) (by norm_num)).false
-  have hs : IsOpen {s : ℂ | 1 < s.re} := by refine isOpen_lt ?_ ?_ <;> fun_prop
-  convert B.e.iteratedDeriv_LSeries_alternating B.e_nonneg B.abscissa n using 2
-  refine Set.EqOn.iteratedDeriv_of_isOpen (fun _ ↦ B.F_eq_LSeries) hs n
-    (?_ : 2 ∈ {s : ℂ | 1 < s.re}) -- needed to avoid `Real.lt` from showing up...
-  simp only [Set.mem_setOf_eq, re_ofNat, Nat.one_lt_ofNat]
+  refine (B.F_neg_two ▸ (?_ : 0 < B.F (-2))).false
+  convert ArithmeticFunction.LSeries_positive_of_eq_differentiable B.e_nonneg
+    (B.e_one_eq_one ▸ zero_lt_one) B.F_differentiable B.abscissa ?_ (-2)
+  · norm_cast
+  · exact fun s hs ↦ B.F_eq_LSeries <| one_lt_two.trans hs
 
 end
 
