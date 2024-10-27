@@ -18,7 +18,7 @@ This is an important step in the proof of
 ### Auxiliary lemmas
 -/
 
--- Mathlib.Analysis.Calculus.Deriv.Slope
+-- Mathlib.Analysis.Calculus.Deriv.Slope or Mathlib.LinearAlgebra.AffineSpace.Slope
 lemma HasDerivAt.continuousAt_div {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜]
     {f : 𝕜 → 𝕜} {c a : 𝕜} (hf : HasDerivAt f a c) :
     ContinuousAt (Function.update (fun x ↦ (f x - f c) / (x - c)) c a) c := by
@@ -33,9 +33,10 @@ lemma MulChar.isQuadratic_iff_sq_eq_one {M R : Type*} [CommMonoid M] [CommRing R
     IsQuadratic χ ↔ χ ^ 2 = 1:= by
   refine ⟨fun h ↦ ext (fun x ↦ ?_), fun h x ↦ ?_⟩
   · rw [one_apply_coe, χ.pow_apply_coe]
-    rcases (h x).resolve_left (fun H ↦ (not_isUnit_zero <| H ▸ IsUnit.map χ <| x.isUnit).elim)
-      with H | H <;>
-    simp only [H, even_two, Even.neg_pow, one_pow]
+    rcases h x with H | H | H
+    · exact (not_isUnit_zero <| H ▸ IsUnit.map χ <| x.isUnit).elim
+    · simp only [H, one_pow]
+    · simp only [H, even_two, Even.neg_pow, one_pow]
   · by_cases hx : IsUnit x
     · refine .inr <| sq_eq_one_iff.mp ?_
       rw [← χ.pow_apply' two_ne_zero, h, MulChar.one_apply hx]
