@@ -1,15 +1,9 @@
-import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Complex.Positivity
-import Mathlib.NumberTheory.ArithmeticFunction
-import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
 ### Auxiliary lemmas
 -/
 
-open Complex in
-lemma continuous_cpow_natCast_neg (n : ℕ) [NeZero n] : Continuous fun s : ℂ ↦ (n : ℂ) ^ (-s) :=
-  Continuous.const_cpow continuous_neg (.inl <| NeZero.ne (n : ℂ))
 
 -- not really needed here
 
@@ -23,129 +17,12 @@ lemma summable_im {α : Type _} {f : α → ℂ} (h : Summable f) : Summable fun
 
 -- #find_home summable_re -- [Mathlib.Analysis.Complex.Basic]
 
--- see Mathlib PR #18031
-open scoped ComplexOrder
-
-lemma inv_natCast_pow_ofReal_pos {n : ℕ} (hn : n ≠ 0) (x : ℝ) : 0 < ((n : ℂ) ^ (x : ℂ))⁻¹ := by
-  refine RCLike.inv_pos_of_pos ?_
-  rw [show (n : ℂ) ^ (x : ℂ) = (n : ℝ) ^ (x : ℂ) from rfl, ← ofReal_cpow n.cast_nonneg']
-  positivity
-
 end Complex
 
-open Complex
-
-open scoped ComplexOrder
-
-namespace LSeries
-
-private lemma inv_ofNat_cpow_ofReal_pos {n : ℕ} (hn : n ≠ 0) (x : ℝ) :
-    0 < ((n : ℂ) ^ (x : ℂ))⁻¹ := by
-  refine RCLike.inv_pos_of_pos ?_
-  rw [show (n : ℂ) = (n : ℝ) from rfl, ← ofReal_cpow (n.cast_nonneg), zero_lt_real]
-  positivity
-
-
-lemma term_nonneg {a : ℕ → ℂ} {n : ℕ} (h : 0 ≤ a n) (x : ℝ) : 0 ≤ term a x n := by
-  rw [term_def]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [↓reduceIte, le_refl]
-  · simp only [hn, ↓reduceIte]
-    refine mul_nonneg h (inv_ofNat_cpow_ofReal_pos hn x).le
-
-lemma term_pos {a : ℕ → ℂ} {n : ℕ} (hn : n ≠ 0) (h : 0 < a n) (x : ℝ) : 0 < term a x n := by
-  simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero]
-  refine mul_pos h <| inv_ofNat_cpow_ofReal_pos hn x
-
-/-- If all values of a `ℂ`-valued arithmetic function are nonnegative reals and `x` is a
-real number in the domain of absolute convergence, then the `n`th iterated derivative
-of the associated L-series is nonnegative real when `n` is even and nonpositive real
-when `n` is odd. -/
-lemma iteratedDeriv_alternating {a : ℕ → ℂ} (hn : 0 ≤ a) {x : ℝ}
-    (h : LSeries.abscissaOfAbsConv a < x) (n : ℕ) :
-    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries a) x := by
-  rw [LSeries_iteratedDeriv _ h, LSeries, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩,
-    one_mul]
-  refine tsum_nonneg fun k ↦ ?_
-  rw [LSeries.term_def]
-  split
-  · exact le_rfl
-  · refine mul_nonneg ?_ <| (inv_natCast_pow_ofReal_pos (by assumption) x).le
-    induction n with
-    | zero => simp only [Function.iterate_zero, id_eq]; exact hn k
-    | succ n IH =>
-        rw [Function.iterate_succ_apply']
-        refine mul_nonneg ?_ IH
-        simp only [← natCast_log, zero_le_real, Real.log_natCast_nonneg]
-
-/-- If all values of `a : ℕ → ℂ` are nonnegative reals and `a 1` is positive,
-then `L a x` is positive real for all real `x` larger than `abscissaOfAbsConv a`. -/
-lemma positive {a : ℕ → ℂ} (ha₀ : 0 ≤ a) (ha₁ : 0 < a 1) {x : ℝ} (hx : abscissaOfAbsConv a < x) :
-    0 < LSeries a x := by
-  rw [LSeries]
-  refine tsum_pos ?_ (fun n ↦ term_nonneg (ha₀ n) x) 1 <| term_pos one_ne_zero ha₁ x
-  exact LSeriesSummable_of_abscissaOfAbsConv_lt_re <| by simpa only [ofReal_re] using hx
-
-/-- If all values of `a : ℕ → ℂ` are nonnegative reals and `a 1`
-is positive, and the L-series of `a` agrees with an entire function `f` on some open
-right half-plane where it converges, then `f` is real and positive on `ℝ`. -/
-lemma positive_of_eq_differentiable {a : ℕ → ℂ} (ha₀ : 0 ≤ a) (ha₁ : 0 < a 1) {f : ℂ → ℂ}
-    (hf : Differentiable ℂ f) {x : ℝ} (hx : abscissaOfAbsConv a < x)
-    (hf' : {s | x < s.re}.EqOn f (LSeries a)) (y : ℝ) :
-    0 < f y := by
-  have hxy : x < max x y + 1 := (le_max_left x y).trans_lt (lt_add_one _)
-  have hxy' : abscissaOfAbsConv a < max x y + 1 := hx.trans <| mod_cast hxy
-  have hys : (max x y + 1 : ℂ) ∈ {s | x < s.re} := by
-    simp only [Set.mem_setOf_eq, add_re, ofReal_re, one_re, hxy]
-  have hfx : 0 < f (max x y + 1) := by
-    rw [hf' hys]
-    convert positive ha₀ ha₁ hxy'
-    simp only [ofReal_add, ofReal_one]
-  refine (hfx.trans_le <| hf.apply_le_of_iteratedDeriv_alternating (fun n _ ↦ ?_) ?_)
-  · have hs : IsOpen {s : ℂ | x < s.re} := by refine isOpen_lt ?_ ?_ <;> fun_prop
-    convert iteratedDeriv_alternating ha₀ hxy' n using 2
-    convert hf'.iteratedDeriv_of_isOpen hs n hys
-    simp only [ofReal_add, ofReal_one]
-  · exact_mod_cast (le_max_right x y).trans (lt_add_one _).le
-
-end LSeries
-
-namespace ArithmeticFunction
-
-/-- If all values of a `ℂ`-valued arithmetic function are nonnegative reals and `x` is a
-real number in the domain of absolute convergence, then the `n`th iterated derivative
-of the associated L-series is nonnegative real when `n` is even and nonpositive real
-when `n` is odd. -/
-lemma iteratedDeriv_LSeries_alternating (a : ArithmeticFunction ℂ) (hn : ∀ n, 0 ≤ a n) {x : ℝ}
-    (h : LSeries.abscissaOfAbsConv a < x) (n : ℕ) :
-    0 ≤ (-1) ^ n * iteratedDeriv n (LSeries (a ·)) x :=
-  LSeries.iteratedDeriv_alternating hn h n
-
-/-- If all values of a `ℂ`-valued arithmetic function `a` are nonnegative reals and `a 1`
-is positive, and the L-series of `a` agrees with an entire function `f` on some open
-right half-plane where it converges, then `f` is real and positive on `ℝ`. -/
-lemma LSeries_positive_of_eq_differentiable {a : ArithmeticFunction ℂ} (ha₀ : 0 ≤ (a ·))
-    (ha₁ : 0 < a 1) {f : ℂ → ℂ} (hf : Differentiable ℂ f) {x : ℝ}
-    (hx : LSeries.abscissaOfAbsConv a < x) (hf' : {s | x < s.re}.EqOn f (LSeries a)) (y : ℝ) :
-    0 < f y :=
-  LSeries.positive_of_eq_differentiable ha₀ ha₁ hf hx hf' y
-
-end ArithmeticFunction
-
---
 
 section Topology
 
-open Filter
-
-namespace Asymptotics
-
-
-
-end Asymptotics
-
-
-open Topology Asymptotics
+open Filter Topology Asymptotics
 
 lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
     (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
@@ -299,6 +176,8 @@ lemma realValued_of_iteratedDeriv_real {f : ℂ → ℂ} (hf : Differentiable �
       ofReal_pow, ofReal_sub]
 
 end Complex
+
+open Complex
 
 open scoped ComplexOrder
 

@@ -1,6 +1,6 @@
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Dirichlet
-import EulerProducts.Auxiliary
+import Mathlib.NumberTheory.LSeries.Positivity
 
 /-!
 # Non-vanishing of `L(χ, 1)` for nontrivial quadratic characters `χ`
@@ -151,8 +151,8 @@ lemma BadChar.e_one_eq_one (B : BadChar N) : B.e 1 = 1 := by
 /-- The goal: bad characters do not exist. -/
 theorem BadChar.elim (B : BadChar N) : False := by
   refine (B.F_neg_two ▸ (?_ : 0 < B.F (-2))).false
-  convert ArithmeticFunction.LSeries_positive_of_eq_differentiable B.e_nonneg
-    (B.e_one_eq_one ▸ zero_lt_one) B.F_differentiable B.abscissa ?_ (-2)
+  convert ArithmeticFunction.LSeries_positive_of_differentiable_of_eqOn B.e_nonneg
+    (B.e_one_eq_one ▸ zero_lt_one) B.F_differentiable B.abscissa.le ?_ (-2)
   · norm_cast
   · exact fun s hs ↦ B.F_eq_LSeries <| one_lt_two.trans hs
 
