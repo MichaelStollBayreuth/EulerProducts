@@ -169,7 +169,6 @@ lemma F_eq_LSeries (B : BadChar N) {s : ℂ} (hs : 1 < s.re) :
   · exact (LSeriesSummable_congr _ fun h ↦ (B.χ.apply_eq_toArithmeticFunction_apply h).symm).mpr <|
       ZMod.LSeriesSummable_of_one_lt_re B.χ hs
 
-
 /-- If `χ` is a bad character, then `F` is an entire function. -/
 lemma F_differentiable (B : BadChar N) : Differentiable ℂ B.F := by
   intro s
@@ -220,6 +219,7 @@ theorem LFunction_at_one_ne_zero_of_quadratic {N : ℕ} [NeZero N] {χ : Dirichl
   refine ArithmeticFunction.LSeries_positive_of_differentiable_of_eqOn (zetaMul_nonneg hχ)
     (χ.isMultiplicative_zetaMul.map_one ▸ zero_lt_one) B.F_differentiable ?_
     (fun _ ↦ B.F_eq_LSeries) _
-  exact LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ a ↦ χ.LSeriesSummable_zetaMul a
+  exact LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable
+    fun _ a ↦ χ.LSeriesSummable_zetaMul a
 
 end DirichletCharacter
