@@ -6,11 +6,13 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 ### Auxiliary results
 -/
 
+-- [Mathlib.Data.Fintype.Units] ?
 instance ZMod.fintype_units (n : ℕ) : Fintype (ZMod n)ˣ := by
   match n with
   | 0 =>     exact UnitsInt.fintype
   | m + 1 => infer_instance
 
+-- [Mathlib.RingTheory.RootsOfUnity.Basic] ?
 /-- The canonical isomorphism from the `n`th roots of unity in`Mˣ`
 to the `n`th roots of unity in `M`. -/
 def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
@@ -23,8 +25,9 @@ def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
       right_inv ζ := by simp only [val_toUnits_apply, Subtype.coe_eta]
       map_mul' ζ ζ' := by simp only [Subgroup.coe_mul, Units.val_mul, MulMemClass.mk_mul_mk]
 
+-- [Mathlib.Algebra.BigOperators.Group.Finset] ?
 /-- The canonical isomoorphism between the monoid of homomorphisms from a finite product of
-commutative monoids to another commutative monoid and the product of the homomrphism monoids. -/
+commutative monoids to another commutative monoid and the product of the homomorphism monoids. -/
 def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → Type*)
     [(i : ι) → CommMonoid (M i)] (M' : Type*) [CommMonoid M'] :
     (((i : ι) → M i) →* M') ≃* ((i : ι) → (M i →* M')) where
@@ -34,8 +37,7 @@ def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → 
         ext
         simp only [MonoidHom.finset_prod_apply, MonoidHom.coe_comp, Function.comp_apply,
           evalMonoidHom_apply, MonoidHom.mulSingle_apply, ← map_prod]
-        refine congrArg _ ?_
-        ext1
+        refine congrArg _ <| funext fun _ ↦ ?_
         rw [Fintype.prod_apply]
         exact Fintype.prod_pi_mulSingle ..
       right_inv φ := by
@@ -53,34 +55,32 @@ def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → 
         simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.mulSingle_apply,
           MonoidHom.mul_apply, mul_apply]
 
-
 /-!
 ### Commutative rings that have all roots of unity
 -/
 
 /-- This is a type class recording that an integral domain `R` contains primitive `n`th
 roots of unity for all `n`. Such rings are useful as targets of `MulChar`s. -/
-class HasAllRootsOfUnity (R : Type*) [CommRing R] [IsDomain R] where
+class HasAllRootsOfUnity (R : Type*) [CommMonoid R] where
   hasAllRootsOfUnity (n : ℕ) [NeZero n] : ∃ ζ : R, IsPrimitiveRoot ζ n
 
-lemma HasAllRootsOfUnity.exists_prim_root (R : Type*) [CommRing R] [IsDomain R]
+lemma HasAllRootsOfUnity.exists_prim_root (R : Type*) [CommMonoid R]
     [HasAllRootsOfUnity R] (n : ℕ) [NeZero n] :
     ∃ ζ : R, IsPrimitiveRoot ζ n :=
   HasAllRootsOfUnity.hasAllRootsOfUnity n
 
 namespace IsAlgClosed
 
-/-- An algebraically closed field of characteristic zero contains primitive `n`th roots of unity
+/- /-- An algebraically closed field of characteristic zero contains primitive `n`th roots of unity
 for all `n`. -/
 lemma exists_primitiveRoot (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ) [NeZero n] :
     ∃ ζ : F, IsPrimitiveRoot ζ n :=
   have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
-  this ▸ IsCyclotomicExtension.exists_prim_root F rfl
+  this ▸ IsCyclotomicExtension.exists_prim_root F rfl -/
 
 instance hasAllRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] :
     HasAllRootsOfUnity F where
-  hasAllRootsOfUnity n inst :=
-    have : NeZero n := inst
+  hasAllRootsOfUnity n _inst :=
     have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
     this ▸ IsCyclotomicExtension.exists_prim_root F rfl
 
@@ -90,24 +90,14 @@ end IsAlgClosed
 ### The multiplicative version of the classification theorem for finite abelian groups
 -/
 
+-- [Mathlib.Algebra.DirectSum.Basic] ?
 /-- The canonical isomorphism of a finite direct sum of additive commutative monoids
 and the corresponding finite product. -/
-def DirectSum.equivProd {ι : Type*} [Fintype ι] (G : ι → Type*) [(i : ι) → AddCommMonoid (G i)] :
+def DirectSum.addEquivProd {ι : Type*} [Fintype ι] (G : ι → Type*) [(i : ι) → AddCommMonoid (G i)] :
     DirectSum ι G ≃+ ((i : ι) → G i) :=
-  ⟨DFinsupp.equivFunOnFintype, fun g h ↦ by
-    ext
+  ⟨DFinsupp.equivFunOnFintype, fun g h ↦ funext fun _ ↦ by
     simp only [DFinsupp.equivFunOnFintype, Equiv.toFun_as_coe, Equiv.coe_fn_mk, add_apply,
       Pi.add_apply]⟩
-
-/-- Taking products is compatible with switching from additive to multiplicative and back. -/
-def additiveProdMultiplicativeAddEquivProd {ι : Type*} (G : ι → Type*)
-    [(i : ι) → AddMonoid (G i)] :
-    Additive ((i : ι) → Multiplicative (G i)) ≃+ ((i : ι) → G i) where
-  toFun g i := Multiplicative.toAdd <| (Additive.toMul g) i
-  invFun g := Additive.ofMul fun i ↦ Multiplicative.ofAdd <| g i
-  left_inv g := rfl
-  right_inv g := rfl
-  map_add' g h := by ext; simp only [toMul_add, Pi.mul_apply, toAdd_mul, Pi.add_apply]
 
 /-- The **Classification Theorem For Finite Abelian Groups** in a multiplicative version:
 A finite commutative group `G` is isomorphic to a finite product of finite cyclic groups. -/
@@ -115,11 +105,8 @@ theorem CommGroup.equiv_prod_multiplicative_zmod (G : Type*) [CommGroup G] [Fini
     ∃ (ι : Type) (_ : Fintype ι) (n : ι → ℕ),
        (∀ (i : ι), 1 < n i) ∧ Nonempty (G ≃* ((i : ι) → Multiplicative (ZMod (n i)))) := by
   obtain ⟨ι, inst, n, h₁, h₂⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' (Additive G)
-  let inst' := inst
-  exact ⟨ι, inst, n, h₁, ⟨MulEquiv.toAdditive.symm <|
-    h₂.some.trans ((additiveProdMultiplicativeAddEquivProd (fun i ↦ ZMod (n i))).trans
-      (DirectSum.equivProd (fun i ↦ ZMod (n i))).symm).symm⟩⟩
-
+  exact ⟨ι, inst, n, h₁, ⟨MulEquiv.toAdditive.symm <| h₂.some.trans <|
+    (DirectSum.addEquivProd _).trans <| MulEquiv.toAdditive'' <| MulEquiv.piMultiplicative _⟩⟩
 
 /-!
 ### Results specific for cyclic groups
