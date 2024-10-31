@@ -6,7 +6,7 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 ### Auxiliary results
 -/
 
-instance ZMod.units_fintype (n : ℕ) : Fintype (ZMod n)ˣ := by
+instance ZMod.fintype_units (n : ℕ) : Fintype (ZMod n)ˣ := by
   match n with
   | 0 =>     exact UnitsInt.fintype
   | m + 1 => infer_instance
