@@ -6,16 +6,10 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 ### Auxiliary results
 -/
 
--- [Mathlib.Data.Fintype.Units] ?
-instance ZMod.fintype_units (n : ℕ) : Fintype (ZMod n)ˣ := by
-  match n with
-  | 0 =>     exact UnitsInt.fintype
-  | m + 1 => infer_instance
-
 -- [Mathlib.RingTheory.RootsOfUnity.Basic] ?
 /-- The canonical isomorphism from the `n`th roots of unity in`Mˣ`
 to the `n`th roots of unity in `M`. -/
-def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ+) :
+def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ) :
     rootsOfUnity n Mˣ ≃* rootsOfUnity n M where
       toFun ζ := ⟨ζ.val, (mem_rootsOfUnity ..).mpr <| (mem_rootsOfUnity' ..).mp ζ.prop⟩
       invFun ζ := ⟨toUnits ζ.val, by
@@ -59,6 +53,76 @@ def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → 
 ### Commutative monoids that have all roots of unity
 -/
 
+
+/-- This is a type class recording that a commutative monoid `M` contains primitive `n`th
+roots of unity for all `n` and the group of `n`th roots of unity is cyclic for all `n`.
+Such monoids are suitable targets w.r.t. duality statements for groups of exponent `n`. -/
+class HasNTorsionCyclicOfOrderN (M : Type*) [CommMonoid M] (n : ℕ) where
+  prim : ∃ m : M, IsPrimitiveRoot m n
+  cyc : IsCyclic <| rootsOfUnity n M
+
+namespace HasNTorsionCyclicOfOrderN
+
+lemma exists_primitiveRoot (M : Type*) [CommMonoid M] (n : ℕ) [HasNTorsionCyclicOfOrderN M n] :
+    ∃ ζ : M, IsPrimitiveRoot ζ n :=
+  HasNTorsionCyclicOfOrderN.prim
+
+instance rootsOfUnity_isCyclic (M : Type*) [CommMonoid M] (n : ℕ) [HasNTorsionCyclicOfOrderN M n] :
+    IsCyclic (rootsOfUnity n M) :=
+  HasNTorsionCyclicOfOrderN.cyc
+
+/-- If `M` satisfies `HasNTorsionCyclicOfOrderN`, then the group of `n`th roots of unity
+in `M` is finite. -/
+instance finite_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
+    [HasNTorsionCyclicOfOrderN M n] :
+    Finite <| rootsOfUnity n M := by
+  have := rootsOfUnity_isCyclic M n
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity n M)
+  have hg' : g ^ n = 1 := OneMemClass.coe_eq_one.mp g.prop
+  let f (j : ZMod n) : rootsOfUnity n M := g ^ (j.val : ℤ)
+  refine Finite.of_surjective f fun x ↦ ?_
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp <| hg x
+  refine ⟨k, ?_⟩
+  simp only [ZMod.natCast_val, ← hk, f, ZMod.coe_intCast]
+  suffices ∃ m, k = k % n + m * n by
+    obtain ⟨m, hm⟩ := this
+    nth_rewrite 2 [hm]
+    rw [zpow_add, mul_comm m, zpow_mul, zpow_natCast, hg', one_zpow, mul_one]
+  exact ⟨k / n, (k.emod_add_ediv' n).symm⟩
+
+/-- If `M` satisfies `HasNTorsionCyclicOfOrderN`, then the group of `n`th roots of unity
+in `M` (is cyclic and) has order `n`. -/
+lemma natCard_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
+    [HasNTorsionCyclicOfOrderN M n] :
+    Nat.card (rootsOfUnity n M) = n := by
+  obtain ⟨ζ, h⟩ := exists_primitiveRoot M n
+  have : Fintype <| rootsOfUnity n M := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, ← IsCyclic.exponent_eq_card]
+  refine dvd_antisymm ?_ ?_
+  · exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
+  · nth_rewrite 1 [h.eq_orderOf]
+    rw [← (h.isUnit <| NeZero.pos n).unit_spec, orderOf_units]
+    let ζ' : rootsOfUnity n M := ⟨(h.isUnit <| NeZero.pos n).unit, ?_⟩
+    · rw [← Subgroup.orderOf_mk]
+      exact Monoid.order_dvd_exponent ζ'
+    simp only [mem_rootsOfUnity, PNat.mk_coe]
+    rw [← Units.eq_iff, Units.val_pow_eq_pow_val, IsUnit.unit_spec, h.pow_eq_one, Units.val_one]
+
+end HasNTorsionCyclicOfOrderN
+
+namespace IsAlgClosed
+
+/-- An algebraically closed field of characteristic zero satisfies `HasNTorsionCyclicOfOrderN`
+for all `n`. -/
+instance hasNTorsionCyclicOfOrderN (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ)
+    [NeZero n] :
+    HasNTorsionCyclicOfOrderN F n where
+  prim := Subtype.coe_mk n (NeZero.pos n) ▸ IsCyclotomicExtension.exists_prim_root F rfl
+  cyc := rootsOfUnity.isCyclic F n
+
+end IsAlgClosed
+
+/-
 /-- This is a type class recording that a commutative monoid `M` contains primitive `n`th
 roots of unity for all `n` and the group of `n`th roots of unity is cyclic for all `n`.
 
@@ -66,7 +130,7 @@ Rings with this property (e.g., algebraically closed fields of characteristic ze
 as targets of `MulChar`s. -/
 class HasAllRootsOfUnity (M : Type*) [CommMonoid M] where
   hasAllRootsOfUnity (n : ℕ) [NeZero n] : ∃ ζ : M, IsPrimitiveRoot ζ n
-  is_cyclic' (n : ℕ) [NeZero n] : IsCyclic (rootsOfUnity ⟨n, NeZero.pos n⟩ M)
+  is_cyclic' (n : ℕ) [NeZero n] : IsCyclic (rootsOfUnity n M)
 
 lemma HasAllRootsOfUnity.exists_prim_root (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
     (n : ℕ) [NeZero n] :
@@ -75,16 +139,16 @@ lemma HasAllRootsOfUnity.exists_prim_root (M : Type*) [CommMonoid M] [HasAllRoot
 
 lemma HasAllRootsOfUnity.is_cyclic (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
     (n : ℕ) [NeZero n] :
-    IsCyclic (rootsOfUnity ⟨n, NeZero.pos n⟩ M) :=
+    IsCyclic (rootsOfUnity n M) :=
   HasAllRootsOfUnity.is_cyclic' n
 
 instance HasAllRootsOfUnity.finite_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
     (n : ℕ) [NeZero n] :
-    Finite <| rootsOfUnity ⟨n, NeZero.pos n⟩ M := by
+    Finite <| rootsOfUnity n M := by
   have := HasAllRootsOfUnity.is_cyclic M n
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity ⟨n, NeZero.pos n⟩ M)
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity n M)
   have hg' : g ^ n = 1 := OneMemClass.coe_eq_one.mp g.prop
-  let f (j : ZMod n) : rootsOfUnity ⟨n, NeZero.pos n⟩ M := g ^ (j.val : ℤ)
+  let f (j : ZMod n) : rootsOfUnity n M := g ^ (j.val : ℤ)
   refine Finite.of_surjective f fun x ↦ ?_
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp <| hg x
   refine ⟨k, ?_⟩
@@ -98,11 +162,11 @@ instance HasAllRootsOfUnity.finite_rootsOfUnity (M : Type*) [CommMonoid M] [HasA
 noncomputable
 instance HasAllRootsOfUnity.fintype_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
     (n : ℕ) [NeZero n] :
-    Fintype <| rootsOfUnity ⟨n, NeZero.pos n⟩ M := Fintype.ofFinite _
+    Fintype <| rootsOfUnity n M := Fintype.ofFinite _
 
 lemma HasAllRootsOfUnity.card_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
     (n : ℕ) [NeZero n] :
-    Fintype.card (rootsOfUnity ⟨n, NeZero.pos n⟩ M) = n := by
+    Fintype.card (rootsOfUnity n M) = n := by
   obtain ⟨ζ, h⟩ := HasAllRootsOfUnity.exists_prim_root M n
   have hcyc := HasAllRootsOfUnity.is_cyclic M n
   rw [← IsCyclic.exponent_eq_card]
@@ -110,7 +174,7 @@ lemma HasAllRootsOfUnity.card_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRoo
   · exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
   · nth_rewrite 1 [h.eq_orderOf]
     rw [← (h.isUnit <| NeZero.pos n).unit_spec, orderOf_units]
-    let ζ' : rootsOfUnity ⟨n, NeZero.pos n⟩ M := ⟨(h.isUnit <| NeZero.pos n).unit, ?_⟩
+    let ζ' : rootsOfUnity n M := ⟨(h.isUnit <| NeZero.pos n).unit, ?_⟩
     · rw [← Subgroup.orderOf_mk]
       exact Monoid.order_dvd_exponent ζ'
     simp only [mem_rootsOfUnity, PNat.mk_coe]
@@ -123,9 +187,10 @@ instance hasAllRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] :
   hasAllRootsOfUnity n _inst :=
     have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
     this ▸ IsCyclotomicExtension.exists_prim_root F rfl
-  is_cyclic' n _inst := rootsOfUnity.isCyclic F ⟨n, NeZero.pos n⟩
+  is_cyclic' n _inst := rootsOfUnity.isCyclic F n
 
 end IsAlgClosed
+ -/
 
 /-!
 ### The multiplicative version of the classification theorem for finite abelian groups
@@ -161,17 +226,16 @@ namespace IsCyclic
 noncomputable
 def monoidHomMulEquivRootsOfUnityOfGenerator {G : Type*} [CommGroup G] [Fintype G] {g : G}
     (hg : ∀ (x : G), x ∈ Subgroup.zpowers g) (G' : Type*) [CommGroup G'] :
-    (G →* G') ≃* rootsOfUnity ⟨Fintype.card G, Fintype.card_pos⟩ G' where
-  toFun φ := ⟨(IsUnit.map φ <| Group.isUnit _ : IsUnit <| φ g).unit, by
-    simp only [mem_rootsOfUnity, PNat.mk_coe, Units.ext_iff, Units.val_pow_eq_pow_val,
-      IsUnit.unit_spec, ← map_pow, pow_card_eq_one, map_one, Units.val_one]⟩
+    (G →* G') ≃* rootsOfUnity (Fintype.card G) G' where
+  toFun φ := ⟨(IsUnit.map φ <| Group.isUnit g).unit, by
+    simp only [mem_rootsOfUnity, Units.ext_iff, Units.val_pow_eq_pow_val, IsUnit.unit_spec,
+      ← map_pow, pow_card_eq_one, map_one, Units.val_one]⟩
   invFun ζ := monoidHomOfForallMemZpowers hg (g' := (ζ.val : G')) <| by
     simpa only [orderOf_eq_card_of_forall_mem_zpowers hg, orderOf_dvd_iff_pow_eq_one,
       ← Units.val_pow_eq_pow_val, Units.val_eq_one] using ζ.prop
   left_inv φ := (MonoidHom.eq_iff_eq_on_generator hg _ φ).mpr <| by
     simp only [IsUnit.unit_spec, monoidHomOfForallMemZpowers_apply_gen]
-  right_inv φ := by
-    ext1
+  right_inv φ := Subtype.ext <| by
     simp only [monoidHomOfForallMemZpowers_apply_gen, IsUnit.unit_of_val_units]
   map_mul' x y := by
     simp only [MonoidHom.mul_apply, MulMemClass.mk_mul_mk, Subtype.mk.injEq, Units.ext_iff,
@@ -179,22 +243,27 @@ def monoidHomMulEquivRootsOfUnityOfGenerator {G : Type*} [CommGroup G] [Fintype 
 
 /-- The group of group homomorphisms from a finite cyclic group `G` of order `n` into another
 group `G'` is (noncanonically) isomorphic to the group of `n`th roots of unity in `G'`. -/
-lemma monoidHom_mulEquiv_rootsOfUnity  (G : Type*) [CommGroup G] [Fintype G]
-    [inst_cyc : IsCyclic G] (G' : Type*) [CommGroup G'] :
-    Nonempty <| (G →* G') ≃* rootsOfUnity ⟨Fintype.card G, Fintype.card_pos⟩ G' := by
-  obtain ⟨g, hg⟩ := inst_cyc.exists_generator
-  exact ⟨monoidHomMulEquivRootsOfUnityOfGenerator hg G'⟩
+lemma monoidHom_mulEquiv_rootsOfUnity (G : Type*) [CommGroup G] [Finite G] [IsCyclic G]
+    (G' : Type*) [CommGroup G'] :
+    Nonempty <| (G →* G') ≃* rootsOfUnity (Nat.card G) G' := by
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  have : Fintype G := Fintype.ofFinite _
+  exact ⟨Nat.card_eq_fintype_card (α  := G) ▸ monoidHomMulEquivRootsOfUnityOfGenerator hg G'⟩
 
-lemma exists_apply_ne_one (G G' : Type*) [CommGroup G] [IsCyclic G] [Fintype G] [CommGroup G']
-    ⦃ζ : G'⦄ (hζ : IsPrimitiveRoot ζ (Fintype.card G)) ⦃a : G⦄ (ha : a ≠ 1) :
+/-- If `G` is cyclic of order `n` and `G'` contains a primitive `n`th root of unity,
+then for each `a : G` with `a ≠ 1` there is a homomorphism `φ : G →* G'` such that `φ a ≠ 1`. -/
+lemma exists_apply_ne_one {G G' : Type*} [CommGroup G] [IsCyclic G] [Finite G] [CommGroup G']
+    (hG' : ∃ ζ : G', IsPrimitiveRoot ζ (Nat.card G)) ⦃a : G⦄ (ha : a ≠ 1) :
     ∃ φ  : G →* G', φ a ≠ 1 := by
+  let inst : Fintype G := Fintype.ofFinite _
+  obtain ⟨ζ, hζ⟩ := hG'
   -- pick a generator `g` of `G`
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
   have hζg : orderOf ζ ∣ orderOf g := by
-    rw [← hζ.eq_orderOf, orderOf_eq_card_of_forall_mem_zpowers hg]
+    rw [← hζ.eq_orderOf, orderOf_eq_card_of_forall_mem_zpowers hg, Nat.card_eq_fintype_card]
   -- use the homomorphism `φ` given by `g ↦ ζ`
   let φ := monoidHomOfForallMemZpowers hg hζg
-  have hφg : IsPrimitiveRoot (φ g) (Fintype.card G) := by
+  have hφg : IsPrimitiveRoot (φ g) (Nat.card G) := by
     rwa [monoidHomOfForallMemZpowers_apply_gen hg hζg]
   use φ
   contrapose! ha
@@ -203,41 +272,35 @@ lemma exists_apply_ne_one (G G' : Type*) [CommGroup G] [IsCyclic G] [Fintype G] 
   obtain ⟨k, hk⟩ := hg
   rw [← hk, map_pow] at ha
   obtain ⟨l, rfl⟩ := (hφg.pow_eq_one_iff_dvd k).mp ha
-  rw [← hk, pow_mul, pow_card_eq_one, one_pow]
+  rw [← hk, pow_mul, Nat.card_eq_fintype_card, pow_card_eq_one, one_pow]
 
 /-- The group of group homomorphims from a finite cyclic group `G` of order `n` into the
-group of units of a ring `R` with all roots of unity is isomorphic to `G` -/
-lemma monoidHom_equiv_self (G R : Type*) [CommGroup G] [Finite G]
-    [IsCyclic G] [CommMonoid R] [HasAllRootsOfUnity R] :
-    Nonempty ((G →* Rˣ) ≃* G) := by
-  classical
+group of units of a ring `M` with all roots of unity is isomorphic to `G` -/
+lemma monoidHom_equiv_self (G M : Type*) [CommGroup G] [Finite G]
+    [IsCyclic G] [CommMonoid M] [HasNTorsionCyclicOfOrderN M (Nat.card G)] :
+    Nonempty ((G →* Mˣ) ≃* G) := by
   have : Fintype G := Fintype.ofFinite G
-  let n : ℕ+ := ⟨Fintype.card G, Fintype.card_pos⟩
-  let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Rˣ).some
-  have hcyc' : IsCyclic (rootsOfUnity n R) := HasAllRootsOfUnity.is_cyclic R n
-  have hord : Fintype.card (rootsOfUnity n R) = Fintype.card G := by
-    convert HasAllRootsOfUnity.card_rootsOfUnity R (Fintype.card G)
-  simp only [← Nat.card_eq_fintype_card] at hord
-  let e' := mulEquivOfCyclicCardEq hord
-  let e'' := rootsOfUnityUnitsMulEquiv R n
-  exact ⟨(e.trans e'').trans e'⟩
+  have : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
+  have hord := HasNTorsionCyclicOfOrderN.natCard_rootsOfUnity M (Nat.card G)
+  let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Mˣ).some
+  exact ⟨e.trans (rootsOfUnityUnitsMulEquiv M (Nat.card G)) |>.trans (mulEquivOfCyclicCardEq hord)⟩
 
 end IsCyclic
 
-lemma ZMod.exists_monoidHom_apply_ne_one (R : Type*) [CommRing R] [IsDomain R] [HasAllRootsOfUnity R]
-    (n : ℕ) [NeZero n] {a : ZMod n} (ha : a ≠ 0) :
-    ∃ φ : Multiplicative (ZMod n) →* Rˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
-  have hn : n ≠ 0 := NeZero.ne n
-  obtain ⟨ζ, hζ⟩ := HasAllRootsOfUnity.exists_prim_root R n
-  let nn : ℕ+ := ⟨n, Nat.pos_of_ne_zero hn⟩
-  have hnn : nn = n := rfl
-  let ζ' := (hnn ▸ hζ).toRootsOfUnity.1 -- `ζ` as a unit
-  have hζ' : IsPrimitiveRoot ζ' n := IsPrimitiveRoot.coe_units_iff.mp hζ
-  have hc : Fintype.card (Multiplicative (ZMod n)) = n := by
-    simp only [Fintype.card_multiplicative, ZMod.card]
-  exact IsCyclic.exists_apply_ne_one (Multiplicative (ZMod n)) Rˣ (hc ▸ hζ') <|
+/-- If `G` is a commutative group that contains a primitive `n`th root of unity
+and `a : ZMod n` is nonzero, then there exists a group homomorphism `φ` from the
+additive group `ZMod n` to the multiplicative group `G` such that `φ a ≠ 1`. -/
+lemma ZMod.exists_monoidHom_apply_ne_one {G : Type*} [CommGroup G] {n : ℕ} [NeZero n]
+    (hG : ∃ ζ : G, IsPrimitiveRoot ζ n) {a : ZMod n} (ha : a ≠ 0) :
+    ∃ φ : Multiplicative (ZMod n) →* Gˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
+  obtain ⟨ζ, hζ⟩ := hG
+  have hc : Nat.card (Multiplicative (ZMod n)) = n := by
+    simp only [Nat.card_eq_fintype_card, Fintype.card_multiplicative, card]
+  exact IsCyclic.exists_apply_ne_one
+    (hc.symm ▸ ⟨hζ.toRootsOfUnity.val, IsPrimitiveRoot.coe_units_iff.mp hζ⟩) <|
     by simp only [ne_eq, ofAdd_eq_one, ha, not_false_eq_true]
 
+-- (up to here)
 
 /-!
 ### Results for general finite abelian groups
@@ -310,7 +373,7 @@ instance finite (M R : Type*) [CommMonoid M] [Fintype Mˣ] [DecidableEq M] [Comm
     [IsDomain R] :
     Finite (MulChar M R) := by
   have : Finite (Mˣ →* Rˣ) := by
-    let S := rootsOfUnity ⟨Fintype.card Mˣ, Fintype.card_pos⟩ R
+    let S := rootsOfUnity (Fintype.card Mˣ) R
     let F := Mˣ →* S
     have fF : Finite F :=
       Finite.of_injective (fun f : F ↦ (f : Mˣ → S)) DFunLike.coe_injective
@@ -385,7 +448,9 @@ instance inhabited (R : Type*) [CommMonoidWithZero R] (n : ℕ) :
 
 variable {n : ℕ} {R : Type*} [CommRing R] [IsDomain R]
 
-instance finite : Finite (DirichletCharacter R n) := MulChar.finite ..
+instance finite : Finite (DirichletCharacter R n) :=
+  letI : Fintype (ZMod n)ˣ := n.casesOn UnitsInt.fintype inferInstance
+  MulChar.finite ..
 
 noncomputable instance fintype : Fintype (DirichletCharacter R n) := Fintype.ofFinite _
 
