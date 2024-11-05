@@ -7,7 +7,7 @@ import Mathlib.NumberTheory.DirichletCharacter.Basic
 -/
 
 -- [Mathlib.RingTheory.RootsOfUnity.Basic] ?
-/-- The canonical isomorphism from the `n`th roots of unity in`Mˣ`
+/-- The canonical isomorphism from the `n`th roots of unity in `Mˣ`
 to the `n`th roots of unity in `M`. -/
 def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ) :
     rootsOfUnity n Mˣ ≃* rootsOfUnity n M where
@@ -20,7 +20,7 @@ def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ) :
       map_mul' ζ ζ' := by simp only [Subgroup.coe_mul, Units.val_mul, MulMemClass.mk_mul_mk]
 
 -- [Mathlib.Algebra.BigOperators.Group.Finset] ?
-/-- The canonical isomoorphism between the monoid of homomorphisms from a finite product of
+/-- The canonical isomorphism between the monoid of homomorphisms from a finite product of
 commutative monoids to another commutative monoid and the product of the homomorphism monoids. -/
 @[to_additive]
 def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → Type*)
@@ -50,6 +50,7 @@ def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → 
         simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.mulSingle_apply,
           MonoidHom.mul_apply, mul_apply]
 
+-- [Mathlib.Algebra.Group.TypeTags]
 lemma Pi.mulSingle_multiplicativeOfAdd_eq {ι : Type*} [DecidableEq ι] {M : ι → Type*}
     [(i : ι) → AddMonoid (M i)] (i : ι) (a : M i) (j : ι) :
     Pi.mulSingle (f := fun i ↦ Multiplicative (M i)) i (Multiplicative.ofAdd a) j =
@@ -59,6 +60,7 @@ lemma Pi.mulSingle_multiplicativeOfAdd_eq {ι : Type*} [DecidableEq ι] {M : ι 
   · simp only [mulSingle, ne_eq, h, not_false_eq_true, Function.update_noteq, one_apply, single,
       zero_apply, ofAdd_zero]
 
+-- [Mathlib.Algebra.Group.TypeTags]
 lemma Pi.single_additiveOfMul_eq {ι : Type*} [DecidableEq ι] {M : ι → Type*}
     [(i : ι) → Monoid (M i)] (i : ι) (a : M i) (j : ι) :
     Pi.single (f := fun i ↦ Additive (M i)) i (Additive.ofMul a) j =
@@ -68,26 +70,14 @@ lemma Pi.single_additiveOfMul_eq {ι : Type*} [DecidableEq ι] {M : ι → Type*
   · simp only [single, ne_eq, h, not_false_eq_true, Function.update_noteq, zero_apply, mulSingle,
       one_apply, ofMul_one]
 
+-- [Mathlib.GroupTheory.OrderOfElement]
 @[to_additive]
 lemma orderOf_piMulSingle {ι : Type*} [DecidableEq ι] {M : ι → Type*} [(i : ι) → Monoid (M i)]
     (i : ι) (g : M i) :
-    orderOf (Pi.mulSingle i g) = orderOf g := by
-  rcases Nat.eq_zero_or_pos (orderOf g) with hg | hg
-  · rw [hg]
-    rw [orderOf_eq_zero_iff] at hg ⊢
-    contrapose! hg
-    simpa only [Pi.evalMonoidHom_apply, Pi.mulSingle_eq_same]
-      using MonoidHom.isOfFinOrder (Pi.evalMonoidHom _ i) hg
-  · rw [orderOf_eq_iff hg]
-    refine ⟨funext fun j ↦ ?_, fun m hm₁ hm₂ H ↦ ?_⟩
-    · simp only [Pi.pow_apply, Pi.one_apply]
-      rcases eq_or_ne j i with rfl | hij
-      · simp only [Pi.mulSingle_eq_same, pow_orderOf_eq_one]
-      · simp only [ne_eq, hij, not_false_eq_true, Pi.mulSingle_eq_of_ne, one_pow]
-    · apply_fun (· i) at H
-      simp only [Pi.pow_apply, Pi.mulSingle_eq_same, Pi.one_apply] at H
-      exact pow_ne_one_of_lt_orderOf hm₂.ne' hm₁ H
+    orderOf (Pi.mulSingle i g) = orderOf g :=
+  orderOf_injective (MonoidHom.mulSingle M i) (Pi.mulSingle_injective M i) g
 
+-- [Mathlib.GroupTheory.SpecificGroups.Cyclic]
 @[to_additive]
 lemma Subgroup.isCyclic_of_le {G : Type*} [Group G] {H H' : Subgroup G} (h : H ≤ H')
     [IsCyclic H'] :
@@ -98,10 +88,12 @@ lemma Subgroup.isCyclic_of_le {G : Type*} [Group G] {H H' : Subgroup G} (h : H �
   obtain ⟨n, hn⟩ := hg (e.symm x)
   exact ⟨n, by simp only at hn ⊢; rw [← map_zpow, hn, MulEquiv.apply_symm_apply]⟩
 
+-- [Mathlib.GroupTheory.Exponent]
 instance Monoid.neZero_exponent_of_finite {G : Type u} [LeftCancelMonoid G] [Finite G] :
     NeZero <| Monoid.exponent G :=
   ⟨Monoid.exponent_ne_zero_of_finite⟩
 
+-- [Mathlib.Data.Nat.Totient]
 instance Nat.neZero_totient {n : ℕ} [NeZero n] : NeZero n.totient :=
   ⟨(Nat.totient_pos.mpr <| NeZero.pos n).ne'⟩
 
@@ -191,6 +183,7 @@ end IsAlgClosed
 
 namespace IsCyclic
 
+-- [Mathlib.RingTheory.RootsOfUnity.Basic]
 /-- The isomorphism from the group of group homomorphisms from a finite cyclic group `G` of order
 `n` into another group `G'` to the group of `n`th roots of unity in `G'` determined by a generator
 `g` of `G`. It sends `φ : G →* G'` to `φ g`. -/
@@ -221,6 +214,7 @@ lemma monoidHom_mulEquiv_rootsOfUnity (G : Type*) [CommGroup G] [Finite G] [IsCy
   have : Fintype G := Fintype.ofFinite _
   exact ⟨Nat.card_eq_fintype_card (α  := G) ▸ monoidHomMulEquivRootsOfUnityOfGenerator hg G'⟩
 
+-- [Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots]
 /-- If `G` is cyclic of order `n` and `G'` contains a primitive `n`th root of unity,
 then for each `a : G` with `a ≠ 1` there is a homomorphism `φ : G →* G'` such that `φ a ≠ 1`. -/
 lemma exists_apply_ne_one {G G' : Type*} [CommGroup G] [IsCyclic G] [Finite G] [CommGroup G']
@@ -258,6 +252,7 @@ lemma monoidHom_equiv_self (G M : Type*) [CommGroup G] [Finite G]
 
 end IsCyclic
 
+-- [Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots]
 /-- If `M` is a commutative group that contains a primitive `n`th root of unity
 and `a : ZMod n` is nonzero, then there exists a group homomorphism `φ` from the
 additive group `ZMod n` to the multiplicative group `Mˣ` such that `φ a ≠ 1`. -/
