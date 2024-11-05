@@ -293,8 +293,6 @@ lemma ZMod.exists_monoidHom_apply_ne_one {M : Type*} [CommMonoid M] {n : ℕ} [N
     (hc ▸ ⟨hζ.toRootsOfUnity.val, IsPrimitiveRoot.coe_units_iff.mp hζ⟩) <|
     by simp only [ne_eq, ofAdd_eq_one, ha, not_false_eq_true]
 
--- (up to here)
-
 /-!
 ### Results for general finite abelian groups
 -/
