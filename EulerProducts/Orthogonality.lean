@@ -22,6 +22,7 @@ def rootsOfUnityUnitsMulEquiv (M : Type*) [CommMonoid M] (n : ℕ) :
 -- [Mathlib.Algebra.BigOperators.Group.Finset] ?
 /-- The canonical isomoorphism between the monoid of homomorphisms from a finite product of
 commutative monoids to another commutative monoid and the product of the homomorphism monoids. -/
+@[to_additive]
 def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → Type*)
     [(i : ι) → CommMonoid (M i)] (M' : Type*) [CommMonoid M'] :
     (((i : ι) → M i) →* M') ≃* ((i : ι) → (M i →* M')) where
@@ -109,8 +110,10 @@ instance Nat.neZero_totient {n : ℕ} [NeZero n] : NeZero n.totient :=
 -/
 
 /-- This is a type class recording that a commutative monoid `M` contains primitive `n`th
-roots of unity for all `n` and the group of `n`th roots of unity is cyclic for all `n`.
-Such monoids are suitable targets w.r.t. duality statements for groups of exponent `n`. -/
+roots of unity and such that the group of `n`th roots of unity is cyclic.
+
+Such monoids are suitable targets in the context of duality statements for groups
+of exponent `n`. -/
 class HasEnoughRootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) where
   prim : ∃ m : M, IsPrimitiveRoot m n
   cyc : IsCyclic <| rootsOfUnity n M
@@ -133,7 +136,7 @@ lemma of_dvd (M : Type*) [CommMonoid M] {m n : ℕ} [NeZero n] (hmn : m ∣ n)
     have ⟨ζ, hζ⟩ := exists_primitiveRoot M n
     have ⟨k, hk⟩ := hmn
     ⟨ζ ^ k, IsPrimitiveRoot.pow (NeZero.pos n) hζ (mul_comm m k ▸ hk)⟩
-  cyc := Subgroup.isCyclic_of_le <| rootsOfUnity_le_of_dvd (M := M) hmn
+  cyc := Subgroup.isCyclic_of_le <| rootsOfUnity_le_of_dvd hmn
 
 /-- If `M` satisfies `HasEnoughRootsOfUnity`, then the group of `n`th roots of unity
 in `M` is finite. -/
@@ -148,11 +151,7 @@ instance finite_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp <| hg x
   refine ⟨k, ?_⟩
   simp only [ZMod.natCast_val, ← hk, f, ZMod.coe_intCast]
-  suffices ∃ m, k = k % n + m * n by
-    obtain ⟨m, hm⟩ := this
-    nth_rewrite 2 [hm]
-    rw [zpow_add, mul_comm m, zpow_mul, zpow_natCast, hg', one_zpow, mul_one]
-  exact ⟨k / n, (k.emod_add_ediv' n).symm⟩
+  exact (zpow_eq_zpow_emod' k hg').symm
 
 /-- If `M` satisfies `HasEnoughRootsOfUnity`, then the group of `n`th roots of unity
 in `M` (is cyclic and) has order `n`. -/
