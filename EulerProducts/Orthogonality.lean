@@ -524,7 +524,7 @@ theorem sum_characters_eq [HasEnoughRootsOfUnity R n.totient] (a : ZMod n) :
       using congrArg Nat.cast <| card_eq_totient_of_hasEnoughRootsOfUnity n
   · exact sum_characters_eq_zero ha
 
-/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for `a` and `b`
+/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
 mod `n` with values in `R` vanihses if `a ≠ b` and has the value `n.totient` if `a = b`. -/
 theorem sum_char_inv_mul_char_eq [HasEnoughRootsOfUnity R n.totient] {a : ZMod n}
