@@ -49,32 +49,96 @@ def Pi.monoidHomMulEquiv {ι : Type*} [Fintype ι] [DecidableEq ι] (M : ι → 
         simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.mulSingle_apply,
           MonoidHom.mul_apply, mul_apply]
 
-/-!
-### Commutative monoids that have all roots of unity
--/
+lemma Pi.mulSingle_multiplicativeOfAdd_eq {ι : Type*} [DecidableEq ι] {M : ι → Type*}
+    [(i : ι) → AddMonoid (M i)] (i : ι) (a : M i) (j : ι) :
+    Pi.mulSingle (f := fun i ↦ Multiplicative (M i)) i (Multiplicative.ofAdd a) j =
+      Multiplicative.ofAdd ((Pi.single i a) j) := by
+  rcases eq_or_ne j i with rfl | h
+  · simp only [mulSingle_eq_same, single_eq_same]
+  · simp only [mulSingle, ne_eq, h, not_false_eq_true, Function.update_noteq, one_apply, single,
+      zero_apply, ofAdd_zero]
 
+lemma Pi.single_additiveOfMul_eq {ι : Type*} [DecidableEq ι] {M : ι → Type*}
+    [(i : ι) → Monoid (M i)] (i : ι) (a : M i) (j : ι) :
+    Pi.single (f := fun i ↦ Additive (M i)) i (Additive.ofMul a) j =
+      Additive.ofMul ((Pi.mulSingle i a) j) := by
+  rcases eq_or_ne j i with rfl | h
+  · simp only [mulSingle_eq_same, single_eq_same]
+  · simp only [single, ne_eq, h, not_false_eq_true, Function.update_noteq, zero_apply, mulSingle,
+      one_apply, ofMul_one]
+
+@[to_additive]
+lemma orderOf_piMulSingle {ι : Type*} [DecidableEq ι] {M : ι → Type*} [(i : ι) → Monoid (M i)]
+    (i : ι) (g : M i) :
+    orderOf (Pi.mulSingle i g) = orderOf g := by
+  rcases Nat.eq_zero_or_pos (orderOf g) with hg | hg
+  · rw [hg]
+    rw [orderOf_eq_zero_iff] at hg ⊢
+    contrapose! hg
+    simpa only [Pi.evalMonoidHom_apply, Pi.mulSingle_eq_same]
+      using MonoidHom.isOfFinOrder (Pi.evalMonoidHom _ i) hg
+  · rw [orderOf_eq_iff hg]
+    refine ⟨funext fun j ↦ ?_, fun m hm₁ hm₂ H ↦ ?_⟩
+    · simp only [Pi.pow_apply, Pi.one_apply]
+      rcases eq_or_ne j i with rfl | hij
+      · simp only [Pi.mulSingle_eq_same, pow_orderOf_eq_one]
+      · simp only [ne_eq, hij, not_false_eq_true, Pi.mulSingle_eq_of_ne, one_pow]
+    · apply_fun (· i) at H
+      simp only [Pi.pow_apply, Pi.mulSingle_eq_same, Pi.one_apply] at H
+      exact pow_ne_one_of_lt_orderOf hm₂.ne' hm₁ H
+
+@[to_additive]
+lemma Subgroup.isCyclic_of_le {G : Type*} [Group G] {H H' : Subgroup G} (h : H ≤ H')
+    [IsCyclic H'] :
+    IsCyclic H := by
+  let e := Subgroup.subgroupOfEquivOfLe h
+  obtain ⟨g, hg⟩ := Subgroup.isCyclic <| H.subgroupOf H'
+  refine ⟨e g, fun x ↦ ?_⟩
+  obtain ⟨n, hn⟩ := hg (e.symm x)
+  exact ⟨n, by simp only at hn ⊢; rw [← map_zpow, hn, MulEquiv.apply_symm_apply]⟩
+
+instance Monoid.neZero_exponent_of_finite {G : Type u} [LeftCancelMonoid G] [Finite G] :
+    NeZero <| Monoid.exponent G :=
+  ⟨Monoid.exponent_ne_zero_of_finite⟩
+
+instance Nat.neZero_totient {n : ℕ} [NeZero n] : NeZero n.totient :=
+  ⟨(Nat.totient_pos.mpr <| NeZero.pos n).ne'⟩
+
+/-!
+### Commutative monoids that have enough roots of unity
+-/
 
 /-- This is a type class recording that a commutative monoid `M` contains primitive `n`th
 roots of unity for all `n` and the group of `n`th roots of unity is cyclic for all `n`.
 Such monoids are suitable targets w.r.t. duality statements for groups of exponent `n`. -/
-class HasNTorsionCyclicOfOrderN (M : Type*) [CommMonoid M] (n : ℕ) where
+class HasEnoughRootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) where
   prim : ∃ m : M, IsPrimitiveRoot m n
   cyc : IsCyclic <| rootsOfUnity n M
 
-namespace HasNTorsionCyclicOfOrderN
+namespace HasEnoughRootsOfUnity
 
-lemma exists_primitiveRoot (M : Type*) [CommMonoid M] (n : ℕ) [HasNTorsionCyclicOfOrderN M n] :
+lemma exists_primitiveRoot (M : Type*) [CommMonoid M] (n : ℕ) [HasEnoughRootsOfUnity M n] :
     ∃ ζ : M, IsPrimitiveRoot ζ n :=
-  HasNTorsionCyclicOfOrderN.prim
+  HasEnoughRootsOfUnity.prim
 
-instance rootsOfUnity_isCyclic (M : Type*) [CommMonoid M] (n : ℕ) [HasNTorsionCyclicOfOrderN M n] :
+instance rootsOfUnity_isCyclic (M : Type*) [CommMonoid M] (n : ℕ) [HasEnoughRootsOfUnity M n] :
     IsCyclic (rootsOfUnity n M) :=
-  HasNTorsionCyclicOfOrderN.cyc
+  HasEnoughRootsOfUnity.cyc
 
-/-- If `M` satisfies `HasNTorsionCyclicOfOrderN`, then the group of `n`th roots of unity
+/-- If `HasEnoughRootsOfUnity M n` and `m ∣ n`, then also `HasEnoughRootsOfUnity M m`. -/
+lemma of_dvd (M : Type*) [CommMonoid M] {m n : ℕ} [NeZero n] (hmn : m ∣ n)
+    [HasEnoughRootsOfUnity M n] :
+    HasEnoughRootsOfUnity M m where
+  prim :=
+    have ⟨ζ, hζ⟩ := exists_primitiveRoot M n
+    have ⟨k, hk⟩ := hmn
+    ⟨ζ ^ k, IsPrimitiveRoot.pow (NeZero.pos n) hζ (mul_comm m k ▸ hk)⟩
+  cyc := Subgroup.isCyclic_of_le <| rootsOfUnity_le_of_dvd (M := M) hmn
+
+/-- If `M` satisfies `HasEnoughRootsOfUnity`, then the group of `n`th roots of unity
 in `M` is finite. -/
 instance finite_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
-    [HasNTorsionCyclicOfOrderN M n] :
+    [HasEnoughRootsOfUnity M n] :
     Finite <| rootsOfUnity n M := by
   have := rootsOfUnity_isCyclic M n
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity n M)
@@ -90,10 +154,10 @@ instance finite_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
     rw [zpow_add, mul_comm m, zpow_mul, zpow_natCast, hg', one_zpow, mul_one]
   exact ⟨k / n, (k.emod_add_ediv' n).symm⟩
 
-/-- If `M` satisfies `HasNTorsionCyclicOfOrderN`, then the group of `n`th roots of unity
+/-- If `M` satisfies `HasEnoughRootsOfUnity`, then the group of `n`th roots of unity
 in `M` (is cyclic and) has order `n`. -/
 lemma natCard_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
-    [HasNTorsionCyclicOfOrderN M n] :
+    [HasEnoughRootsOfUnity M n] :
     Nat.card (rootsOfUnity n M) = n := by
   obtain ⟨ζ, h⟩ := exists_primitiveRoot M n
   have : Fintype <| rootsOfUnity n M := Fintype.ofFinite _
@@ -108,89 +172,19 @@ lemma natCard_rootsOfUnity (M : Type*) [CommMonoid M] (n : ℕ) [NeZero n]
     simp only [mem_rootsOfUnity, PNat.mk_coe]
     rw [← Units.eq_iff, Units.val_pow_eq_pow_val, IsUnit.unit_spec, h.pow_eq_one, Units.val_one]
 
-end HasNTorsionCyclicOfOrderN
+end HasEnoughRootsOfUnity
 
 namespace IsAlgClosed
 
-/-- An algebraically closed field of characteristic zero satisfies `HasNTorsionCyclicOfOrderN`
+/-- An algebraically closed field of characteristic zero satisfies `HasEnoughRootsOfUnity`
 for all `n`. -/
-instance hasNTorsionCyclicOfOrderN (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ)
+instance hasEnoughRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ)
     [NeZero n] :
-    HasNTorsionCyclicOfOrderN F n where
+    HasEnoughRootsOfUnity F n where
   prim := Subtype.coe_mk n (NeZero.pos n) ▸ IsCyclotomicExtension.exists_prim_root F rfl
   cyc := rootsOfUnity.isCyclic F n
 
 end IsAlgClosed
-
-/-
-/-- This is a type class recording that a commutative monoid `M` contains primitive `n`th
-roots of unity for all `n` and the group of `n`th roots of unity is cyclic for all `n`.
-
-Rings with this property (e.g., algebraically closed fields of characteristic zero) are useful
-as targets of `MulChar`s. -/
-class HasAllRootsOfUnity (M : Type*) [CommMonoid M] where
-  hasAllRootsOfUnity (n : ℕ) [NeZero n] : ∃ ζ : M, IsPrimitiveRoot ζ n
-  is_cyclic' (n : ℕ) [NeZero n] : IsCyclic (rootsOfUnity n M)
-
-lemma HasAllRootsOfUnity.exists_prim_root (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
-    (n : ℕ) [NeZero n] :
-    ∃ ζ : M, IsPrimitiveRoot ζ n :=
-  HasAllRootsOfUnity.hasAllRootsOfUnity n
-
-lemma HasAllRootsOfUnity.is_cyclic (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
-    (n : ℕ) [NeZero n] :
-    IsCyclic (rootsOfUnity n M) :=
-  HasAllRootsOfUnity.is_cyclic' n
-
-instance HasAllRootsOfUnity.finite_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
-    (n : ℕ) [NeZero n] :
-    Finite <| rootsOfUnity n M := by
-  have := HasAllRootsOfUnity.is_cyclic M n
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity n M)
-  have hg' : g ^ n = 1 := OneMemClass.coe_eq_one.mp g.prop
-  let f (j : ZMod n) : rootsOfUnity n M := g ^ (j.val : ℤ)
-  refine Finite.of_surjective f fun x ↦ ?_
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp <| hg x
-  refine ⟨k, ?_⟩
-  simp only [ZMod.natCast_val, ← hk, f, ZMod.coe_intCast]
-  suffices ∃ m, k = k % n + m * n by
-    obtain ⟨m, hm⟩ := this
-    nth_rewrite 2 [hm]
-    rw [zpow_add, mul_comm m, zpow_mul, zpow_natCast, hg', one_zpow, mul_one]
-  exact ⟨k / n, (k.emod_add_ediv' n).symm⟩
-
-noncomputable
-instance HasAllRootsOfUnity.fintype_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
-    (n : ℕ) [NeZero n] :
-    Fintype <| rootsOfUnity n M := Fintype.ofFinite _
-
-lemma HasAllRootsOfUnity.card_rootsOfUnity (M : Type*) [CommMonoid M] [HasAllRootsOfUnity M]
-    (n : ℕ) [NeZero n] :
-    Fintype.card (rootsOfUnity n M) = n := by
-  obtain ⟨ζ, h⟩ := HasAllRootsOfUnity.exists_prim_root M n
-  have hcyc := HasAllRootsOfUnity.is_cyclic M n
-  rw [← IsCyclic.exponent_eq_card]
-  refine dvd_antisymm ?_ ?_
-  · exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
-  · nth_rewrite 1 [h.eq_orderOf]
-    rw [← (h.isUnit <| NeZero.pos n).unit_spec, orderOf_units]
-    let ζ' : rootsOfUnity n M := ⟨(h.isUnit <| NeZero.pos n).unit, ?_⟩
-    · rw [← Subgroup.orderOf_mk]
-      exact Monoid.order_dvd_exponent ζ'
-    simp only [mem_rootsOfUnity, PNat.mk_coe]
-    rw [← Units.eq_iff, Units.val_pow_eq_pow_val, IsUnit.unit_spec, h.pow_eq_one, Units.val_one]
-
-namespace IsAlgClosed
-
-instance hasAllRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] :
-    HasAllRootsOfUnity F where
-  hasAllRootsOfUnity n _inst :=
-    have : (⟨n, Nat.pos_of_ne_zero <| NeZero.ne n⟩ : ℕ+) = n := rfl
-    this ▸ IsCyclotomicExtension.exists_prim_root F rfl
-  is_cyclic' n _inst := rootsOfUnity.isCyclic F n
-
-end IsAlgClosed
- -/
 
 /-!
 ### The multiplicative version of the classification theorem for finite abelian groups
@@ -277,27 +271,27 @@ lemma exists_apply_ne_one {G G' : Type*} [CommGroup G] [IsCyclic G] [Finite G] [
 /-- The group of group homomorphims from a finite cyclic group `G` of order `n` into the
 group of units of a ring `M` with all roots of unity is isomorphic to `G` -/
 lemma monoidHom_equiv_self (G M : Type*) [CommGroup G] [Finite G]
-    [IsCyclic G] [CommMonoid M] [HasNTorsionCyclicOfOrderN M (Nat.card G)] :
+    [IsCyclic G] [CommMonoid M] [HasEnoughRootsOfUnity M (Nat.card G)] :
     Nonempty ((G →* Mˣ) ≃* G) := by
   have : Fintype G := Fintype.ofFinite G
   have : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
-  have hord := HasNTorsionCyclicOfOrderN.natCard_rootsOfUnity M (Nat.card G)
+  have hord := HasEnoughRootsOfUnity.natCard_rootsOfUnity M (Nat.card G)
   let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Mˣ).some
   exact ⟨e.trans (rootsOfUnityUnitsMulEquiv M (Nat.card G)) |>.trans (mulEquivOfCyclicCardEq hord)⟩
 
 end IsCyclic
 
-/-- If `G` is a commutative group that contains a primitive `n`th root of unity
+/-- If `M` is a commutative group that contains a primitive `n`th root of unity
 and `a : ZMod n` is nonzero, then there exists a group homomorphism `φ` from the
-additive group `ZMod n` to the multiplicative group `G` such that `φ a ≠ 1`. -/
-lemma ZMod.exists_monoidHom_apply_ne_one {G : Type*} [CommGroup G] {n : ℕ} [NeZero n]
-    (hG : ∃ ζ : G, IsPrimitiveRoot ζ n) {a : ZMod n} (ha : a ≠ 0) :
-    ∃ φ : Multiplicative (ZMod n) →* Gˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
+additive group `ZMod n` to the multiplicative group `Mˣ` such that `φ a ≠ 1`. -/
+lemma ZMod.exists_monoidHom_apply_ne_one {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n]
+    (hG : ∃ ζ : M, IsPrimitiveRoot ζ n) {a : ZMod n} (ha : a ≠ 0) :
+    ∃ φ : Multiplicative (ZMod n) →* Mˣ, φ (Multiplicative.ofAdd a) ≠ 1 := by
   obtain ⟨ζ, hζ⟩ := hG
-  have hc : Nat.card (Multiplicative (ZMod n)) = n := by
+  have hc : n = Nat.card (Multiplicative (ZMod n)) := by
     simp only [Nat.card_eq_fintype_card, Fintype.card_multiplicative, card]
   exact IsCyclic.exists_apply_ne_one
-    (hc.symm ▸ ⟨hζ.toRootsOfUnity.val, IsPrimitiveRoot.coe_units_iff.mp hζ⟩) <|
+    (hc ▸ ⟨hζ.toRootsOfUnity.val, IsPrimitiveRoot.coe_units_iff.mp hζ⟩) <|
     by simp only [ne_eq, ofAdd_eq_one, ha, not_false_eq_true]
 
 -- (up to here)
@@ -311,46 +305,65 @@ namespace CommGroup
 open MonoidHom
 
 private
-lemma exists_apply_ne_one_aux (G R : Type*) [CommGroup G] [Finite G] [CommMonoid R]
-    (H : ∀ n : ℕ, n ≠ 0 → ∀ a : ZMod n, a ≠ 0 →
-       ∃ φ : Multiplicative (ZMod n) →* R, φ (Multiplicative.ofAdd a) ≠ 1)
+lemma dvd_exponent {ι G : Type*} [Fintype ι] [CommGroup G] {n : ι → ℕ}
+    (e : G ≃* ((i : ι) → Multiplicative (ZMod (n i)))) (i : ι) :
+  n i ∣ Monoid.exponent G := by
+  classical
+  have : n i = orderOf (e.symm <| Pi.mulSingle i <| Multiplicative.ofAdd 1) := by
+    rw [MulEquiv.orderOf_eq, orderOf_piMulSingle, orderOf_ofAdd_eq_addOrderOf]
+    exact (ZMod.addOrderOf_one (n i)).symm
+  exact this ▸ Monoid.order_dvd_exponent _
+
+private
+lemma exists_apply_ne_one_aux (G M : Type*) [CommGroup G] [Finite G] [CommMonoid M]
+    (H : ∀ n : ℕ, n ∣ Monoid.exponent G → ∀ a : ZMod n, a ≠ 0 →
+       ∃ φ : Multiplicative (ZMod n) →* M, φ (Multiplicative.ofAdd a) ≠ 1)
     {a : G} (ha : a ≠ 1) :
-    ∃ φ : G →* R, φ a ≠ 1 := by
-  obtain ⟨ι, _, n, h₁, h₂⟩ := CommGroup.equiv_prod_multiplicative_zmod G
-  let e := h₂.some
+    ∃ φ : G →* M, φ a ≠ 1 := by
+  obtain ⟨ι, _, n, _, h⟩ := CommGroup.equiv_prod_multiplicative_zmod G
+  let e := h.some
   obtain ⟨i, hi⟩ : ∃ i : ι, e a i ≠ 1 := by
     contrapose! ha
     suffices e a = 1 from (MulEquiv.map_eq_one_iff e).mp this
     exact funext ha
-  have hi' : Multiplicative.toAdd (e a i) ≠ 0 := by
+  have hi : Multiplicative.toAdd (e a i) ≠ 0 := by
     simp only [ne_eq, toAdd_eq_zero, hi, not_false_eq_true]
-  obtain ⟨φi, hφi⟩ := H (n i) (Nat.not_eq_zero_of_lt (h₁ i)) (Multiplicative.toAdd <| e a i) hi'
+  obtain ⟨φi, hφi⟩ := H (n i) (dvd_exponent e i) (Multiplicative.toAdd <| e a i) hi
   simp only [ofAdd_toAdd] at hφi
   let x := φi.comp (Pi.evalMonoidHom (fun (i : ι) ↦ Multiplicative (ZMod (n i))) i)
   use x.comp e
   simpa only [coe_comp, coe_coe, Function.comp_apply, Pi.evalMonoidHom_apply, ne_eq, x]
 
-/-- If `G` is a finite commutative group and `R` is a ring with all roots of unity,
-then for each `a ≠ 1` in `G`, there exists a group homomorphism
-`φ : G → Rˣ` such that `φ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
-    [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : G} (ha : a ≠ 1) :
-    ∃ φ : G →* Rˣ, φ a ≠ 1 :=
-  exists_apply_ne_one_aux G Rˣ
-    (fun n hn _ ↦ have : NeZero n := ⟨hn⟩; ZMod.exists_monoidHom_apply_ne_one R n) ha
+/-- If `G` is a finite commutative group of exponent `n` and `M` is a commutative monoid
+with cyclic `n`-torsion of order `n`, then for each `a ≠ 1` in `G`, there exists a
+group homomorphism `φ : G → Mˣ` such that `φ a ≠ 1`. -/
+theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
+    [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] {a : G} (ha : a ≠ 1) :
+    ∃ φ : G →* Mˣ, φ a ≠ 1 := by
+  refine exists_apply_ne_one_aux G Mˣ (fun n hn a ha₀ ↦ ?_) ha
+  have : NeZero n := ⟨fun H ↦ NeZero.ne _ <| Nat.eq_zero_of_zero_dvd (H ▸ hn)⟩
+  refine ZMod.exists_monoidHom_apply_ne_one ?_ ha₀
+  have : HasEnoughRootsOfUnity M n := HasEnoughRootsOfUnity.of_dvd M hn
+  exact HasEnoughRootsOfUnity.exists_primitiveRoot M n
 
-/-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Rˣ`
-of `R`-valued characters when `R` is a ring that has all roots of unity. -/
-theorem monoidHom_mulEquiv_self_of_hasAllRootsOfUnity (G R : Type*) [CommGroup G] [Finite G]
-    [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
-    Nonempty (G ≃* (G →* Rˣ)) := by
+/-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Mˣ`
+of `M`-valued characters when `M` is a commutative monoid with cyclic `n`-torsion of order `n`,
+where `n` is the exponent of `G`. -/
+theorem monoidHom_mulEquiv_self_of_hasAllRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
+    [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] :
+    Nonempty (G ≃* (G →* Mˣ)) := by
   classical
   obtain ⟨ι, _, n, ⟨h₁, h₂⟩⟩ := CommGroup.equiv_prod_multiplicative_zmod G
   let e := h₂.some
-  let e' := Pi.monoidHomMulEquiv (fun i ↦ Multiplicative (ZMod (n i))) Rˣ
-  let e'' := MulEquiv.monoidHomCongr e (MulEquiv.refl Rˣ)
+  let e' := Pi.monoidHomMulEquiv (fun i ↦ Multiplicative (ZMod (n i))) Mˣ
+  let e'' := MulEquiv.monoidHomCongr e (MulEquiv.refl Mˣ)
   have : ∀ i, NeZero (n i) := fun i ↦ NeZero.of_gt (h₁ i)
-  let E i := (IsCyclic.monoidHom_equiv_self (Multiplicative (ZMod (n i))) R).some
+  have inst i : HasEnoughRootsOfUnity M (Nat.card (Multiplicative (ZMod (n i)))) := by
+    have hdvd : Nat.card (Multiplicative (ZMod (n i))) ∣ Monoid.exponent G := by
+      convert dvd_exponent e i
+      simp only [Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card]
+    exact HasEnoughRootsOfUnity.of_dvd M hdvd
+  let E i := (IsCyclic.monoidHom_equiv_self (Multiplicative (ZMod (n i))) M).some
   let E' := MulEquiv.piCongrRight E
   exact ⟨e.trans E'.symm|>.trans e'.symm|>.trans e''.symm⟩
 
@@ -375,13 +388,12 @@ instance finite (M R : Type*) [CommMonoid M] [Fintype Mˣ] [DecidableEq M] [Comm
   have : Finite (Mˣ →* Rˣ) := by
     let S := rootsOfUnity (Fintype.card Mˣ) R
     let F := Mˣ →* S
-    have fF : Finite F :=
-      Finite.of_injective (fun f : F ↦ (f : Mˣ → S)) DFunLike.coe_injective
+    have fF : Finite F := .of_injective (fun f ↦ (f : Mˣ → S)) DFunLike.coe_injective
     refine Finite.of_surjective (fun f : F ↦ (Subgroup.subtype _).comp f) (fun f ↦ ?_)
     have H (a : Mˣ) : f a ∈ S := by
       simp only [mem_rootsOfUnity, PNat.mk_coe, ← map_pow, pow_card_eq_one, map_one, S]
     use MonoidHom.codRestrict f S H
-    ext
+    ext1
     simp only [MonoidHom.coe_comp, Subgroup.coeSubtype, Function.comp_apply,
       MonoidHom.codRestrict_apply]
   exact Finite.of_equiv _ MulChar.equivToUnitHom.symm
@@ -399,11 +411,12 @@ lemma exists_apply_ne_one_iff_exists_monoidHom {M R : Type*} [CommMonoid M]
   · contrapose! hφ
     simpa only [ofUnitHom_eq, equivToUnitHom_symm_coe, Units.val_eq_one] using hφ
 
-/-- If `M` is a finite commutative monoid and `R` is a ring that has all roots of unity,
+/-- If `M` is a finite commutative monoid and `R` is a ring that has enough roots of unity,
 then for each `a ≠ 1` in `M`, there exists a multiplicative character `χ : M → R` such that
 `χ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
-    [DecidableEq M] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {a : M} (ha : a ≠ 1) :
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
+    [DecidableEq M] [CommRing R] [Nontrivial R] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)]
+    {a : M} (ha : a ≠ 1) :
     ∃ χ : MulChar M R, χ a ≠ 1 := by
   by_cases hu : IsUnit a
   . let a' : Mˣ := hu.unit -- `a` as a unit
@@ -417,15 +430,15 @@ theorem exists_apply_ne_one_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [
     exact zero_ne_one
 
 /-- The cardinality of the group of `R` valued multiplicative characters on a finite commutative
-monoid `M` is the same as that of its unit group `Mˣ` when `R` is a ring that has all roots
+monoid `M` is the same as that of its unit group `Mˣ` when `R` is a ring that has enough roots
 of unity. -/
-lemma card_eq_card_units_of_hasAllRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
-    [DecidableEq M] [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] :
-    Fintype.card (MulChar M R) = Fintype.card Mˣ := by
+lemma card_eq_card_units_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
+    [DecidableEq M] [CommRing R] [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)] :
+    Fintype.card (MulChar M R) = Fintype.card Mˣ :=
   let e := (CommGroup.monoidHom_mulEquiv_self_of_hasAllRootsOfUnity Mˣ R).some.toEquiv
   have : Finite (Mˣ →* Rˣ) := Finite.of_equiv _ e
   have : Fintype (Mˣ →* Rˣ) := Fintype.ofFinite (Mˣ →* Rˣ)
-  exact (Fintype.card_congr <| MulChar.equivToUnitHom).trans (Fintype.card_congr e).symm
+  (Fintype.card_congr <| MulChar.equivToUnitHom).trans (Fintype.card_congr e).symm
 
 end MulChar
 
@@ -466,49 +479,59 @@ lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
     (h : ∀ a : ZMod n, a ≠ 1 → ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 ↔ a ≠ 1 := by
   refine ⟨fun H ha ↦ ?_, fun H ↦ sum_characters_eq_zero_aux <| h a H⟩
-  simp only [ha, isUnit_one, not_true_eq_false, map_one, Finset.sum_const, nsmul_eq_mul, mul_one,
-    Nat.cast_eq_zero, Finset.card_eq_zero, Finset.univ_eq_empty_iff] at H
+  simp only [ha, map_one, Finset.sum_const, nsmul_eq_mul, mul_one, Nat.cast_eq_zero,
+    Finset.card_eq_zero, Finset.univ_eq_empty_iff] at H
   exact (not_isEmpty_of_nonempty <| DirichletCharacter R n) H
 
 end general
 
-variable {R : Type*} [CommRing R] [IsDomain R] [HasAllRootsOfUnity R] {n : ℕ} [NeZero n]
+variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
+
+variable (R n) in
+omit [IsDomain R] in
+private lemma HasEnoughRootsOfUnity.of_totient [HasEnoughRootsOfUnity R n.totient] :
+    HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ) :=
+  HasEnoughRootsOfUnity.of_dvd R (ZMod.card_units_eq_totient n ▸  Group.exponent_dvd_card)
 
 variable (n) in
 /-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has all
 roots of unity. -/
-lemma card_eq_totient_of_hasAllRootsOfUnity :
+lemma card_eq_totient_of_hasEnoughRootsOfUnity [inst : HasEnoughRootsOfUnity R n.totient] :
     Fintype.card (DirichletCharacter R n) = n.totient := by
   rw [← ZMod.card_units_eq_totient n]
-  convert MulChar.card_eq_card_units_of_hasAllRootsOfUnity (ZMod n) R
+  have := HasEnoughRootsOfUnity.of_totient R n
+  exact MulChar.card_eq_card_units_of_hasEnoughRootsOfUnity (ZMod n) R
 
-/-- If `R` is a ring that has all roots of unity and `n ≠ 0`, then for each
+/-- If `R` is a ring that has enough roots of unity and `n ≠ 0`, then for each
 `a ≠ 1` in `ZMod n`, there exists a Dirichlet character `χ` mod `n` with values in `R`
 such that `χ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasAllRootsOfUnity ⦃a : ZMod n⦄ (ha : a ≠ 1) :
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity [HasEnoughRootsOfUnity R n.totient]
+    ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∃ χ : DirichletCharacter R n, χ a ≠ 1 :=
-  MulChar.exists_apply_ne_one_of_hasAllRootsOfUnity (ZMod n) R ha
+  have := HasEnoughRootsOfUnity.of_totient R n
+  MulChar.exists_apply_ne_one_of_hasEnoughRootsOfUnity (ZMod n) R ha
 
-/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for each `a ≠ 1` in `ZMod n`,
+/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for each `a ≠ 1` in `ZMod n`,
 the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes. -/
-theorem sum_characters_eq_zero ⦃a : ZMod n⦄ (ha : a ≠ 1) :
+theorem sum_characters_eq_zero [HasEnoughRootsOfUnity R n.totient] ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 :=
-  sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasAllRootsOfUnity ha
+  sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasEnoughRootsOfUnity ha
 
-/-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for `a` in `ZMod n`,
+/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for `a` in `ZMod n`,
 the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes if `a ≠ 1`
 and has the value `n.totient` if `a = 1`. -/
-theorem sum_characters_eq (a : ZMod n) :
+theorem sum_characters_eq [HasEnoughRootsOfUnity R n.totient] (a : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a = if a = 1 then (n.totient : R) else 0 := by
   split_ifs with ha
   · simpa only [ha, map_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
-      using congrArg Nat.cast <| card_eq_totient_of_hasAllRootsOfUnity n
+      using congrArg Nat.cast <| card_eq_totient_of_hasEnoughRootsOfUnity n
   · exact sum_characters_eq_zero ha
 
 /-- If `R` is ring that has all roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
 mod `n` with values in `R` vanihses if `a ≠ b` and has the value `n.totient` if `a = b`. -/
-theorem sum_char_inv_mul_char_eq {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
+theorem sum_char_inv_mul_char_eq [HasEnoughRootsOfUnity R n.totient] {a : ZMod n}
+    (ha : IsUnit a) (b : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a⁻¹ * χ b = if a = b then n.totient else 0 := by
   convert sum_characters_eq (a⁻¹ * b) using 2 with χ
   · rw [map_mul]
