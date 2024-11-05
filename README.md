@@ -17,9 +17,6 @@ Current projects:
 * [__EulerProducts/DirichletLSeries.lean__](EulerProducts/DirichletLSeries.lean):
   results on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
   von Mangoldt functions)
-* [__EulerProducts/NonvanishingQuadratic.lean__](EulerProducts/NonvanishingQuadratic.lean):
-  This contains a proof of the non-vanishing of the L-function of a nontrivial quadratic
-  Dirichlet character at 1.
 * [__EulerProducts/Orthogonality.lean__](EulerProducts/Orthogonality.lean):
   A proof of the orthogonality relation of Dirichlet characters of given modulus.
 * [__EulerProducts/PNT.lean__](EulerProducts/PNT.lean):

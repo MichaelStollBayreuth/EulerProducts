@@ -1,9 +1,9 @@
 import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
-import EulerProducts.NonvanishingQuadratic
 import EulerProducts.Orthogonality
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.LSeries.Linearity
+import Mathlib.NumberTheory.LSeries.QuadraticNonvanishing
 
 section LSeries
 

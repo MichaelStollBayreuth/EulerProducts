@@ -186,28 +186,6 @@ instance hasEnoughRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F
 end IsAlgClosed
 
 /-!
-### The multiplicative version of the classification theorem for finite abelian groups
--/
-
--- [Mathlib.Algebra.DirectSum.Basic] ?
-/-- The canonical isomorphism of a finite direct sum of additive commutative monoids
-and the corresponding finite product. -/
-def DirectSum.addEquivProd {ι : Type*} [Fintype ι] (G : ι → Type*) [(i : ι) → AddCommMonoid (G i)] :
-    DirectSum ι G ≃+ ((i : ι) → G i) :=
-  ⟨DFinsupp.equivFunOnFintype, fun g h ↦ funext fun _ ↦ by
-    simp only [DFinsupp.equivFunOnFintype, Equiv.toFun_as_coe, Equiv.coe_fn_mk, add_apply,
-      Pi.add_apply]⟩
-
-/-- The **Classification Theorem For Finite Abelian Groups** in a multiplicative version:
-A finite commutative group `G` is isomorphic to a finite product of finite cyclic groups. -/
-theorem CommGroup.equiv_prod_multiplicative_zmod (G : Type*) [CommGroup G] [Finite G] :
-    ∃ (ι : Type) (_ : Fintype ι) (n : ι → ℕ),
-       (∀ (i : ι), 1 < n i) ∧ Nonempty (G ≃* ((i : ι) → Multiplicative (ZMod (n i)))) := by
-  obtain ⟨ι, inst, n, h₁, h₂⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' (Additive G)
-  exact ⟨ι, inst, n, h₁, ⟨MulEquiv.toAdditive.symm <| h₂.some.trans <|
-    (DirectSum.addEquivProd _).trans <| MulEquiv.toAdditive'' <| MulEquiv.piMultiplicative _⟩⟩
-
-/-!
 ### Results specific for cyclic groups
 -/
 
