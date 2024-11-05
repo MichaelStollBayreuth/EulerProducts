@@ -336,7 +336,7 @@ lemma exists_apply_ne_one_aux (G M : Type*) [CommGroup G] [Finite G] [CommMonoid
 /-- If `G` is a finite commutative group of exponent `n` and `M` is a commutative monoid
 with cyclic `n`-torsion of order `n`, then for each `a ≠ 1` in `G`, there exists a
 group homomorphism `φ : G → Mˣ` such that `φ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
     [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* Mˣ, φ a ≠ 1 := by
   refine exists_apply_ne_one_aux G Mˣ (fun n hn a ha₀ ↦ ?_) ha
@@ -348,7 +348,7 @@ theorem exists_apply_ne_one_of_hasAllRootsOfUnity (G M : Type*) [CommGroup G] [F
 /-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Mˣ`
 of `M`-valued characters when `M` is a commutative monoid with cyclic `n`-torsion of order `n`,
 where `n` is the exponent of `G`. -/
-theorem monoidHom_mulEquiv_self_of_hasAllRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
+theorem monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
     [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] :
     Nonempty (G ≃* (G →* Mˣ)) := by
   classical
@@ -421,7 +421,7 @@ theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M
   . let a' : Mˣ := hu.unit -- `a` as a unit
     have ha' : a = a' := rfl
     refine (exists_apply_ne_one_iff_exists_monoidHom (R := R) a').mpr ?_
-    refine CommGroup.exists_apply_ne_one_of_hasAllRootsOfUnity Mˣ R ?_
+    refine CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity Mˣ R ?_
     contrapose! ha
     rw [ha', ha, Units.val_eq_one]
   · use 1
@@ -434,7 +434,7 @@ of unity. -/
 lemma card_eq_card_units_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
     [DecidableEq M] [CommRing R] [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)] :
     Fintype.card (MulChar M R) = Fintype.card Mˣ :=
-  let e := (CommGroup.monoidHom_mulEquiv_self_of_hasAllRootsOfUnity Mˣ R).some.toEquiv
+  let e := (CommGroup.monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity Mˣ R).some.toEquiv
   have : Finite (Mˣ →* Rˣ) := Finite.of_equiv _ e
   have : Fintype (Mˣ →* Rˣ) := Fintype.ofFinite (Mˣ →* Rˣ)
   (Fintype.card_congr <| MulChar.equivToUnitHom).trans (Fintype.card_congr e).symm
