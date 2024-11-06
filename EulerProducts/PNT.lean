@@ -543,7 +543,7 @@ lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
         (deriv (LFunction χ) s / LFunction χ s) := by
   simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg, ←
     Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
-  rw [eq_inv_mul_iff_mul_eq₀<|  mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
+  rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
   simp only [← LSeries_smul]
   classical
   rw [← LSeries_sum' <| fun χ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
@@ -553,7 +553,7 @@ lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
   simp only [← mul_assoc, ← Finset.sum_mul, mul_ite, mul_one, mul_zero, Set.mem_setOf_eq]
   congrm (?_ * (Λ n : ℂ))
   simpa only [Nat.cast_ite, Nat.cast_zero, eq_comm (a := a)]
-    using (sum_char_inv_mul_char_eq (R := ℂ) ha n).symm
+    using (sum_char_inv_mul_char_eq ℂ ha n).symm
 
 variable (q a) in
 open Classical in

@@ -299,15 +299,18 @@ private lemma HasEnoughRootsOfUnity.of_totient :
     HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ) :=
   HasEnoughRootsOfUnity.of_dvd R (ZMod.card_units_eq_totient n ▸ Group.exponent_dvd_card)
 
-variable {R}
+/-- The group of Dirichlet characters mod `n` with values in a ring `R` that has enough
+roots of unity is (noncanonically) isomorphic to `(ZMod n)ˣ`. -/
+lemma mulEquiv_units : Nonempty (DirichletCharacter R n ≃* (ZMod n)ˣ) :=
+  have := HasEnoughRootsOfUnity.of_totient R n
+  MulChar.mulEquiv_units ..
 
 /-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has all
 roots of unity. -/
 lemma card_eq_totient_of_hasEnoughRootsOfUnity :
     Nat.card (DirichletCharacter R n) = n.totient := by
   rw [← ZMod.card_units_eq_totient n, ← Nat.card_eq_fintype_card]
-  have := HasEnoughRootsOfUnity.of_totient R n
-  exact MulChar.card_eq_card_units_of_hasEnoughRootsOfUnity (ZMod n) R
+  exact Nat.card_congr (mulEquiv_units R n).some.toEquiv
 
 variable {n}
 
@@ -326,7 +329,7 @@ for each `a ≠ 1` in `ZMod n`, the sum of `χ a` over all Dirichlet characters 
 with values in `R` vanishes. -/
 theorem sum_characters_eq_zero ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 :=
-  sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasEnoughRootsOfUnity ha
+  sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasEnoughRootsOfUnity R ha
 
 /-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then
 for `a` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n`
@@ -336,8 +339,8 @@ theorem sum_characters_eq (a : ZMod n) :
   split_ifs with ha
   · simpa only [ha, map_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
       ← Nat.card_eq_fintype_card]
-      using congrArg Nat.cast <| card_eq_totient_of_hasEnoughRootsOfUnity n
-  · exact sum_characters_eq_zero ha
+      using congrArg Nat.cast <| card_eq_totient_of_hasEnoughRootsOfUnity R n
+  · exact sum_characters_eq_zero R ha
 
 /-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
