@@ -7,6 +7,13 @@ import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 ### Commutative monoids that have enough roots of unity
 -/
 
+lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
+    a⁻¹ * b = 1 ↔ a = b := by
+  -- ideally, this would be `ha.inv_mul_eq_one`, but `ZMod n` is not a `DivisionMonoid`...
+  refine ⟨fun H ↦ ?_, fun H ↦ H ▸ a.inv_mul_of_unit ha⟩
+  apply_fun (a * ·) at H
+  rwa [← mul_assoc, a.mul_inv_of_unit ha, one_mul, mul_one, eq_comm] at H
+
 namespace IsAlgClosed
 
 /-- An algebraically closed field of characteristic zero satisfies `HasEnoughRootsOfUnity`
@@ -86,7 +93,6 @@ group of units of a ring `M` with all roots of unity is isomorphic to `G` -/
 lemma monoidHom_equiv_self (G M : Type*) [CommGroup G] [Finite G]
     [IsCyclic G] [CommMonoid M] [HasEnoughRootsOfUnity M (Nat.card G)] :
     Nonempty ((G →* Mˣ) ≃* G) := by
-  have : Fintype G := Fintype.ofFinite G
   have : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
   have hord := HasEnoughRootsOfUnity.natCard_rootsOfUnity M (Nat.card G)
   let e := (IsCyclic.monoidHom_mulEquiv_rootsOfUnity G Mˣ).some
@@ -126,9 +132,10 @@ lemma dvd_exponent {ι G : Type*} [Finite ι] [CommGroup G] {n : ι → ℕ}
       using (ZMod.addOrderOf_one (n i)).symm
   exact this ▸ Monoid.order_dvd_exponent _
 
+variable (G M : Type*) [CommGroup G] [Finite G] [CommMonoid M]
+
 private
-lemma exists_apply_ne_one_aux (G M : Type*) [CommGroup G] [Finite G] [CommMonoid M]
-    (H : ∀ n : ℕ, n ∣ Monoid.exponent G → ∀ a : ZMod n, a ≠ 0 →
+lemma exists_apply_ne_one_aux (H : ∀ n : ℕ, n ∣ Monoid.exponent G → ∀ a : ZMod n, a ≠ 0 →
        ∃ φ : Multiplicative (ZMod n) →* M, φ (.ofAdd a) ≠ 1)
     {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* M, φ a ≠ 1 := by
@@ -143,11 +150,12 @@ lemma exists_apply_ne_one_aux (G M : Type*) [CommGroup G] [Finite G] [CommMonoid
   use (φi.comp (Pi.evalMonoidHom (fun (i : ι) ↦ Multiplicative (ZMod (n i))) i)).comp e
   simpa only [coe_comp, coe_coe, Function.comp_apply, Pi.evalMonoidHom_apply, ne_eq] using hφi
 
+variable  [HasEnoughRootsOfUnity M (Monoid.exponent G)]
+
 /-- If `G` is a finite commutative group of exponent `n` and `M` is a commutative monoid
 with enough `n`th roots of unity, then for each `a ≠ 1` in `G`, there exists a
 group homomorphism `φ : G → Mˣ` such that `φ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
-    [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] {a : G} (ha : a ≠ 1) :
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity {a : G} (ha : a ≠ 1) :
     ∃ φ : G →* Mˣ, φ a ≠ 1 := by
   refine exists_apply_ne_one_aux G Mˣ (fun n hn a ha₀ ↦ ?_) ha
   have : NeZero n := ⟨fun H ↦ NeZero.ne _ <| Nat.eq_zero_of_zero_dvd (H ▸ hn)⟩
@@ -157,9 +165,7 @@ theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (G M : Type*) [CommGroup G]
 /-- A finite commutative group `G` is (noncanonically) isomorphic to the group `G →* Mˣ`
 of `M`-valued characters when `M` is a commutative monoid with enough `n`th roots of unity,
 where `n` is the exponent of `G`. -/
-theorem monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity (G M : Type*) [CommGroup G] [Finite G]
-    [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent G)] :
-    Nonempty (G ≃* (G →* Mˣ)) := by
+theorem monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity : Nonempty (G ≃* (G →* Mˣ)) := by
   classical -- to get `DecidableEq ι`
   obtain ⟨ι, _, n, ⟨h₁, h₂⟩⟩ := equiv_prod_multiplicative_zmod G
   let e := h₂.some
@@ -184,68 +190,64 @@ We provide instances for `Finite (MulChar M R)` and `Fintype (MulChar M R)`
 when `M` is a finite commutative monoid and `R` is an integral domain.
 
 We also show that `MulChar M R` and `Mˣ` have the same cardinality when `R` has
-all roots of unity.
+enough roots of unity.
 -/
 
 namespace MulChar
 
-instance finite (M R : Type*) [CommMonoid M] [Fintype Mˣ] [DecidableEq M] [CommRing R]
-    [IsDomain R] :
-    Finite (MulChar M R) := by
+variable {M R : Type*} [CommMonoid M] [CommRing R]
+
+instance finite [Finite Mˣ] [IsDomain R] : Finite (MulChar M R) := by
   have : Finite (Mˣ →* Rˣ) := by
+    have : Fintype Mˣ := .ofFinite _
     let S := rootsOfUnity (Fintype.card Mˣ) R
     let F := Mˣ →* S
-    have fF : Finite F := .of_injective (fun f ↦ (f : Mˣ → S)) DFunLike.coe_injective
-    refine Finite.of_surjective (fun f : F ↦ (Subgroup.subtype _).comp f) (fun f ↦ ?_)
-    have H (a : Mˣ) : f a ∈ S := by
-      simp only [mem_rootsOfUnity, PNat.mk_coe, ← map_pow, pow_card_eq_one, map_one, S]
-    use MonoidHom.codRestrict f S H
-    ext1
+    have fF : Finite F := .of_injective _ DFunLike.coe_injective
+    refine .of_surjective (fun f : F ↦ (Subgroup.subtype _).comp f) fun f ↦ ?_
+    have H a : f a ∈ S := by simp only [mem_rootsOfUnity, ← map_pow, pow_card_eq_one, map_one, S]
+    refine ⟨.codRestrict f S H, MonoidHom.ext fun _ ↦ ?_⟩
     simp only [MonoidHom.coe_comp, Subgroup.coeSubtype, Function.comp_apply,
       MonoidHom.codRestrict_apply]
-  exact Finite.of_equiv _ MulChar.equivToUnitHom.symm
+  exact .of_equiv _ MulChar.equivToUnitHom.symm
 
-noncomputable instance fintype (M R : Type*) [CommMonoid M] [Fintype M] [DecidableEq M]
-    [CommRing R] [IsDomain R] :
-    Fintype (MulChar M R) := Fintype.ofFinite _
+noncomputable instance fintype [Finite M] [IsDomain R] :
+    Fintype (MulChar M R) := .ofFinite _
 
-lemma exists_apply_ne_one_iff_exists_monoidHom {M R : Type*} [CommMonoid M]
-    [Fintype M] [DecidableEq M] [CommRing R] (a : Mˣ) :
+lemma exists_apply_ne_one_iff_exists_monoidHom (a : Mˣ) :
     (∃ χ : MulChar M R, χ a ≠ 1) ↔ ∃ φ : Mˣ →* Rˣ, φ a ≠ 1 := by
   refine ⟨fun ⟨χ, hχ⟩ ↦ ⟨χ.toUnitHom, ?_⟩, fun ⟨φ, hφ⟩ ↦ ⟨ofUnitHom φ, ?_⟩⟩
   · contrapose! hχ
-    rwa [Units.ext_iff, show χ.toUnitHom a = χ a from rfl] at hχ
+    rwa [Units.ext_iff, coe_toUnitHom] at hχ
   · contrapose! hφ
     simpa only [ofUnitHom_eq, equivToUnitHom_symm_coe, Units.val_eq_one] using hφ
+
+variable (M R)
+variable [Finite M] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)]
 
 /-- If `M` is a finite commutative monoid and `R` is a ring that has enough roots of unity,
 then for each `a ≠ 1` in `M`, there exists a multiplicative character `χ : M → R` such that
 `χ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
-    [DecidableEq M] [CommRing R] [Nontrivial R] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)]
-    {a : M} (ha : a ≠ 1) :
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity [Nontrivial R] {a : M} (ha : a ≠ 1) :
     ∃ χ : MulChar M R, χ a ≠ 1 := by
   by_cases hu : IsUnit a
-  . let a' : Mˣ := hu.unit -- `a` as a unit
-    have ha' : a = a' := rfl
-    refine (exists_apply_ne_one_iff_exists_monoidHom (R := R) a').mpr ?_
+  . refine (exists_apply_ne_one_iff_exists_monoidHom hu.unit).mpr ?_
     refine CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity Mˣ R ?_
     contrapose! ha
-    rw [ha', ha, Units.val_eq_one]
-  · use 1
-    rw [map_nonunit _ hu]
-    exact zero_ne_one
+    rw [← hu.unit_spec, ha, Units.val_eq_one]
+  · exact ⟨1, by simpa only [map_nonunit _ hu] using zero_ne_one⟩
 
-/-- The cardinality of the group of `R` valued multiplicative characters on a finite commutative
+/-- The group of `R`-valued multiplicative characters on a finite commutative monoid `M` is
+(noncanonically) isomorphic to its unit group `Mˣ` when `R` is a ring that has enough roots
+of unity. -/
+lemma mulEquiv_units : Nonempty (MulChar M R ≃* Mˣ) :=
+  ⟨mulEquivToUnitHom.trans
+    (CommGroup.monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity Mˣ R).some.symm⟩
+
+/-- The cardinality of the group of `R`-valued multiplicative characters on a finite commutative
 monoid `M` is the same as that of its unit group `Mˣ` when `R` is a ring that has enough roots
 of unity. -/
-lemma card_eq_card_units_of_hasEnoughRootsOfUnity (M R : Type*) [CommMonoid M] [Fintype M]
-    [DecidableEq M] [CommRing R] [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)] :
-    Fintype.card (MulChar M R) = Fintype.card Mˣ :=
-  let e := (CommGroup.monoidHom_mulEquiv_self_of_hasEnoughRootsOfUnity Mˣ R).some.toEquiv
-  have : Finite (Mˣ →* Rˣ) := Finite.of_equiv _ e
-  have : Fintype (Mˣ →* Rˣ) := Fintype.ofFinite (Mˣ →* Rˣ)
-  (Fintype.card_congr <| MulChar.equivToUnitHom).trans (Fintype.card_congr e).symm
+lemma card_eq_card_units_of_hasEnoughRootsOfUnity : Nat.card (MulChar M R) = Nat.card Mˣ :=
+  Nat.card_congr (mulEquiv_units M R).some.toEquiv
 
 end MulChar
 
@@ -253,7 +255,7 @@ end MulChar
 /-!
 ### Results for Dirichlet characters
 
-The goal of this section is to show that `∑ χ : DirichletCharacter R n, χ a` vanishes
+The main goal of this section is to show that `∑ χ : DirichletCharacter R n, χ a` vanishes
 if `a ≠ 1` and takes the value `n.totient` otherwise.
 -/
 
@@ -269,18 +271,17 @@ instance inhabited (R : Type*) [CommMonoidWithZero R] (n : ℕ) :
 variable {n : ℕ} {R : Type*} [CommRing R] [IsDomain R]
 
 instance finite : Finite (DirichletCharacter R n) :=
-  letI : Fintype (ZMod n)ˣ := n.casesOn UnitsInt.fintype inferInstance
+  letI : Finite (ZMod n)ˣ := n.casesOn inferInstance inferInstance
   MulChar.finite ..
 
-noncomputable instance fintype : Fintype (DirichletCharacter R n) := Fintype.ofFinite _
+noncomputable instance fintype : Fintype (DirichletCharacter R n) := .ofFinite _
 
 lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 := by
   obtain ⟨χ, hχ⟩ := h
   refine eq_zero_of_mul_eq_self_left hχ ?_
   simp only [Finset.mul_sum, ← MulChar.mul_apply]
-  refine Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ (fun χ' ↦ ?_)
-  simp only [MulChar.coeToFun_mul, Pi.mul_apply]
+  exact Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ fun χ' ↦ rfl
 
 lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
     (h : ∀ a : ZMod n, a ≠ 1 → ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
@@ -292,61 +293,58 @@ lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
 
 end general
 
-variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
+variable (R : Type*) [CommRing R] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity R n.totient]
 
-variable (R n) in
-omit [IsDomain R] in
-private lemma HasEnoughRootsOfUnity.of_totient [HasEnoughRootsOfUnity R n.totient] :
+private lemma HasEnoughRootsOfUnity.of_totient :
     HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ) :=
-  HasEnoughRootsOfUnity.of_dvd R (ZMod.card_units_eq_totient n ▸  Group.exponent_dvd_card)
+  HasEnoughRootsOfUnity.of_dvd R (ZMod.card_units_eq_totient n ▸ Group.exponent_dvd_card)
 
-variable (n) in
+variable {R}
+
 /-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has all
 roots of unity. -/
-lemma card_eq_totient_of_hasEnoughRootsOfUnity [inst : HasEnoughRootsOfUnity R n.totient] :
-    Fintype.card (DirichletCharacter R n) = n.totient := by
-  rw [← ZMod.card_units_eq_totient n]
+lemma card_eq_totient_of_hasEnoughRootsOfUnity :
+    Nat.card (DirichletCharacter R n) = n.totient := by
+  rw [← ZMod.card_units_eq_totient n, ← Nat.card_eq_fintype_card]
   have := HasEnoughRootsOfUnity.of_totient R n
   exact MulChar.card_eq_card_units_of_hasEnoughRootsOfUnity (ZMod n) R
+
+variable {n}
 
 /-- If `R` is a ring that has enough roots of unity and `n ≠ 0`, then for each
 `a ≠ 1` in `ZMod n`, there exists a Dirichlet character `χ` mod `n` with values in `R`
 such that `χ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity [HasEnoughRootsOfUnity R n.totient]
-    ⦃a : ZMod n⦄ (ha : a ≠ 1) :
+theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity [Nontrivial R] ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∃ χ : DirichletCharacter R n, χ a ≠ 1 :=
   have := HasEnoughRootsOfUnity.of_totient R n
   MulChar.exists_apply_ne_one_of_hasEnoughRootsOfUnity (ZMod n) R ha
 
-/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for each `a ≠ 1` in `ZMod n`,
-the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes. -/
-theorem sum_characters_eq_zero [HasEnoughRootsOfUnity R n.totient] ⦃a : ZMod n⦄ (ha : a ≠ 1) :
+variable [IsDomain R]
+
+/-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then
+for each `a ≠ 1` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n`
+with values in `R` vanishes. -/
+theorem sum_characters_eq_zero ⦃a : ZMod n⦄ (ha : a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 :=
   sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasEnoughRootsOfUnity ha
 
-/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for `a` in `ZMod n`,
-the sum of `χ a` over all Dirichlet characters mod `n` with values in `R` vanishes if `a ≠ 1`
-and has the value `n.totient` if `a = 1`. -/
-theorem sum_characters_eq [HasEnoughRootsOfUnity R n.totient] (a : ZMod n) :
+/-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then
+for `a` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n`
+with values in `R` vanishes if `a ≠ 1` and has the value `n.totient` if `a = 1`. -/
+theorem sum_characters_eq (a : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a = if a = 1 then (n.totient : R) else 0 := by
   split_ifs with ha
-  · simpa only [ha, map_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
+  · simpa only [ha, map_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
+      ← Nat.card_eq_fintype_card]
       using congrArg Nat.cast <| card_eq_totient_of_hasEnoughRootsOfUnity n
   · exact sum_characters_eq_zero ha
 
-/-- If `R` is ring that has enough roots of unity and `n ≠ 0`, then for `a` and `b`
+/-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
 mod `n` with values in `R` vanihses if `a ≠ b` and has the value `n.totient` if `a = b`. -/
-theorem sum_char_inv_mul_char_eq [HasEnoughRootsOfUnity R n.totient] {a : ZMod n}
-    (ha : IsUnit a) (b : ZMod n) :
+theorem sum_char_inv_mul_char_eq {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
     ∑ χ : DirichletCharacter R n, χ a⁻¹ * χ b = if a = b then n.totient else 0 := by
-  convert sum_characters_eq (a⁻¹ * b) using 2 with χ
-  · rw [map_mul]
-  · simp only [Nat.cast_ite, Nat.cast_zero]
-    refine ite_congr (eq_iff_iff.mpr ⟨fun H ↦ ?_, fun H ↦ ?_⟩) (fun _ ↦ rfl) (fun _ ↦ rfl)
-    · rw [← H, a.inv_mul_of_unit ha]
-    · apply_fun (a * ·) at H
-      rwa [← mul_assoc, a.mul_inv_of_unit ha, one_mul, mul_one, eq_comm] at H
-  · infer_instance
+  simp only [← map_mul, sum_characters_eq, ZMod.inv_mul_eq_one_of_isUnit ha, Nat.cast_ite,
+    Nat.cast_zero]
 
 end DirichletCharacter
