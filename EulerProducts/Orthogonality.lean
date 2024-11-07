@@ -3,7 +3,7 @@ import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Basic
 
 /-!
-### Commutative monoids that have enough roots of unity
+### Auxiliary lemmas
 -/
 
 lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
@@ -13,6 +13,11 @@ lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : 
   apply_fun (a * ·) at H
   rwa [← mul_assoc, a.mul_inv_of_unit ha, one_mul, mul_one, eq_comm] at H
 
+-- not needed below, but seems to be missing
+instance Group.neZero_card_of_finite {G : Type*} [Group G] [Finite G] : NeZero (Nat.card G) := by
+  refine ⟨Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩⟩
+
+-- new file RingTheory.RootsOfUnity.EnoughRootsOfUnityInstances ?
 namespace IsAlgClosed
 
 /-- An algebraically closed field of characteristic zero satisfies `HasEnoughRootsOfUnity`
@@ -113,11 +118,12 @@ instance inhabited (R : Type*) [CommMonoidWithZero R] (n : ℕ) :
 variable {n : ℕ} {R : Type*} [CommRing R] [IsDomain R]
 
 instance finite : Finite (DirichletCharacter R n) :=
-  letI : Finite (ZMod n)ˣ := n.casesOn inferInstance inferInstance
-  MulChar.finite ..
+  -- case split since we need different instances `Finite (ZMod n)ˣ`
+  n.casesOn (MulChar.finite ..) (fun _ ↦ MulChar.finite ..)
 
 noncomputable instance fintype : Fintype (DirichletCharacter R n) := .ofFinite _
 
+private
 lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 := by
   obtain ⟨χ, hχ⟩ := h
@@ -125,13 +131,13 @@ lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R
   simp only [Finset.mul_sum, ← MulChar.mul_apply]
   exact Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ fun χ' ↦ rfl
 
-lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
+/- lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
     (h : ∀ a : ZMod n, a ≠ 1 → ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
     ∑ χ : DirichletCharacter R n, χ a = 0 ↔ a ≠ 1 := by
   refine ⟨fun H ha ↦ ?_, fun H ↦ sum_characters_eq_zero_aux <| h a H⟩
   simp only [ha, map_one, Finset.sum_const, nsmul_eq_mul, mul_one, Nat.cast_eq_zero,
     Finset.card_eq_zero, Finset.univ_eq_empty_iff] at H
-  exact (not_isEmpty_of_nonempty <| DirichletCharacter R n) H
+  exact (not_isEmpty_of_nonempty <| DirichletCharacter R n) H -/
 
 end general
 
