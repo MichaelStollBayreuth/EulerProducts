@@ -30,26 +30,6 @@ def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃
       fun ⦃_ _⦄ a ↦ a) hζ
   · sorry
 
-
--- new file RingTheory.RootsOfUnity.EnoughRootsOfUnityInstances ?
-namespace IsAlgClosed
-
-/-- An algebraically closed field `F`satisfies `HasEnoughRootsOfUnity F n` for all `n`
-that are not divisible by the characteristic of `F`. -/
-instance hasEnoughRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] (n : ℕ) [i : NeZero (n : F)] :
-    HasEnoughRootsOfUnity F n where
-  prim := by
-    have : NeZero n := NeZero.of_neZero_natCast F
-    have : IsCyclotomicExtension {⟨n, NeZero.pos n⟩} F F :=
-      isCyclotomicExtension _ F
-        fun _ h ↦ Set.mem_singleton_iff.mp h ▸ (PNat.mk_coe n (NeZero.pos n) ▸ i : NeZero (n : F))
-    exact IsCyclotomicExtension.exists_prim_root (S := {(⟨n, NeZero.pos n⟩ : ℕ+)}) F rfl
-  cyc :=
-    have : NeZero n := NeZero.of_neZero_natCast F
-    rootsOfUnity.isCyclic F n
-
-end IsAlgClosed
-
 /-!
 ### Results for multiplicative characters
 
