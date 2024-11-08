@@ -35,6 +35,9 @@ def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃
     have hz' : z.val ∈ Submonoid.unitSphere ℂ := by
       simp only [Submonoid.unitSphere, Submonoid.mem_mk, Subsemigroup.mem_mk, mem_sphere_iff_norm,
         sub_zero, Complex.norm_eq_abs]
+      apply_fun Complex.abs at hz
+      simp only [AbsoluteValue.map_pow, AbsoluteValue.map_one] at hz
+      exact (pow_eq_one_iff_of_nonneg (AbsoluteValue.nonneg Complex.abs ↑z) (NeZero.ne n)).mp hz
     let zz : Circle := ⟨z.val, hz'⟩
     have hzz : zz ^ n = 1 := by
       ext
