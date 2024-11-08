@@ -26,6 +26,8 @@ instance Monoid.neZero_card_of_finite {M : Type*} [Monoid M] [Finite M] : NeZero
 @[simp] lemma mem_unitSphere {R} {x} [NormedDivisionRing R] :
     x ∈ Submonoid.unitSphere R ↔ ‖x‖ = 1 := by simp [Submonoid.unitSphere]
 
+/-- The canonical isomorphisms of the group of `n`th roots of unity on the unit circle
+with the group of `n`th roots of unity of `ℂ`. -/
 noncomputable def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] :
     rootsOfUnity n Circle ≃* rootsOfUnity n ℂ where
   __ := restrictRootsOfUnity coeHom n
