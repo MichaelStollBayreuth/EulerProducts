@@ -1,6 +1,7 @@
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Basic
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 ### Auxiliary lemmas
@@ -14,19 +15,26 @@ lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : 
   rwa [← mul_assoc, a.mul_inv_of_unit ha, one_mul, mul_one, eq_comm] at H
 
 -- not needed below, but seems to be missing
-instance Group.neZero_card_of_finite {G : Type*} [Group G] [Finite G] : NeZero (Nat.card G) := by
+@[to_additive]
+instance Monoid.neZero_card_of_finite {M : Type*} [Monoid M] [Finite M] : NeZero (Nat.card M) := by
   refine ⟨Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩⟩
 
 -- new file RingTheory.RootsOfUnity.EnoughRootsOfUnityInstances ?
 namespace IsAlgClosed
 
-/-- An algebraically closed field of characteristic zero satisfies `HasEnoughRootsOfUnity`
-for all `n`. -/
-instance hasEnoughRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] [CharZero F] (n : ℕ)
-    [NeZero n] :
+/-- An algebraically closed field `F`satisfies `HasEnoughRootsOfUnity F n` for all `n`
+that are not divisible by the characteristic of `F`. -/
+instance hasEnoughRootsOfUnity (F : Type*) [Field F] [IsAlgClosed F] (n : ℕ) [i : NeZero (n : F)] :
     HasEnoughRootsOfUnity F n where
-  prim := Subtype.coe_mk n (NeZero.pos n) ▸ IsCyclotomicExtension.exists_prim_root F rfl
-  cyc := rootsOfUnity.isCyclic F n
+  prim := by
+    have : NeZero n := NeZero.of_neZero_natCast F
+    have : IsCyclotomicExtension {⟨n, NeZero.pos n⟩} F F :=
+      isCyclotomicExtension _ F
+        fun _ h ↦ Set.mem_singleton_iff.mp h ▸ (PNat.mk_coe n (NeZero.pos n) ▸ i : NeZero (n : F))
+    exact IsCyclotomicExtension.exists_prim_root (S := {(⟨n, NeZero.pos n⟩ : ℕ+)}) F rfl
+  cyc :=
+    have : NeZero n := NeZero.of_neZero_natCast F
+    rootsOfUnity.isCyclic F n
 
 end IsAlgClosed
 
