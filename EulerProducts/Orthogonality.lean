@@ -1,12 +1,14 @@
-import Mathlib.GroupTheory.FiniteAbelian.Duality
-import Mathlib.NumberTheory.Cyclotomic.Basic
+import Mathlib.Analysis.Complex.Circle
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.NumberTheory.MulChar.Duality
+import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
 ### Auxiliary lemmas
 -/
 
+-- [Mathlib.Data.ZMod.Basic]
 lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
     a⁻¹ * b = 1 ↔ a = b := by
   -- ideally, this would be `ha.inv_mul_eq_one`, but `ZMod n` is not a `DivisionMonoid`...
@@ -19,98 +21,19 @@ lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : 
 instance Monoid.neZero_card_of_finite {M : Type*} [Monoid M] [Finite M] : NeZero (Nat.card M) := by
   refine ⟨Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩⟩
 
-noncomputable
-def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃* rootsOfUnity n ℂ := by
-  refine MulEquiv.ofBijective (restrictRootsOfUnity coeHom n) ⟨?_, fun ζ ↦ ?_⟩
-  · refine (injective_iff_map_eq_one _).mpr fun ζ hζ ↦ Subtype.ext ?_
-    rw [Subgroup.coe_one]
-    simp only [restrictRootsOfUnity, MonoidHom.coe_mk, OneHom.coe_mk, Subgroup.mk_eq_one,
-      ← map_one (Units.map ↑coeHom)] at hζ
-    exact (Units.map_injective <| (Set.injective_codRestrict Subtype.property).mp
-      fun ⦃_ _⦄ a ↦ a) hζ
-  · let z := ζ.val
-    have hz : z.val ^ n = 1 := by
-      norm_cast
-      rw [show z ^ n = 1 from ζ.prop, Units.val_eq_one]
-    have hz' : z.val ∈ Submonoid.unitSphere ℂ := by
-      simp only [Submonoid.unitSphere, Submonoid.mem_mk, Subsemigroup.mem_mk, mem_sphere_iff_norm,
-        sub_zero, Complex.norm_eq_abs]
-      apply_fun Complex.abs at hz
-      simp only [AbsoluteValue.map_pow, AbsoluteValue.map_one] at hz
-      exact (pow_eq_one_iff_of_nonneg (AbsoluteValue.nonneg Complex.abs ↑z) (NeZero.ne n)).mp hz
-    let zz : Circle := ⟨z.val, hz'⟩
-    have hzz : zz ^ n = 1 := by
-      ext
-      rw [SubmonoidClass.coe_pow]
-      simp only [hz, OneMemClass.coe_one]
-    use rootsOfUnity.mkOfPowEq zz hzz
-    ext
-    simp only [restrictRootsOfUnity_coe_apply, rootsOfUnity.val_mkOfPowEq_coe, coeHom_apply]
+@[simp, norm_cast] lemma Circle.coe_pow (z : Circle) (n : ℕ) : (↑(z ^ n) : ℂ) = z ^ n := rfl
 
-/-!
-### Results for multiplicative characters
+@[simp] lemma mem_unitSphere {R} {x} [NormedDivisionRing R] :
+    x ∈ Submonoid.unitSphere R ↔ ‖x‖ = 1 := by simp [Submonoid.unitSphere]
 
-We provide instances for `Finite (MulChar M R)` and `Fintype (MulChar M R)`
-when `M` is a finite commutative monoid and `R` is an integral domain.
-
-We also show that `MulChar M R` and `Mˣ` have the same cardinality when `R` has
-enough roots of unity.
--/
-
-namespace MulChar
-
-variable {M R : Type*} [CommMonoid M] [CommRing R]
-
-instance finite [Finite Mˣ] [IsDomain R] : Finite (MulChar M R) := by
-  have : Finite (Mˣ →* Rˣ) := by
-    have : Fintype Mˣ := .ofFinite _
-    let S := rootsOfUnity (Fintype.card Mˣ) R
-    let F := Mˣ →* S
-    have fF : Finite F := .of_injective _ DFunLike.coe_injective
-    refine .of_surjective (fun f : F ↦ (Subgroup.subtype _).comp f) fun f ↦ ?_
-    have H a : f a ∈ S := by simp only [mem_rootsOfUnity, ← map_pow, pow_card_eq_one, map_one, S]
-    refine ⟨.codRestrict f S H, MonoidHom.ext fun _ ↦ ?_⟩
-    simp only [MonoidHom.coe_comp, Subgroup.coeSubtype, Function.comp_apply,
-      MonoidHom.codRestrict_apply]
-  exact .of_equiv _ MulChar.equivToUnitHom.symm
-
-lemma exists_apply_ne_one_iff_exists_monoidHom (a : Mˣ) :
-    (∃ χ : MulChar M R, χ a ≠ 1) ↔ ∃ φ : Mˣ →* Rˣ, φ a ≠ 1 := by
-  refine ⟨fun ⟨χ, hχ⟩ ↦ ⟨χ.toUnitHom, ?_⟩, fun ⟨φ, hφ⟩ ↦ ⟨ofUnitHom φ, ?_⟩⟩
-  · contrapose! hχ
-    rwa [Units.ext_iff, coe_toUnitHom] at hχ
-  · contrapose! hφ
-    simpa only [ofUnitHom_eq, equivToUnitHom_symm_coe, Units.val_eq_one] using hφ
-
-variable (M R)
-variable [Finite M] [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)]
-
-/-- If `M` is a finite commutative monoid and `R` is a ring that has enough roots of unity,
-then for each `a ≠ 1` in `M`, there exists a multiplicative character `χ : M → R` such that
-`χ a ≠ 1`. -/
-theorem exists_apply_ne_one_of_hasEnoughRootsOfUnity [Nontrivial R] {a : M} (ha : a ≠ 1) :
-    ∃ χ : MulChar M R, χ a ≠ 1 := by
-  by_cases hu : IsUnit a
-  · refine (exists_apply_ne_one_iff_exists_monoidHom hu.unit).mpr ?_
-    refine CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity Mˣ R ?_
-    contrapose! ha
-    rw [← hu.unit_spec, ha, Units.val_eq_one]
-  · exact ⟨1, by simpa only [map_nonunit _ hu] using zero_ne_one⟩
-
-/-- The group of `R`-valued multiplicative characters on a finite commutative monoid `M` is
-(noncanonically) isomorphic to its unit group `Mˣ` when `R` is a ring that has enough roots
-of unity. -/
-lemma mulEquiv_units : Nonempty (MulChar M R ≃* Mˣ) :=
-  ⟨mulEquivToUnitHom.trans
-    (CommGroup.mulEquiv_monoidHom_of_hasEnoughRootsOfUnity Mˣ R).some.symm⟩
-
-/-- The cardinality of the group of `R`-valued multiplicative characters on a finite commutative
-monoid `M` is the same as that of its unit group `Mˣ` when `R` is a ring that has enough roots
-of unity. -/
-lemma card_eq_card_units_of_hasEnoughRootsOfUnity : Nat.card (MulChar M R) = Nat.card Mˣ :=
-  Nat.card_congr (mulEquiv_units M R).some.toEquiv
-
-end MulChar
+noncomputable def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] :
+    rootsOfUnity n Circle ≃* rootsOfUnity n ℂ where
+  __ := restrictRootsOfUnity coeHom n
+  invFun ζ := rootsOfUnity.mkOfPowEq ⟨(ζ : ℂˣ),
+      mem_unitSphere.2 (Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2)⟩
+      (by aesop (add simp Units.ext_iff))
+  left_inv ζ := by ext; simp
+  right_inv ζ := by ext; simp
 
 
 /-!
