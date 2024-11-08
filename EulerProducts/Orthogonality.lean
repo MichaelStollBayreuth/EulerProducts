@@ -43,10 +43,9 @@ def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃
       ext
       rw [SubmonoidClass.coe_pow]
       simp only [hz, OneMemClass.coe_one]
-    let ζ' : rootsOfUnity n Circle := rootsOfUnity.mkOfPowEq zz hzz
-    use ζ'
+    use rootsOfUnity.mkOfPowEq zz hzz
     ext
-    simp only [restrictRootsOfUnity_coe_apply, rootsOfUnity.val_mkOfPowEq_coe, coeHom_apply, ζ']
+    simp only [restrictRootsOfUnity_coe_apply, rootsOfUnity.val_mkOfPowEq_coe, coeHom_apply]
 
 /-!
 ### Results for multiplicative characters
