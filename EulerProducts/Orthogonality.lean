@@ -138,22 +138,6 @@ instance finite : Finite (DirichletCharacter R n) :=
 -- This is needed to be able to write down sums over characters.
 noncomputable instance fintype : Fintype (DirichletCharacter R n) := .ofFinite _
 
-private
-lemma sum_characters_eq_zero_aux {a : ZMod n} (h : ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
-    ∑ χ : DirichletCharacter R n, χ a = 0 := by
-  obtain ⟨χ, hχ⟩ := h
-  refine eq_zero_of_mul_eq_self_left hχ ?_
-  simp only [Finset.mul_sum, ← MulChar.mul_apply]
-  exact Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ fun χ' ↦ rfl
-
-/- lemma sum_characters_eq_zero_iff_aux {a : ZMod n} [CharZero R]
-    (h : ∀ a : ZMod n, a ≠ 1 → ∃ χ : DirichletCharacter R n, χ a ≠ 1) :
-    ∑ χ : DirichletCharacter R n, χ a = 0 ↔ a ≠ 1 := by
-  refine ⟨fun H ha ↦ ?_, fun H ↦ sum_characters_eq_zero_aux <| h a H⟩
-  simp only [ha, map_one, Finset.sum_const, nsmul_eq_mul, mul_one, Nat.cast_eq_zero,
-    Finset.card_eq_zero, Finset.univ_eq_empty_iff] at H
-  exact (not_isEmpty_of_nonempty <| DirichletCharacter R n) H -/
-
 end general
 
 variable (R : Type*) [CommRing R] (n : ℕ) [NeZero n] [HasEnoughRootsOfUnity R n.totient]
@@ -191,8 +175,11 @@ variable [IsDomain R]
 for each `a ≠ 1` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n`
 with values in `R` vanishes. -/
 theorem sum_characters_eq_zero ⦃a : ZMod n⦄ (ha : a ≠ 1) :
-    ∑ χ : DirichletCharacter R n, χ a = 0 :=
-  sum_characters_eq_zero_aux <| exists_apply_ne_one_of_hasEnoughRootsOfUnity R ha
+    ∑ χ : DirichletCharacter R n, χ a = 0 := by
+  obtain ⟨χ, hχ⟩ := exists_apply_ne_one_of_hasEnoughRootsOfUnity R ha
+  refine eq_zero_of_mul_eq_self_left hχ ?_
+  simp only [Finset.mul_sum, ← MulChar.mul_apply]
+  exact Fintype.sum_bijective _ (Group.mulLeft_bijective χ) _ _ fun χ' ↦ rfl
 
 /-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then
 for `a` in `ZMod n`, the sum of `χ a` over all Dirichlet characters mod `n`
@@ -207,10 +194,9 @@ theorem sum_characters_eq (a : ZMod n) :
 
 /-- If `R` is an integral domain that has enough roots of unity and `n ≠ 0`, then for `a` and `b`
 in `ZMod n` with `a` a unit, the sum of `χ a⁻¹ * χ b` over all Dirichlet characters
-mod `n` with values in `R` vanihses if `a ≠ b` and has the value `n.totient` if `a = b`. -/
+mod `n` with values in `R` vanishes if `a ≠ b` and has the value `n.totient` if `a = b`. -/
 theorem sum_char_inv_mul_char_eq {a : ZMod n} (ha : IsUnit a) (b : ZMod n) :
-    ∑ χ : DirichletCharacter R n, χ a⁻¹ * χ b = if a = b then n.totient else 0 := by
-  simp only [← map_mul, sum_characters_eq, ZMod.inv_mul_eq_one_of_isUnit ha, Nat.cast_ite,
-    Nat.cast_zero]
+    ∑ χ : DirichletCharacter R n, χ a⁻¹ * χ b = if a = b then (n.totient : R) else 0 := by
+  simp only [← map_mul, sum_characters_eq, ZMod.inv_mul_eq_one_of_isUnit ha]
 
 end DirichletCharacter
