@@ -28,7 +28,22 @@ def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃
       ← map_one (Units.map ↑coeHom)] at hζ
     exact (Units.map_injective <| (Set.injective_codRestrict Subtype.property).mp
       fun ⦃_ _⦄ a ↦ a) hζ
-  · sorry
+  · let z := ζ.val
+    have hz : z.val ^ n = 1 := by
+      norm_cast
+      rw [show z ^ n = 1 from ζ.prop, Units.val_eq_one]
+    have hz' : z.val ∈ Submonoid.unitSphere ℂ := by
+      simp only [Submonoid.unitSphere, Submonoid.mem_mk, Subsemigroup.mem_mk, mem_sphere_iff_norm,
+        sub_zero, Complex.norm_eq_abs]
+    let zz : Circle := ⟨z.val, hz'⟩
+    have hzz : zz ^ n = 1 := by
+      ext
+      rw [SubmonoidClass.coe_pow]
+      simp only [hz, OneMemClass.coe_one]
+    let ζ' : rootsOfUnity n Circle := rootsOfUnity.mkOfPowEq zz hzz
+    use ζ'
+    ext
+    simp only [restrictRootsOfUnity_coe_apply, rootsOfUnity.val_mkOfPowEq_coe, coeHom_apply, ζ']
 
 /-!
 ### Results for multiplicative characters
