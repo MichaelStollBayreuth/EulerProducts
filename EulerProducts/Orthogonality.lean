@@ -19,6 +19,18 @@ lemma ZMod.inv_mul_eq_one_of_isUnit {n : ℕ} {a : ZMod n} (ha : IsUnit a) (b : 
 instance Monoid.neZero_card_of_finite {M : Type*} [Monoid M] [Finite M] : NeZero (Nat.card M) := by
   refine ⟨Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩⟩
 
+noncomputable
+def Circle.rootsOfUnityMulEquiv {n : ℕ} [NeZero n] : rootsOfUnity n Circle ≃* rootsOfUnity n ℂ := by
+  refine MulEquiv.ofBijective (restrictRootsOfUnity coeHom n) ⟨?_, fun ζ ↦ ?_⟩
+  · refine (injective_iff_map_eq_one _).mpr fun ζ hζ ↦ Subtype.ext ?_
+    rw [Subgroup.coe_one]
+    simp only [restrictRootsOfUnity, MonoidHom.coe_mk, OneHom.coe_mk, Subgroup.mk_eq_one,
+      ← map_one (Units.map ↑coeHom)] at hζ
+    exact (Units.map_injective <| (Set.injective_codRestrict Subtype.property).mp
+      fun ⦃_ _⦄ a ↦ a) hζ
+  · sorry
+
+
 -- new file RingTheory.RootsOfUnity.EnoughRootsOfUnityInstances ?
 namespace IsAlgClosed
 
@@ -159,7 +171,7 @@ lemma mulEquiv_units : Nonempty (DirichletCharacter R n ≃* (ZMod n)ˣ) :=
   have := HasEnoughRootsOfUnity.of_totient R n
   MulChar.mulEquiv_units ..
 
-/-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has all
+/-- There are `n.totient` Dirichlet characters mod `n` with values in a ring that has enough
 roots of unity. -/
 lemma card_eq_totient_of_hasEnoughRootsOfUnity :
     Nat.card (DirichletCharacter R n) = n.totient := by
