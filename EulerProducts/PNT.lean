@@ -1,7 +1,7 @@
 import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
-import EulerProducts.Orthogonality
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import Mathlib.NumberTheory.LSeries.Linearity
 import Mathlib.NumberTheory.LSeries.QuadraticNonvanishing
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed

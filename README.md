@@ -17,8 +17,6 @@ Current projects:
 * [__EulerProducts/DirichletLSeries.lean__](EulerProducts/DirichletLSeries.lean):
   results on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
   von Mangoldt functions)
-* [__EulerProducts/Orthogonality.lean__](EulerProducts/Orthogonality.lean):
-  A proof of the orthogonality relation of Dirichlet characters of given modulus.
 * [__EulerProducts/PNT.lean__](EulerProducts/PNT.lean):
   a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
   __Wiener-Ikehara Tauberian Theorem__. This also contains a proof of the non-vanishing
