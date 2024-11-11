@@ -443,12 +443,10 @@ theorem Lfunction_ne_zero_of_one_le_re (χ : DirichletCharacter ℂ N) ⦃s : �
 
 end DirichletCharacter
 
-/-- We use `ζ` to denote the Riemann zeta function. -/
-local notation (name := rzeta) "ζ" => riemannZeta
-
 open DirichletCharacter in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
-lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) : ζ z ≠ 0 := by
+lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) :
+    riemannZeta z ≠ 0 := by
   rw [← LFunction_modOne_eq (χ := 1)]
   exact Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ 1) (.inr hz) hz'
 
@@ -470,18 +468,18 @@ variable (n : ℕ) [NeZero n]
 character `χ`. Its (negative) logarithmic derivative is used in the Wiener-Ikehara Theorem
 to prove the Prime Number Theorem version of Dirichlet's Theorem on primes in arithmetic
 progressions. -/
-noncomputable def LFunction_triv_char₁ : ℂ → ℂ :=
+noncomputable def LFunctionTrivChar₁ : ℂ → ℂ :=
   Function.update (fun z ↦ LFunctionTrivChar n z * (z - 1)) 1
     (∏ p ∈ n.primeFactors, (1 - (p : ℂ)⁻¹))
 
-lemma LFunction_triv_char₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) :
-    LFunction_triv_char₁ n z = LFunctionTrivChar n z * (z - 1) := by
-  simp [LFunction_triv_char₁, hz]
+lemma LFunctionTrivChar₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) :
+    LFunctionTrivChar₁ n z = LFunctionTrivChar n z * (z - 1) := by
+  simp [LFunctionTrivChar₁, hz]
 
-lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunction_triv_char₁ n) := by
+lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunctionTrivChar₁ n) := by
   rw [← differentiableOn_univ,
     ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem,
-    LFunction_triv_char₁]
+    LFunctionTrivChar₁]
   refine ⟨DifferentiableOn.congr (f := fun z ↦ LFunctionTrivChar n z * (z - 1))
     (fun z hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
     continuousWithinAt_compl_self.mp ?_⟩
@@ -494,43 +492,43 @@ lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunction_triv
     simp only [continuousWithinAt_compl_self, continuousAt_update_same]
     exact LFunctionTrivChar_residue_one
 
-lemma deriv_LFunction_triv_char₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
-    deriv (LFunction_triv_char₁ n) z =
+lemma deriv_LFunctionTrivChar₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
+    deriv (LFunctionTrivChar₁ n) z =
       deriv (LFunctionTrivChar n) z * (z - 1) + LFunctionTrivChar n z := by
-  have H : deriv (LFunction_triv_char₁ n) z =
+  have H : deriv (LFunctionTrivChar₁ n) z =
       deriv (fun w ↦ LFunctionTrivChar n w * (w - 1)) z := by
     refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
-    simp only [LFunction_triv_char₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true,
+    simp only [LFunctionTrivChar₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true,
       Function.update_noteq]
   rw [H, deriv_mul (differentiableAt_LFunction _ z (.inl hz)) <| differentiableAt_id'.sub <|
     differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
 
-lemma neg_logDeriv_LFunction_triv_char₁_eq {z : ℂ} (hz₁ : z ≠ 1)
+lemma neg_logDeriv_LFunctionTrivChar₁_eq {z : ℂ} (hz₁ : z ≠ 1)
     (hz₂ : LFunctionTrivChar n z ≠ 0) :
-    -deriv (LFunction_triv_char₁ n) z / LFunction_triv_char₁ n z =
+    -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z =
       -deriv (LFunctionTrivChar n) z / LFunctionTrivChar n z - 1 / (z - 1) := by
-  rw [deriv_LFunction_triv_char₁_apply_of_ne_one n hz₁, LFunction_triv_char₁_apply_of_ne_one n hz₁]
+  rw [deriv_LFunctionTrivChar₁_apply_of_ne_one n hz₁, LFunctionTrivChar₁_apply_of_ne_one n hz₁]
   field_simp [sub_ne_zero.mpr hz₁]
   ring
 
-lemma continuousOn_neg_logDeriv_LFunction_triv_char₁ :
-    ContinuousOn (fun z ↦ -deriv (LFunction_triv_char₁ n) z / LFunction_triv_char₁ n z)
+lemma continuousOn_neg_logDeriv_LFunctionTrivChar₁ :
+    ContinuousOn (fun z ↦ -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z)
       {z | z = 1 ∨ LFunctionTrivChar n z ≠ 0} := by
   simp_rw [neg_div]
   refine (((LFunction_triv_char₁_differentiable n).contDiff.continuous_deriv le_rfl).continuousOn.div
     (LFunction_triv_char₁_differentiable n).continuous.continuousOn fun w hw ↦ ?_).neg
   rcases eq_or_ne w 1 with rfl | hw'
-  · simp only [LFunction_triv_char₁, Function.update_same]
+  · simp only [LFunctionTrivChar₁, Function.update_same]
     refine Finset.prod_ne_zero_iff.mpr fun p hp ↦ ?_
     rw [sub_ne_zero, ne_eq, one_eq_inv]
     exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_one
   · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
-    simp only [LFunction_triv_char₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
+    simp only [LFunctionTrivChar₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
       false_or]
     exact sub_ne_zero.mpr hw'
 
-lemma eq_one_or_LFunction_triv_char_ne_zero_of_one_le_re :
+lemma eq_one_or_LFunctionTrivChar_ne_zero_of_one_le_re :
     {s : ℂ | 1 ≤ s.re} ⊆ {s | s = 1 ∨ LFunction (1 : DirichletCharacter ℂ n) s ≠ 0} := by
   intro s hs
   simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
@@ -573,6 +571,9 @@ We show that `s ↦ ζ' s / ζ s + 1 / (s - 1)` (or rather, its negative, which 
 we need for the Wiener-Ikehara Theorem) is continuous outside the zeros of `ζ`.
 -/
 
+/-- We use `ζ` to denote the Riemann zeta function. -/
+local notation (name := rzeta) "ζ" => riemannZeta
+
 /-- The function obtained by "multiplying away" the pole of `ζ`. Its (negative) logarithmic
 derivative is the function used in the Wiener-Ikehara Theorem to prove the Prime Number
 Theorem. -/
@@ -580,23 +581,23 @@ noncomputable def ζ₁ : ℂ → ℂ := Function.update (fun z ↦ ζ z * (z - 
 
 open DirichletCharacter
 
-lemma riemannZeta_eq_LFunction_triv_char_one : ζ = LFunctionTrivChar 1 :=
+lemma riemannZeta_eq_LFunctionTrivChar_one : ζ = LFunctionTrivChar 1 :=
   LFunction_modOne_eq.symm
 
-lemma ζ₁_eq_LFunction_triv_char₁_one : ζ₁ = LFunction_triv_char₁ 1 := by
+lemma ζ₁_eq_LFunctionTrivChar₁_one : ζ₁ = LFunctionTrivChar₁ 1 := by
   ext1
-  simp only [ζ₁, LFunction_triv_char₁, LFunction_modOne_eq, Nat.primeFactors_one,
+  simp only [ζ₁, LFunctionTrivChar₁, LFunction_modOne_eq, Nat.primeFactors_one,
     Finset.prod_empty]
 
 lemma neg_logDeriv_ζ₁_eq {z : ℂ} (hz₁ : z ≠ 1) (hz₂ : ζ z ≠ 0) :
     -deriv ζ₁ z / ζ₁ z = -deriv ζ z / ζ z - 1 / (z - 1) := by
-  simp only [ζ₁_eq_LFunction_triv_char₁_one, riemannZeta_eq_LFunction_triv_char_one] at hz₂ ⊢
-  exact neg_logDeriv_LFunction_triv_char₁_eq 1 hz₁ hz₂
+  simp only [ζ₁_eq_LFunctionTrivChar₁_one, riemannZeta_eq_LFunctionTrivChar_one] at hz₂ ⊢
+  exact neg_logDeriv_LFunctionTrivChar₁_eq 1 hz₁ hz₂
 
 lemma continuousOn_neg_logDeriv_ζ₁ :
     ContinuousOn (fun z ↦ -deriv ζ₁ z / ζ₁ z) {z | z = 1 ∨ ζ z ≠ 0} := by
-  simp only [ζ₁_eq_LFunction_triv_char₁_one, riemannZeta_eq_LFunction_triv_char_one]
-  exact continuousOn_neg_logDeriv_LFunction_triv_char₁ 1
+  simp only [ζ₁_eq_LFunctionTrivChar₁_one, riemannZeta_eq_LFunctionTrivChar_one]
+  exact continuousOn_neg_logDeriv_LFunctionTrivChar₁ 1
 
 end zeta
 
@@ -621,8 +622,8 @@ lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
      LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s =
       -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
         (deriv (LFunction χ) s / LFunction χ s) := by
-  simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg, ←
-    Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
+  simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg,
+    ← Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
   rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
   simp only [← LSeries_smul]
   classical
@@ -640,7 +641,7 @@ open Classical in
 /-- The function `F` used in the Wiener-Ikehara Theorem to prove Dirichlet's Theorem. -/
 noncomputable
 def weakDirichlet_auxFun (s : ℂ) : ℂ :=
-  (q.totient : ℂ)⁻¹ * (-deriv (LFunction_triv_char₁ q) s / LFunction_triv_char₁ q s -
+  (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
     ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
 
 lemma weakDirichlet_auxFun_prop (ha : IsUnit a) :
@@ -662,7 +663,7 @@ lemma weakDirichlet_auxFun_prop (ha : IsUnit a) :
   have hs₁ : s ≠ 1 := by
     rintro rfl
     simp only [one_re, lt_self_iff_false] at hs
-  rw [deriv_LFunction_triv_char₁_apply_of_ne_one _ hs₁, LFunction_triv_char₁_apply_of_ne_one _ hs₁]
+  rw [deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs₁, LFunctionTrivChar₁_apply_of_ne_one _ hs₁]
   simp only [LFunctionTrivChar]
   rw [add_div, mul_div_mul_right _ _ (sub_ne_zero_of_ne hs₁)]
   conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
@@ -676,8 +677,8 @@ lemma continuousOn_weakDirichlet_auxFun :
   rw [show weakDirichlet_auxFun q a = fun s ↦ _ from rfl]
   simp only [weakDirichlet_auxFun, sub_eq_add_neg]
   refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
-  · exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_triv_char₁ q)
-      (eq_one_or_LFunction_triv_char_ne_zero_of_one_le_re q)
+  · exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q)
+      (eq_one_or_LFunctionTrivChar_ne_zero_of_one_le_re q)
   · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
     refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
     replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
