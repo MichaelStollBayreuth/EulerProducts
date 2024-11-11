@@ -11,6 +11,7 @@ Here we consider `f : ℕ →*₀ ℂ` and the goal is to prove that
 `exp (∑ p in Primes, log (1 - f p)⁻¹) = ∑ n : ℕ, f n`
 under suitable conditions on `f`.
 -/
+-- Mathlib.NumberTheory.EulerProduct.Basic
 
 open BigOperators Filter Topology Complex
 
@@ -52,14 +53,20 @@ section BigO
 
 open Topology Asymptotics Filter
 
+-- [Mathlib.Analysis.InnerProductSpace.Basic, Mathlib.Analysis.Complex.Asymptotics,
+--  Mathlib.Analysis.Normed.Algebra.Exponential]
 lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
   h.comp_tendsto <| Continuous.tendsto continuous_ofReal x
 
+-- [Mathlib.Analysis.Complex.RealDeriv]
 lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
   h.comp_tendsto <| ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
 
+-- [Mathlib.Analysis.Asymptotics.Theta, Mathlib.Analysis.SpecificLimits.Normed,
+--  Mathlib.Analysis.Asymptotics.SpecificAsymptotics,
+--  Mathlib.Analysis.NormedSpace.OperatorNorm.Asymptotics]
 lemma ContinuousAt.isBigO {𝕜 𝕜' : Type*} [NormedRing 𝕜] [NormedRing 𝕜'] [NormOneClass 𝕜']
     {f : 𝕜 → 𝕜'} {z : 𝕜} (hf : ContinuousAt f z) :
     (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : 𝕜')) := by
@@ -77,6 +84,7 @@ lemma ContinuousAt.isBigO {𝕜 𝕜' : Type*} [NormedRing 𝕜] [NormedRing �
     _ < ‖f z‖ + 1 := add_lt_add_left hw _
     _ = _ := by simp only [norm_one, mul_one]
 
+-- [Mathlib.Analysis.Calculus.Deriv.Shift]
 lemma DifferentiableAt.isBigO_of_eq_zero {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup 𝕜'] [NormedSpace 𝕜 𝕜']
     {f : 𝕜 → 𝕜'} {z : 𝕜} (hf : DifferentiableAt 𝕜 f z) (hz : f z = 0) :
