@@ -291,6 +291,11 @@ variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
 open Complex BigOperators Filter Topology Homeomorph Asymptotics
 
+private lemma one_lt_re_one_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
+    1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
+  simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
+    ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
+
 open scoped LSeries.notation
 
 open Nat ArithmeticFunction
@@ -302,14 +307,12 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   let χ₀ := (1 : DirichletCharacter ℂ N)
-  have ⟨h₀, h₁, h₂⟩ :
-      1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
-    simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
-      ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
+  have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
     simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
-    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ₀ h₀).hasSum).summable.mul_left 3
+    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ₀ h₀).hasSum).summable
+    |>.mul_left 3
   have hsum₁ :=
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
@@ -317,96 +320,89 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
   rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁,
     ← LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add,
     norm_eq_abs, abs_exp]
-  simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
+  simp only [cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff]
   rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
     re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₁,
-    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
-    ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
+    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₂, ← tsum_mul_left,
+    ← tsum_mul_left, ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
+  simp only [χ.pow_apply' two_ne_zero]
+  -- `exact` times out here
   convert tsum_nonneg fun p : Nat.Primes ↦ χ.re_log_comb_nonneg p.prop.two_le h₀
-  rw [sq, sq, MulChar.mul_apply]
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
 /-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
 lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
-    ‖LFunctionTrivChar N (1 + x) ^ 3 * χ.LFunction (1 + x + I * y) ^ 4 *
-      (χ ^ 2).LFunction (1 + x + 2 * I * y)‖ ≥ 1 := by
-  convert norm_LSeries_product_ge_one χ hx y using 3
-  · congr 2
-    · refine DirichletCharacter.LFunction_eq_LSeries 1 ?_
-      simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx]
-    · refine χ.LFunction_eq_LSeries ?_
-      simp only [add_re, one_re, ofReal_re, mul_re, I_re, zero_mul, I_im, ofReal_im, mul_zero,
-        sub_self, add_zero, lt_add_iff_pos_right, hx]
-  · refine (χ ^ 2).LFunction_eq_LSeries ?_
-    simp only [add_re, one_re, ofReal_re, mul_re, re_ofNat, I_re, mul_zero, im_ofNat, I_im, mul_one,
-      sub_self, zero_mul, mul_im, add_zero, ofReal_im, lt_add_iff_pos_right, hx]
+    ‖LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * y) ^ 4 *
+      LFunction (χ ^ 2) (1 + x + 2 * I * y)‖ ≥ 1 := by
+  have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
+  rw [LFunctionTrivChar, DirichletCharacter.LFunction_eq_LSeries 1 h₀,
+    χ.LFunction_eq_LSeries h₁, (χ ^ 2).LFunction_eq_LSeries h₂]
+  exact norm_LSeries_product_ge_one χ hx y
 
-lemma LFunction_triv_char_isBigO_near_one_horizontal :
+lemma LFunctionTrivChar_isBigO_near_one_horizontal :
     (fun x : ℝ ↦ LFunctionTrivChar N (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
   have : (fun w : ℂ ↦ LFunctionTrivChar N (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
     have H : Tendsto (fun w ↦ w * LFunctionTrivChar N (1 + w)) (𝓝[≠] 0)
                (𝓝 <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
-      convert Tendsto.comp (f := fun w ↦ 1 + w) (LFunctionTrivChar_residue_one (N := N)) ?_ using 1
-      · ext w
+      convert (LFunctionTrivChar_residue_one (N := N)).comp (f := fun w ↦ 1 + w) ?_ using 1
+      · ext1 w
         simp only [Function.comp_apply, add_sub_cancel_left]
       · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
-        convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;> simp
+        convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;>
+          simp only [coe_addLeft, add_zero]
     exact ((isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
       Tendsto.isBigO_one ℂ H).trans <| isBigO_refl ..
   exact (isBigO_comp_ofReal_nhds_ne this).mono <| nhds_right'_le_nhds_ne 0
 
-lemma LFunction_isBigO_of_ne_one_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
+omit [NeZero N] in
+private lemma one_add_I_mul_ne_one_or {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
+    1 + I * y ≠ 1 ∨ χ ≠ 1:= by
+  simpa only [ne_eq, add_right_eq_self, _root_.mul_eq_zero, I_ne_zero, ofReal_eq_zero, false_or]
+    using hy
+
+lemma LFunction_isBigO_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
     (fun x : ℝ ↦ χ.LFunction (1 + x + I * y)) =O[𝓝[>] 0] (fun _ ↦ (1 : ℂ)) := by
-  refine Asymptotics.IsBigO.mono ?_ nhdsWithin_le_nhds
-  have hy' : 1 + I * y ≠ 1 ∨ χ ≠ 1:= by
-    simpa only [ne_eq, add_right_eq_self, _root_.mul_eq_zero, I_ne_zero, ofReal_eq_zero,
-      false_or] using hy
+  refine IsBigO.mono ?_ nhdsWithin_le_nhds
   convert isBigO_comp_ofReal
-    (χ.differentiableAt_LFunction _ hy').continuousAt.isBigO using 3 with x
-  ring
+    (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or hy).continuousAt.isBigO using 3
+  abel
 
-lemma LFunction_isBigO_near_root_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1)
-    (h : χ.LFunction (1 + I * y) = 0) :
-    (fun x : ℝ ↦ χ.LFunction (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
-  have hy' : 1 + I * y ≠ 1 ∨ χ ≠ 1:= by simp [hy]
+lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1)
+    (h : LFunction χ (1 + I * y) = 0) :
+    (fun x : ℝ ↦ LFunction χ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
   conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  refine (isBigO_comp_ofReal <| DifferentiableAt.isBigO_of_eq_zero ?_ h).mono
-    nhdsWithin_le_nhds
-  exact χ.differentiableAt_LFunction (1 + I * ↑y) hy'
+  refine (isBigO_comp_ofReal <| DifferentiableAt.isBigO_of_eq_zero ?_ h).mono nhdsWithin_le_nhds
+  exact χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or hy
 
-/-- The L function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
+/-- The L-function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
 or `χ^2 ≠ 1`. -/
-theorem LFunction_ne_zero_of_re_eq_one_of_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
-    χ.LFunction (1 + I * t) ≠ 0 := by
+lemma LFunction_ne_zero_of_ne_one_or_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
+    LFunction χ (1 + I * t) ≠ 0 := by
   intro Hz
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
-      (fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * χ.LFunction (1 + x + I * t) ^ 4 *
-                   (χ ^ 2).LFunction (1 + x + 2 * I * t)) :=
+      (fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * t) ^ 4 *
+                   LFunction (χ ^ 2) (1 + x + 2 * I * t)) :=
     IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
       fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_LFunction_product_ge_one hx t).le
   have hz₁ : t ≠ 0 ∨ χ ≠ 1 := by
     rcases h with h | h
-    · refine .inr ?_
-      rintro rfl
-      simp only [one_pow, ne_eq, not_true_eq_false] at h
+    · exact .inr <| by rintro rfl; simp only [one_pow, ne_eq, not_true_eq_false] at h
     · exact .inl h
   have hz₂ : 2 * t ≠ 0 ∨ χ ^ 2 ≠ 1 := by
     rcases h with h | h
     · exact .inr h
     · exact .inl <| mul_ne_zero two_ne_zero h
-  have H := ((LFunction_triv_char_isBigO_near_one_horizontal (N := N)).pow 3).mul
-    ((LFunction_isBigO_near_root_horizontal hz₁ Hz).pow 4)|>.mul <|
-    LFunction_isBigO_of_ne_one_horizontal hz₂
+  have H := ((LFunctionTrivChar_isBigO_near_one_horizontal (N := N)).pow 3).mul
+    ((LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
+    LFunction_isBigO_horizontal hz₂
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
     rcases eq_or_ne x 0 with rfl | h
     · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
     · field_simp [h]
-      ring
-  conv at H => enter [3, x]; rw [help]
-  conv at H =>
-    enter [2, x]; rw [show 1 + x + I * ↑(2 * t) = 1 + x + 2 * I * t by simp; ring]
+      exact _root_.pow_succ' ..
+  simp only [ofReal_mul, ofReal_ofNat, mul_left_comm I, ← mul_assoc, help] at H
   replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
   refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <|
@@ -420,9 +416,9 @@ theorem Lfunction_ne_zero_of_re_eq_one (χ : DirichletCharacter ℂ N) (t : ℝ)
     LFunction χ (1 + I * t) ≠ 0 := by
   by_cases h : χ ^ 2 = 1 ∧ t = 0
   · simp only [ne_eq, h.2, not_true_eq_false, or_false] at hχt
-    rw [h.2, ofReal_zero, mul_zero, add_zero]
-    exact LFunction_at_one_ne_zero_of_quadratic h.1 hχt
-  · exact LFunction_ne_zero_of_re_eq_one_of_not_quadratic <| not_and_or.mp h
+    simpa only [h.2, ofReal_zero, mul_zero, add_zero]
+      using LFunction_at_one_ne_zero_of_quadratic h.1 hχt
+  · exact LFunction_ne_zero_of_ne_one_or_not_quadratic <| not_and_or.mp h
 
 /-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
 except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
