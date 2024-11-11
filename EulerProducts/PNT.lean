@@ -1,10 +1,47 @@
-import EulerProducts.Auxiliary
 import EulerProducts.Logarithm
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import Mathlib.NumberTheory.LSeries.Linearity
 import Mathlib.NumberTheory.LSeries.QuadraticNonvanishing
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+
+section BigO
+
+open Topology Asymptotics Filter
+
+lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    Continuous.tendsto Complex.continuous_ofReal x
+
+lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
+    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
+  Asymptotics.IsBigO.comp_tendsto (k := fun y : ℝ ↦ (y : ℂ)) h <|
+    ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
+
+lemma ContinuousAt.isBigO {f : ℂ → ℂ} {z : ℂ} (hf : ContinuousAt f z) :
+    (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : ℂ)) := by
+  rw [isBigO_iff']
+  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0 := by
+    convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
+    · simp
+    · simp [Function.comp_def, hf]
+  simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
+  specialize hf 1 zero_lt_one
+  refine ⟨‖f z‖ + 1, by positivity, ?_⟩
+  refine Eventually.mp hf <| Eventually.of_forall fun w hw ↦ le_of_lt ?_
+  calc ‖f (w + z)‖
+    _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
+    _ < ‖f z‖ + 1 := add_lt_add_left hw _
+    _ = _ := by simp only [norm_one, mul_one]
+
+lemma DifferentiableAt.isBigO_of_eq_zero {f : ℂ → ℂ} {z : ℂ} (hf : DifferentiableAt ℂ f z)
+    (hz : f z = 0) : (fun w ↦ f (w + z)) =O[𝓝 0] id := by
+  rw [← zero_add z] at hf
+  simpa only [zero_add, hz, sub_zero]
+    using (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
+
+end BigO
 
 section LSeries
 
