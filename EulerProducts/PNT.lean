@@ -171,18 +171,6 @@ def WienerIkeharaTheorem : Prop :=
 
 open Complex
 
--- A helper lemma used in some proofs below
-lemma one_lt_re_of_pos {x : ℝ} (y : ℝ) (hx : 0 < x) :
-    1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
-  simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
-    ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
-
-/-- We use `ζ` to denote the Riemann zeta function. -/
-local notation (name := rzeta) "ζ" => riemannZeta
-
-/-- We use `χ₁` to denote the (trivial) Dirichlet character modulo `1`. -/
-local notation (name := Dchar_one') "χ₁" => (1 : DirichletCharacter ℂ 1)
-
 section EulerProduct
 
 -- This gets moved to `NumberTheory.LSeries.EulerProduct`
@@ -194,19 +182,20 @@ theorem DirichletCharacter.LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharac
     (hs : 1 < s.re) :
     exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
   rw [LSeries]
-  convert exp_sum_primes_log_eq_tsum (f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs) <|
-    summable_dirichletSummand χ hs -- where does the `x✝: ℕ` come from??
-  ext n
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [term_zero, map_zero]
-  · simp [hn, dirichletSummandHom, div_eq_mul_inv, cpow_neg]
+  let f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs
+  have h n : term ↗χ s n = f n := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp only [term_zero, map_zero]
+    · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, div_eq_mul_inv,
+        dirichletSummandHom, cpow_neg, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, f]
+  simpa only [h] using exp_sum_primes_log_eq_tsum (f := f) <| summable_dirichletSummand χ hs
 
 open DirichletCharacter
 
 /-- A variant of the Euler product for the L-series of `ζ`. -/
 theorem ArithmeticFunction.LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
     exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L 1 s := by
-  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' χ₁ hs using 7
+  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' (1 : DirichletCharacter ℂ 1) hs using 7
   rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
 
 /-- A variant of the Euler product for the Riemann zeta function. -/
@@ -217,8 +206,8 @@ theorem riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
 end EulerProduct
 
 
-lemma summable_neg_log_one_sub_char_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
-    (hs : 1 < s.re) :
+lemma summable_neg_log_one_sub_character_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N)
+    {s : ℂ} (hs : 1 < s.re) :
     Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
   have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
     rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
@@ -243,16 +232,17 @@ lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (
   have H₂ := hasSum_re <| hasSum_taylorSeries_neg_log hac₂
   rw [← ((H₀.add H₁).add H₂).tsum_eq]; clear H₀ H₁ H₂
   refine tsum_nonneg fun n ↦ ?_
-  simp only [mul_pow, ← ofReal_pow, div_natCast_re, ofReal_re, mul_re, ofReal_im, zero_mul,
+  simp only [← ofReal_pow, div_natCast_re, ofReal_re, mul_pow, mul_re, ofReal_im, zero_mul,
     sub_zero]
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  field_simp
-  refine div_nonneg ?_ n.cast_nonneg
-  rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz]
-  calc
-    0 ≤ 2 * a ^ n * ((z ^ n).re + 1) ^ 2 := by positivity
-    _ = _  := by ring
+  · simp only [pow_zero, CharP.cast_eq_zero, div_zero, mul_zero, one_re, mul_one, add_zero,
+     le_refl]
+  · simp only [← mul_div_assoc, ← add_div]
+    refine div_nonneg ?_ n.cast_nonneg
+    rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz]
+    calc
+     0 ≤ 2 * a ^ n * ((z ^ n).re + 1) ^ 2 := by positivity
+      _ = _  := by ring
 
 namespace DirichletCharacter
 
@@ -277,24 +267,25 @@ lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn
     have ha₁ : (n : ℝ) ^ (-x) < 1 := by
       simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
         Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff]
-        using Or.inr <| Or.inl ⟨hn, zero_lt_one.trans hx⟩
+        using .inr <| .inl ⟨hn, zero_lt_one.trans hx⟩
     have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1 := by
       rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
         norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
-      simp
+      simp only [abs_natCast, neg_re, mul_re, I_re, ofReal_re, zero_mul, I_im, ofReal_im, mul_zero,
+        sub_self, neg_zero, Real.rpow_zero, natCast_arg, neg_im, mul_im, one_mul, zero_add, mul_neg,
+        Real.exp_zero, ne_eq, one_ne_zero, not_false_eq_true, div_self]
     rw [MulChar.one_apply hn', one_mul]
     convert _root_.re_log_comb_nonneg ha₀ ha₁ hz using 6
     · congr 2
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
     · congr 2
       rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
-        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast]
-      ring
+        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast, mul_left_comm]
     · rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
         ofReal_cpow n.cast_nonneg (-x), ofReal_natCast,
-        show -(2 * I * y) = (2 : ℕ) * (-I * y) by ring, cpow_nat_mul]
-      ring_nf
-  · simp [MulChar.map_nonunit _ hn']
+        show -(2 * I * y) = (2 : ℕ) * -(I * y) by ring, cpow_nat_mul, mul_pow, mul_left_comm]
+  · simp only [MulChar.map_nonunit _ hn', zero_mul, sub_zero, log_one, neg_zero, zero_re, mul_zero,
+      neg_add_rev, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, le_refl]
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
@@ -311,23 +302,26 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   let χ₀ := (1 : DirichletCharacter ℂ N)
-  have ⟨h₀, h₁, h₂⟩ := one_lt_re_of_pos y hx
+  have ⟨h₀, h₁, h₂⟩ :
+      1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
+    simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
+      ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
     simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
-    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ₀ h₀).hasSum).summable.mul_left 3
+    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ₀ h₀).hasSum).summable.mul_left 3
   have hsum₁ :=
-    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
+    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
-    (hasSum_re (summable_neg_log_one_sub_char_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
+    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
   rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁,
     ← LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add,
     norm_eq_abs, abs_exp]
   simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff]
-  rw [re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₀,
-    re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₁,
-    re_tsum <| summable_neg_log_one_sub_char_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
+  rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
+    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₁,
+    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₂, ← tsum_mul_left, ← tsum_mul_left,
     ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
   convert tsum_nonneg fun p : Nat.Primes ↦ χ.re_log_comb_nonneg p.prop.two_le h₀
   rw [sq, sq, MulChar.mul_apply]
@@ -452,6 +446,9 @@ theorem Lfunction_ne_zero_of_one_le_re (χ : DirichletCharacter ℂ N) ⦃s : �
   · exact LFunction_eq_LSeries χ hs ▸ LSeries_ne_zero_of_one_lt_re χ hs
 
 end DirichletCharacter
+
+/-- We use `ζ` to denote the Riemann zeta function. -/
+local notation (name := rzeta) "ζ" => riemannZeta
 
 open DirichletCharacter in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
