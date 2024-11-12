@@ -693,23 +693,6 @@ def WienerIkeharaTheorem : Prop :=
 
 open Filter ArithmeticFunction Topology
 
-/- /-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
-`ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
-theorem PNT_vonMangoldt' (WIT : WienerIkeharaTheorem) :
-    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum Λ) / N) atTop (𝓝 1) := by
-  have hnv := riemannZeta_ne_zero_of_one_le_re
-  refine WIT (F := fun z ↦ -deriv ζ₁ z / ζ₁ z) (fun _ ↦ vonMangoldt_nonneg) (fun s hs ↦ ?_) ?_
-  · have hs₁ : s ≠ 1 := by
-      rintro rfl
-      simp at hs
-    simp only [ne_eq, hs₁, not_false_eq_true, LSeries_vonMangoldt_eq_deriv_riemannZeta_div hs,
-      ofReal_one]
-    exact neg_logDeriv_ζ₁_eq hs₁ <| hnv hs₁ (Set.mem_setOf.mp hs).le
-  · refine continuousOn_neg_logDeriv_ζ₁.mono fun s _ ↦ ?_
-    specialize @hnv s
-    simp at *
-    tauto -/
-
 /--  The *Wiener-Ikehara Theorem* implies *Dirichlet's Theorem* in the form that
 `ψ x ∼ q.totient⁻¹ * x`, where `ψ x = ∑ n < x ∧ n ≡ a mod q, Λ n`
 and `Λ` is the von Mangoldt function.
