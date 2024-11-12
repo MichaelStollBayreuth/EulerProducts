@@ -58,7 +58,7 @@ open Topology Asymptotics Filter
 --  Mathlib.Analysis.Normed.Algebra.Exponential]
 lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
-  h.comp_tendsto <| Continuous.tendsto continuous_ofReal x
+  h.comp_tendsto <| continuous_ofReal.tendsto x
 
 -- [Mathlib.Analysis.Complex.RealDeriv]
 lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
@@ -447,9 +447,8 @@ end DirichletCharacter
 open DirichletCharacter in
 /-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) :
-    riemannZeta z ≠ 0 := by
-  rw [← LFunction_modOne_eq (χ := 1)]
-  exact Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ 1) (.inr hz) hz'
+    riemannZeta z ≠ 0 :=
+  LFunction_modOne_eq (χ := 1) ▸ Lfunction_ne_zero_of_one_le_re _ (.inr hz) hz'
 
 /-!
 ### The logarithmic derivative of the L-function of a trivial character has a simple pole at s = 1 with residue -1
