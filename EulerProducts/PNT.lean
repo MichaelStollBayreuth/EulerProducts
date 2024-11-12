@@ -549,7 +549,7 @@ end nontrivial
 end DirichletCharacter
 
 section zeta
-
+/-
 /-!
 ### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
 
@@ -586,6 +586,7 @@ lemma continuousOn_neg_logDeriv_ζ₁ :
   exact continuousOn_neg_logDeriv_LFunctionTrivChar₁ 1
 
 end zeta
+ -/
 
 /-!
 ### Proof of Lemma 9
