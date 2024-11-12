@@ -150,21 +150,7 @@ lemma LSeries_sum' (hf : ∀ i, LSeriesSummable (f i) s) :
 
 end LSeries
 
-/-!
-### Statement of a version of the Wiener-Ikehara Theorem
--/
-
 open scoped LSeries.notation
-
-open Filter Topology Nat ArithmeticFunction in
-/-- A version of the *Wiener-Ikehara Tauberian Theorem*: If `f` is a nonnegative arithmetic
-function whose L-series has a simple pole at `s = 1` with residue `A` and otherwise extends
-continuously to the closed half-plane `re s ≥ 1`, then `∑ n < N, f n` is asymptotic to `A*N`. -/
-def WienerIkeharaTheorem : Prop :=
-  ∀ {f : ℕ → ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
-    Set.EqOn F (fun s ↦ L ↗f s - A / (s - 1)) {s | 1 < s.re} →
-    ContinuousOn F {s | 1 ≤ s.re} →
-    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
 /-!
 ### The L-function of a Dirichlet character does not vanish on Re(s) = 1
@@ -686,6 +672,20 @@ lemma continuousOn_weakDirichlet_auxFun :
       (LFunction_nontriv_char_ne_zero_of_one_le_re hχ)
 
 end arith_prog
+
+/-!
+### Statement of a version of the Wiener-Ikehara Theorem
+-/
+
+open Filter Topology Nat ArithmeticFunction in
+/-- A version of the *Wiener-Ikehara Tauberian Theorem*: If `f` is a nonnegative arithmetic
+function whose L-series has a simple pole at `s = 1` with residue `A` and otherwise extends
+continuously to the closed half-plane `re s ≥ 1`, then `∑ n < N, f n` is asymptotic to `A*N`. -/
+def WienerIkeharaTheorem : Prop :=
+  ∀ {f : ℕ → ℝ} {A : ℝ} {F : ℂ → ℂ}, (∀ n, 0 ≤ f n) →
+    Set.EqOn F (fun s ↦ L ↗f s - A / (s - 1)) {s | 1 < s.re} →
+    ContinuousOn F {s | 1 ≤ s.re} →
+    Tendsto (fun N : ℕ ↦ ((Finset.range N).sum f) / N) atTop (𝓝 A)
 
 /-!
 ### Derivation of the Prime Number Theorem and Dirichlet's Theorem from the Wiener-Ikehara Theorem
