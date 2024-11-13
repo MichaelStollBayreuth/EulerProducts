@@ -50,40 +50,6 @@ theorem exp_tsum_primes_log_eq_tsum' {f : ℕ → ℂ} (h₀ : f 0 = 0) (h₁ : 
 
 end EulerProduct
 
-section LSeries
-
--- This should go to `Mathlib.NumberTheory.LSeries.Linearity`
-
-open LSeries
-
-variable {ι : Type*} (f : ι → ℕ → ℂ) (S : Finset ι) (s : ℂ)
-
-lemma LSeries.term_sum_apply (n : ℕ) :
-    term (∑ i ∈ S, f i) s n  = ∑ i ∈ S, term (f i) s n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [term_zero, Finset.sum_const_zero]
-  · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, Finset.sum_apply, Finset.sum_div]
-
-lemma LSeries.term_sum : term (∑ i ∈ S, f i) s  = ∑ i ∈ S, term (f i) s :=
-  funext fun _ ↦ by rw [Finset.sum_apply]; exact term_sum_apply f S s _
-
-variable {f S s}
-
-lemma LSeriesHasSum.sum {a : ι → ℂ} (hf : ∀ i ∈ S, LSeriesHasSum (f i) s (a i)) :
-    LSeriesHasSum (∑ i ∈ S, f i) s (∑ i ∈ S, a i) := by
-  simpa only [LSeriesHasSum, term_sum, Finset.sum_fn S fun i ↦ term (f i) s] using hasSum_sum hf
-
-lemma LSeriesSummable.sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
-    LSeriesSummable (∑ i ∈ S, f i) s := by
-  simpa only [LSeriesSummable, ← term_sum_apply] using summable_sum hf
-
-@[simp]
-lemma LSeries_sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
-    LSeries (∑ i ∈ S, f i) s = ∑ i ∈ S, LSeries (f i) s := by
-  simpa only [LSeries, term_sum, Finset.sum_apply] using tsum_sum hf
-
-end LSeries
-
 open scoped LSeries.notation
 
 /-!
@@ -164,15 +130,6 @@ private lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z 
       _ = _  := by ring
 
 namespace DirichletCharacter
-
-lemma deriv_LFunction_eq_deriv_LSeries {n : ℕ} [NeZero n] (χ : DirichletCharacter ℂ n) {s : ℂ}
-    (hs : 1 < s.re) :
-    deriv (LFunction χ) s = deriv (LSeries ↗χ) s :=  by
-  refine Filter.EventuallyEq.deriv_eq ?_
-  have h : {z | 1 < z.re} ∈ nhds s :=
-    (isOpen_lt continuous_const continuous_re).mem_nhds hs
-  filter_upwards [h] with z hz
-  exact LFunction_eq_LSeries χ hz
 
 private lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x : ℝ}
     (hx : 1 < x) (y : ℝ) :
