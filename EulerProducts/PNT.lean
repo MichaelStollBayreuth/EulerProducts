@@ -325,17 +325,16 @@ private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2
 
 /-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish when `s.re = 1`
 except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_re_eq_one {s : ℂ} (hs : s.re = 1) (hχt : χ ≠ 1 ∨ s ≠ 1) :
+theorem Lfunction_ne_zero_of_re_eq_one {s : ℂ} (hs : s.re = 1) (hχs : χ ≠ 1 ∨ s ≠ 1) :
     LFunction χ s ≠ 0 := by
   by_cases h : χ ^ 2 = 1 ∧ s = 1
-  · exact h.2 ▸ LFunction_at_one_ne_zero_of_quadratic h.1 <| hχt.neg_resolve_right h.2
-  · rw [not_and_or, ← ne_eq, ← ne_eq] at h
-    have ht : s = 1 + I * s.im := by
+  · exact h.2 ▸ LFunction_at_one_ne_zero_of_quadratic h.1 <| hχs.neg_resolve_right h.2
+  · have hs' : s = 1 + I * s.im := by
       conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
-    rw [ht, add_right_ne_self] at h
+    rw [not_and_or, ← ne_eq, ← ne_eq, hs', add_right_ne_self] at h
     replace h : χ ^ 2 ≠ 1 ∨ s.im ≠ 0 :=
       h.casesOn .inl (fun H ↦ .inr <| by exact_mod_cast right_ne_zero_of_mul H)
-    exact ht.symm ▸ χ.LFunction_ne_zero_of_not_quadratic_or_ne_one h
+    exact hs'.symm ▸ χ.LFunction_ne_zero_of_not_quadratic_or_ne_one h
 
 /-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
 except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
