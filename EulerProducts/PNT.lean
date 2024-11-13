@@ -50,21 +50,6 @@ theorem exp_tsum_primes_log_eq_tsum' {f : ℕ → ℂ} (h₀ : f 0 = 0) (h₁ : 
 
 end EulerProduct
 
-section BigO
-
-open Topology Asymptotics Filter
-
-lemma Complex.isBigO_comp_ofReal_nhds {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
-  h.comp_tendsto <| continuous_ofReal.tendsto x
-
-lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
-    (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
-  h.comp_tendsto <| continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ _ ↦ by
-    simp_all only [Set.mem_compl_iff, Set.mem_singleton_iff, ofReal_inj, not_false_eq_true]
-
-end BigO
-
 section LSeries
 
 -- This should go to `Mathlib.NumberTheory.LSeries.Linearity`
