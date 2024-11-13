@@ -314,6 +314,7 @@ private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2
     ((χ.LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
     LFunction_isBigO_horizontal _ hz₂
   simp only [ofReal_mul, ofReal_ofNat, mul_left_comm I, ← mul_assoc, help] at H
+  -- go via absolute value to translate into a statement over `ℝ`
   replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
   refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <|
