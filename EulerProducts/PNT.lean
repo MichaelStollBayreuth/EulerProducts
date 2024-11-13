@@ -176,8 +176,8 @@ lemma deriv_LFunction_eq_deriv_LSeries {n : ℕ} [NeZero n] (χ : DirichletChara
 
 /-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
 has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
-lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x y : ℝ}
-    (hx : 1 < x) :
+lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x : ℝ}
+    (hx : 1 < x) (y : ℝ) :
     0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
@@ -211,16 +211,15 @@ private lemma one_lt_re_one_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
 
+variable {N : ℕ} (χ : DirichletCharacter ℂ N)
+
 open scoped LSeries.notation in
 /-- For positive `x` and nonzero `y` we have that
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
-lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x : ℝ} (hx : 0 < x)
-    (y : ℝ) :
+lemma norm_LSeries_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
-  have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
-    simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow
       (1 : DirichletCharacter ℂ N) h₀).hasSum).summable |>.mul_left 3
@@ -228,20 +227,19 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
-  rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁,
-    ← LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add,
-    norm_eq_abs, abs_exp]
+  rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁, ← LSeries_eulerProduct' _ h₂]
   simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
-    Real.one_le_exp_iff]
+    Real.one_le_exp_iff, ← exp_nat_mul, ← exp_add, norm_eq_abs, abs_exp]
   rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
     re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₁,
     re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₂, ← tsum_mul_left,
     ← tsum_mul_left, ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
   simp only [χ.pow_apply' two_ne_zero]
-  -- `exact` times out here
-  convert tsum_nonneg fun p : Nat.Primes ↦ χ.re_log_comb_nonneg p.prop.two_le h₀
+  have hx₁ : (1 + x : ℂ).re = 1 + (x : ℂ) := by
+    simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
+  exact tsum_nonneg fun p ↦ hx₁ ▸ χ.re_log_comb_nonneg p.prop.two_le h₀ y
 
-variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+variable [NeZero N]
 
 /-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
 lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
