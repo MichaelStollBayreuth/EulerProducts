@@ -225,13 +225,12 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
     (y : ℝ) :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
-  let χ₀ := (1 : DirichletCharacter ℂ N)
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
   have hx₁ : 1 + (x : ℂ) = (1 + x : ℂ).re := by -- kills three goals of the `convert` below
     simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
   have hsum₀ :=
-    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ₀ h₀).hasSum).summable
-    |>.mul_left 3
+    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow
+      (1 : DirichletCharacter ℂ N) h₀).hasSum).summable |>.mul_left 3
   have hsum₁ :=
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
@@ -249,7 +248,7 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
   -- `exact` times out here
   convert tsum_nonneg fun p : Nat.Primes ↦ χ.re_log_comb_nonneg p.prop.two_le h₀
 
-variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
+variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
 /-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
 lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
@@ -285,7 +284,7 @@ lemma LFunction_isBigO_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
     (fun x : ℝ ↦ χ.LFunction (1 + x + I * y)) =O[𝓝[>] 0] (fun _ ↦ (1 : ℂ)) := by
   refine IsBigO.mono ?_ nhdsWithin_le_nhds
   conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  have := (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or hy).continuousAt
+  have := (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or χ hy).continuousAt
   rw [← zero_add (1 + _)] at this
   exact ContinuousAt.comp (f := fun x : ℝ ↦ x + (1 + I * y)) (x := 0) this (by fun_prop)
     |>.tendsto.isBigO_one ℂ
@@ -294,7 +293,7 @@ lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 
     (h : LFunction χ (1 + I * y) = 0) :
     (fun x : ℝ ↦ LFunction χ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
   conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  have := χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or hy
+  have := χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or χ hy
   rw [← zero_add (1 + _)] at this
   simpa only [zero_add, h, sub_zero]
     using (Complex.isBigO_comp_ofReal_nhds (this.hasDerivAt.comp_add_const 0 _).differentiableAt.isBigO_sub)
@@ -309,7 +308,7 @@ lemma LFunction_ne_zero_of_ne_one_or_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 �
       (fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * t) ^ 4 *
                    LFunction (χ ^ 2) (1 + x + 2 * I * t)) :=
     IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
-      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (norm_LFunction_product_ge_one hx t).le
+      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (χ.norm_LFunction_product_ge_one hx t).le
   have hz₁ : t ≠ 0 ∨ χ ≠ 1 := by
     rcases h with h | h
     · exact .inr <| by rintro rfl; simp only [one_pow, ne_eq, not_true_eq_false] at h
@@ -319,8 +318,8 @@ lemma LFunction_ne_zero_of_ne_one_or_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 �
     · exact .inr h
     · exact .inl <| mul_ne_zero two_ne_zero h
   have H := ((LFunctionTrivChar_isBigO_near_one_horizontal (N := N)).pow 3).mul
-    ((LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
-    LFunction_isBigO_horizontal hz₂
+    ((χ.LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
+    LFunction_isBigO_horizontal _ hz₂
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
     rcases eq_or_ne x 0 with rfl | h
     · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
@@ -336,18 +335,17 @@ lemma LFunction_ne_zero_of_ne_one_or_not_quadratic {t : ℝ} (h : χ ^ 2 ≠ 1 �
 
 /-- If `χ` is a Dirichlet character, then `L(χ, 1 + I*t)` does not vanish for `t ∈ ℝ`
 except when `χ` is trivial and `t = 0` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_re_eq_one (χ : DirichletCharacter ℂ N) (t : ℝ) (hχt : χ ≠ 1 ∨ t ≠ 0) :
+theorem Lfunction_ne_zero_of_re_eq_one (t : ℝ) (hχt : χ ≠ 1 ∨ t ≠ 0) :
     LFunction χ (1 + I * t) ≠ 0 := by
   by_cases h : χ ^ 2 = 1 ∧ t = 0
   · simp only [ne_eq, h.2, not_true_eq_false, or_false] at hχt
     simpa only [h.2, ofReal_zero, mul_zero, add_zero]
       using LFunction_at_one_ne_zero_of_quadratic h.1 hχt
-  · exact LFunction_ne_zero_of_ne_one_or_not_quadratic <| not_and_or.mp h
+  · exact χ.LFunction_ne_zero_of_ne_one_or_not_quadratic <| not_and_or.mp h
 
 /-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
 except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_one_le_re (χ : DirichletCharacter ℂ N) ⦃s : ℂ⦄ (hχs : χ ≠ 1 ∨ s ≠ 1)
-    (hs : 1 ≤ s.re) :
+theorem Lfunction_ne_zero_of_one_le_re ⦃s : ℂ⦄ (hχs : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) :
     LFunction χ s ≠ 0 := by
   rcases hs.eq_or_lt with hs | hs
   · have hseq : s = 1 + I * s.im := by
