@@ -293,27 +293,26 @@ lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 
 private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
     LFunction χ (1 + I * t) ≠ 0 := by
   intro Hz
-  have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
-      (fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * t) ^ 4 *
-                   LFunction (χ ^ 2) (1 + x + 2 * I * t)) :=
-    IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
-      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (χ.norm_LFunction_product_ge_one hx t).le
   have hz₁ : t ≠ 0 ∨ χ ≠ 1 := by
-    rcases h with h | h
-    · exact .inr <| by rintro rfl; simp only [one_pow, ne_eq, not_true_eq_false] at h
-    · exact .inl h
-  have hz₂ : 2 * t ≠ 0 ∨ χ ^ 2 ≠ 1 := by
-    rcases h with h | h
-    · exact .inr h
-    · exact .inl <| mul_ne_zero two_ne_zero h
-  have H := ((LFunctionTrivChar_isBigO_near_one_horizontal (N := N)).pow 3).mul
-    ((χ.LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
-    LFunction_isBigO_horizontal _ hz₂
+    refine h.casesOn (fun h ↦ .inr fun H ↦ ?_) .inl
+    simp only [H, one_pow, ne_eq, not_true_eq_false] at h
+  have hz₂ : 2 * t ≠ 0 ∨ χ ^ 2 ≠ 1 :=
+    h.casesOn .inr (fun h ↦ .inl <| mul_ne_zero two_ne_zero h)
   have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
     rcases eq_or_ne x 0 with rfl | h
     · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
-    · field_simp [h]
-      exact _root_.pow_succ' ..
+    · rw [one_div, inv_pow, pow_succ _ 3, ← mul_assoc,
+        inv_mul_cancel₀ <| pow_ne_zero 3 (ofReal_ne_zero.mpr h), one_mul, mul_one]
+  -- put together the various `IsBigO` statements and `norm_LFunction_product_ge_one`
+  -- to derive a contradiction
+  have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
+      fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * t) ^ 4 *
+                   LFunction (χ ^ 2) (1 + x + 2 * I * t) :=
+    IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
+      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (χ.norm_LFunction_product_ge_one hx t).le
+  have H := ((LFunctionTrivChar_isBigO_near_one_horizontal (N := N)).pow 3).mul
+    ((χ.LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
+    LFunction_isBigO_horizontal _ hz₂
   simp only [ofReal_mul, ofReal_ofNat, mul_left_comm I, ← mul_assoc, help] at H
   replace H := (H₀.trans H).norm_right
   simp only [norm_eq_abs, abs_ofReal] at H
