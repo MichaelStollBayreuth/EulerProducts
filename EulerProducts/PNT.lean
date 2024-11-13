@@ -174,9 +174,7 @@ lemma deriv_LFunction_eq_deriv_LSeries {n : ℕ} [NeZero n] (χ : DirichletChara
   filter_upwards [h] with z hz
   exact LFunction_eq_LSeries χ hz
 
-/-- The logarithm of an Euler factor of the product `L(χ^0, x)^3 * L(χ, x+I*y)^4 * L(χ^2, x+2*I*y)`
-has nonnegative real part when `s = x + I*y` has real part `x > 1`. -/
-lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x : ℝ}
+private lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x : ℝ}
     (hx : 1 < x) (y : ℝ) :
     0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
@@ -292,9 +290,7 @@ lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 
     using (Complex.isBigO_comp_ofReal_nhds
       (this.comp_add_const 0 _).differentiableAt.isBigO_sub) |>.mono nhdsWithin_le_nhds
 
-/-- The L-function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
-or `χ^2 ≠ 1`. -/
-lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
+private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
     LFunction χ (1 + I * t) ≠ 0 := by
   intro Hz
   have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
