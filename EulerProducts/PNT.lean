@@ -319,6 +319,7 @@ private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2
   simp only [norm_eq_abs, abs_ofReal] at H
   refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <|
     isLittleO_id_one.mono nhdsWithin_le_nhds
+  -- remaining goal: `∃ᶠ (x : ℝ) in 𝓝[>] 0, 1 ≠ 0`
   simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
   exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
