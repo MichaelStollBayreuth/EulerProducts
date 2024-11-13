@@ -54,45 +54,14 @@ section BigO
 
 open Topology Asymptotics Filter
 
--- [Mathlib.Analysis.InnerProductSpace.Basic, Mathlib.Analysis.Complex.Asymptotics,
---  Mathlib.Analysis.Normed.Algebra.Exponential]
 lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
   h.comp_tendsto <| continuous_ofReal.tendsto x
 
--- [Mathlib.Analysis.Complex.RealDeriv]
 lemma Complex.isBigO_comp_ofReal_nhds_ne {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝[≠] (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝[≠] x] (fun y : ℝ ↦ g y) :=
-  h.comp_tendsto <| ((hasDerivAt_id (x : ℂ)).comp_ofReal).tendsto_punctured_nhds one_ne_zero
-
--- [Mathlib.Analysis.Asymptotics.Theta, Mathlib.Analysis.SpecificLimits.Normed,
---  Mathlib.Analysis.Asymptotics.SpecificAsymptotics,
---  Mathlib.Analysis.NormedSpace.OperatorNorm.Asymptotics]
-lemma ContinuousAt.isBigO {𝕜 𝕜' : Type*} [NormedRing 𝕜] [NormedRing 𝕜'] [NormOneClass 𝕜']
-    {f : 𝕜 → 𝕜'} {z : 𝕜} (hf : ContinuousAt f z) :
-    (fun w ↦ f (w + z)) =O[𝓝 0] (fun _ ↦ (1 : 𝕜')) := by
-  rw [isBigO_iff']
-  replace hf : ContinuousAt (fun w ↦ f (w + z)) 0 := by
-    convert (Homeomorph.comp_continuousAt_iff' (Homeomorph.addLeft (-z)) _ z).mp ?_
-    · simp only [Homeomorph.coe_addLeft, neg_add_cancel]
-    · simp only [Homeomorph.coe_addLeft, Function.comp_def, neg_add_cancel_comm, hf]
-  simp_rw [Metric.continuousAt_iff', dist_eq_norm_sub, zero_add] at hf
-  specialize hf 1 zero_lt_one
-  refine ⟨‖f z‖ + 1, by positivity, ?_⟩
-  refine Eventually.mp hf <| Eventually.of_forall fun w hw ↦ le_of_lt ?_
-  calc ‖f (w + z)‖
-    _ ≤ ‖f z‖ + ‖f (w + z) - f z‖ := norm_le_insert' ..
-    _ < ‖f z‖ + 1 := add_lt_add_left hw _
-    _ = _ := by simp only [norm_one, mul_one]
-
--- [Mathlib.Analysis.Calculus.Deriv.Shift]
-lemma DifferentiableAt.isBigO_of_eq_zero {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup 𝕜'] [NormedSpace 𝕜 𝕜']
-    {f : 𝕜 → 𝕜'} {z : 𝕜} (hf : DifferentiableAt 𝕜 f z) (hz : f z = 0) :
-    (fun w ↦ f (w + z)) =O[𝓝 0] id := by
-  rw [← zero_add z] at hf
-  simpa only [zero_add, hz, sub_zero]
-    using (hf.hasDerivAt.comp_add_const 0 z).differentiableAt.isBigO_sub
+  h.comp_tendsto <| continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ _ ↦ by
+    simp_all only [Set.mem_compl_iff, Set.mem_singleton_iff, ofReal_inj, not_false_eq_true]
 
 end BigO
 
@@ -102,15 +71,13 @@ section LSeries
 
 open LSeries
 
-variable {ι : Type*} [DecidableEq ι] (f : ι → ℕ → ℂ) (S : Finset ι) (s : ℂ)
+variable {ι : Type*} (f : ι → ℕ → ℂ) (S : Finset ι) (s : ℂ)
 
 lemma LSeries.term_sum_apply (n : ℕ) :
     term (∑ i ∈ S, f i) s n  = ∑ i ∈ S, term (f i) s n := by
-  induction S using Finset.induction_on with
-  | empty =>
-    simp only [Finset.sum_empty, term, Pi.zero_apply, zero_div, ite_self]
-  | insert hi IH  =>
-    simp only [Finset.sum_insert hi, term_add_apply, IH]
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [term_zero, Finset.sum_const_zero]
+  · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, Finset.sum_apply, Finset.sum_div]
 
 lemma LSeries.term_sum : term (∑ i ∈ S, f i) s  = ∑ i ∈ S, term (f i) s :=
   funext fun _ ↦ by rw [Finset.sum_apply]; exact term_sum_apply f S s _
@@ -129,24 +96,6 @@ lemma LSeriesSummable.sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
 lemma LSeries_sum (hf : ∀ i ∈ S, LSeriesSummable (f i) s) :
     LSeries (∑ i ∈ S, f i) s = ∑ i ∈ S, LSeries (f i) s := by
   simpa only [LSeries, term_sum, Finset.sum_apply] using tsum_sum hf
-
-variable [Fintype ι]
-
-/-- The version of `LSeriesHasSum.sum` for `Fintype.sum`. -/
-lemma LSeriesHasSum.sum' {a : ι → ℂ} (hf : ∀ i, LSeriesHasSum (f i) s (a i)) :
-    LSeriesHasSum (∑ i : ι, f i) s (∑ i : ι, a i) :=
-  sum fun i _ ↦ hf i
-
-/-- The version of `LSeriesSummable.sum` for `Fintype.sum`. -/
-lemma LSeriesSummable.sum' (hf : ∀ i, LSeriesSummable (f i) s) :
-    LSeriesSummable (∑ i : ι, f i) s :=
-  sum fun i _ ↦ hf i
-
-/-- The version of `LSeries_sum` for `Fintype.sum`. -/
-@[simp]
-lemma LSeries_sum' (hf : ∀ i, LSeriesSummable (f i) s) :
-    LSeries (∑ i : ι, f i) s = ∑ i : ι, LSeries (f i) s :=
-  LSeries_sum fun i _ ↦ hf i
 
 end LSeries
 
@@ -352,16 +301,21 @@ private lemma one_add_I_mul_ne_one_or {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
 lemma LFunction_isBigO_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
     (fun x : ℝ ↦ χ.LFunction (1 + x + I * y)) =O[𝓝[>] 0] (fun _ ↦ (1 : ℂ)) := by
   refine IsBigO.mono ?_ nhdsWithin_le_nhds
-  convert isBigO_comp_ofReal
-    (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or hy).continuousAt.isBigO using 3
-  abel
+  conv => enter [2, x]; rw [add_comm 1, add_assoc]
+  have := (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or hy).continuousAt
+  rw [← zero_add (1 + _)] at this
+  exact ContinuousAt.comp (f := fun x : ℝ ↦ x + (1 + I * y)) (x := 0) this (by fun_prop)
+    |>.tendsto.isBigO_one ℂ
 
 lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1)
     (h : LFunction χ (1 + I * y) = 0) :
     (fun x : ℝ ↦ LFunction χ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
   conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  refine (isBigO_comp_ofReal <| DifferentiableAt.isBigO_of_eq_zero ?_ h).mono nhdsWithin_le_nhds
-  exact χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or hy
+  have := χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or hy
+  rw [← zero_add (1 + _)] at this
+  simpa only [zero_add, h, sub_zero]
+    using (isBigO_comp_ofReal (this.hasDerivAt.comp_add_const 0 _).differentiableAt.isBigO_sub)
+      |>.mono nhdsWithin_le_nhds
 
 /-- The L-function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
 or `χ^2 ≠ 1`. -/
@@ -614,7 +568,7 @@ lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
   rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
   simp only [← LSeries_smul]
   classical
-  rw [← LSeries_sum' <| fun χ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
+  rw [← LSeries_sum <| fun χ _ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
   refine LSeries_congr s fun {n} _ ↦ ?_
   simp only [Pi.smul_apply, smul_eq_mul, Finset.sum_apply, Pi.mul_apply, Set.indicator_apply]
   conv_lhs => rw [← one_mul (Λ n : ℂ), ← zero_mul (Λ n : ℂ), ← ite_mul]
