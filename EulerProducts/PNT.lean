@@ -90,7 +90,7 @@ open scoped LSeries.notation
 ### The L-function of a Dirichlet character does not vanish on Re(s) = 1
 -/
 
-open Complex
+--open Complex
 
 section EulerProduct
 
@@ -205,17 +205,12 @@ lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
-open Complex BigOperators Filter Topology Homeomorph Asymptotics
-
 private lemma one_lt_re_one_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
     1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
 
-open scoped LSeries.notation
-
-open Nat ArithmeticFunction
-
+open scoped LSeries.notation in
 /-- For positive `x` and nonzero `y` we have that
 $|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
 lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x : ℝ} (hx : 0 < x)
@@ -235,7 +230,7 @@ lemma norm_LSeries_product_ge_one {N : ℕ} (χ : DirichletCharacter ℂ N) {x :
   rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁,
     ← LSeries_eulerProduct' (χ ^ 2) h₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add,
     norm_eq_abs, abs_exp]
-  simp only [cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
+  simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff]
   rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
     re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₁,
@@ -256,6 +251,9 @@ lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     χ.LFunction_eq_LSeries h₁, (χ ^ 2).LFunction_eq_LSeries h₂]
   exact norm_LSeries_product_ge_one χ hx y
 
+open Asymptotics Topology Filter
+
+open Homeomorph in
 lemma LFunctionTrivChar_isBigO_near_one_horizontal :
     (fun x : ℝ ↦ LFunctionTrivChar N (1 + x)) =O[𝓝[>] 0] (fun x ↦ (1 : ℂ) / x) := by
   have : (fun w : ℂ ↦ LFunctionTrivChar N (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
