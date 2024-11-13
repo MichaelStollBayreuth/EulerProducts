@@ -54,7 +54,7 @@ section BigO
 
 open Topology Asymptotics Filter
 
-lemma Complex.isBigO_comp_ofReal {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
+lemma Complex.isBigO_comp_ofReal_nhds {f g : ℂ → ℂ} {x : ℝ} (h : f =O[𝓝 (x : ℂ)] g) :
     (fun y : ℝ ↦ f y) =O[𝓝 x] (fun y : ℝ ↦ g y) :=
   h.comp_tendsto <| continuous_ofReal.tendsto x
 
@@ -314,7 +314,7 @@ lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 
   have := χ.differentiableAt_LFunction (1 + I * ↑y) <| one_add_I_mul_ne_one_or hy
   rw [← zero_add (1 + _)] at this
   simpa only [zero_add, h, sub_zero]
-    using (isBigO_comp_ofReal (this.hasDerivAt.comp_add_const 0 _).differentiableAt.isBigO_sub)
+    using (Complex.isBigO_comp_ofReal_nhds (this.hasDerivAt.comp_add_const 0 _).differentiableAt.isBigO_sub)
       |>.mono nhdsWithin_le_nhds
 
 /-- The L-function of a Dirichlet character `χ` does not vanish at `1 + I*t` if `t ≠ 0`
