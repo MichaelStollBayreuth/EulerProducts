@@ -139,9 +139,7 @@ lemma summable_neg_log_one_sub_character_mul_prime_cpow {N : ℕ} (χ : Dirichle
     |>.of_norm.neg_clog_one_sub
   simp only [neg_re, neg_lt_neg_iff, hs]
 
-/-- A technical lemma showing that a certain linear combination of real parts of logarithms
-is nonnegative. This is used to show non-vanishing of the Riemann zeta function and of
-Dirichlet L-series on the line `re s = 1`. -/
+private
 lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
   have hac₀ : ‖(a : ℂ)‖ < 1 := by
