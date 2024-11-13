@@ -126,6 +126,7 @@ theorem riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
 
 end EulerProduct
 
+section nonvanishing
 
 lemma summable_neg_log_one_sub_character_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N)
     {s : ℂ} (hs : 1 < s.re) :
@@ -365,6 +366,8 @@ open DirichletCharacter in
 lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) :
     riemannZeta z ≠ 0 :=
   LFunction_modOne_eq (χ := 1) ▸ Lfunction_ne_zero_of_one_le_re _ (.inr hz) hz'
+
+end nonvanishing
 
 /-!
 ### The logarithmic derivative of the L-function of a trivial character has a simple pole at s = 1 with residue -1
