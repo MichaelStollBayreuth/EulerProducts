@@ -323,34 +323,26 @@ private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2
   simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
   exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
 
-/-- If `χ` is a Dirichlet character, then `L(χ, 1 + I*t)` does not vanish for `t ∈ ℝ`
-except when `χ` is trivial and `t = 0` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_re_eq_one (t : ℝ) (hχt : χ ≠ 1 ∨ t ≠ 0) :
-    LFunction χ (1 + I * t) ≠ 0 := by
-  by_cases h : χ ^ 2 = 1 ∧ t = 0
-  · simp only [ne_eq, h.2, not_true_eq_false, or_false] at hχt
-    simpa only [h.2, ofReal_zero, mul_zero, add_zero]
-      using LFunction_at_one_ne_zero_of_quadratic h.1 hχt
-  · exact χ.LFunction_ne_zero_of_not_quadratic_or_ne_one <| not_and_or.mp h
+/-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish when `s.re = 1`
+except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
+theorem Lfunction_ne_zero_of_re_eq_one {s : ℂ} (hs : s.re = 1) (hχt : χ ≠ 1 ∨ s ≠ 1) :
+    LFunction χ s ≠ 0 := by
+  by_cases h : χ ^ 2 = 1 ∧ s = 1
+  · exact h.2 ▸ LFunction_at_one_ne_zero_of_quadratic h.1 <| hχt.neg_resolve_right h.2
+  · rw [not_and_or, ← ne_eq, ← ne_eq] at h
+    have ht : s = 1 + I * s.im := by
+      conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
+    rw [ht, add_right_ne_self] at h
+    replace h : χ ^ 2 ≠ 1 ∨ s.im ≠ 0 :=
+      h.casesOn .inl (fun H ↦ .inr <| by exact_mod_cast right_ne_zero_of_mul H)
+    exact ht.symm ▸ χ.LFunction_ne_zero_of_not_quadratic_or_ne_one h
 
 /-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
 except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
 theorem Lfunction_ne_zero_of_one_le_re ⦃s : ℂ⦄ (hχs : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) :
     LFunction χ s ≠ 0 := by
   rcases hs.eq_or_lt with hs | hs
-  · have hseq : s = 1 + I * s.im := by
-      rw [mul_comm I, ← re_add_im s, ← hs]
-      push_cast
-      simp only [add_im, one_im, mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero,
-        add_zero, zero_add]
-    rw [hseq]
-    apply Lfunction_ne_zero_of_re_eq_one
-    rcases hχs with h | h
-    · exact .inl h
-    · refine .inr ?_
-      rw [← re_add_im s, ← hs, ofReal_one] at h
-      simpa only [ne_eq, add_right_eq_self, _root_.mul_eq_zero, ofReal_eq_zero, I_ne_zero,
-        or_false] using h
+  · exact Lfunction_ne_zero_of_re_eq_one χ hs.symm hχs
   · exact LFunction_eq_LSeries χ hs ▸ LSeries_ne_zero_of_one_lt_re χ hs
 
 end DirichletCharacter
