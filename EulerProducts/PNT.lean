@@ -102,14 +102,14 @@ open LSeries Nat EulerProduct
 theorem DirichletCharacter.LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
     (hs : 1 < s.re) :
     exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
-  rw [LSeries]
   let f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs
   have h n : term ↗χ s n = f n := by
     rcases eq_or_ne n 0 with rfl | hn
     · simp only [term_zero, map_zero]
     · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, div_eq_mul_inv,
         dirichletSummandHom, cpow_neg, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, f]
-  simpa only [h] using exp_tsum_primes_log_eq_tsum (f := f) <| summable_dirichletSummand χ hs
+  simpa only [LSeries, h]
+    using exp_tsum_primes_log_eq_tsum (f := f) <| summable_dirichletSummand χ hs
 
 open DirichletCharacter
 
@@ -132,15 +132,14 @@ lemma summable_neg_log_one_sub_character_mul_prime_cpow {N : ℕ} (χ : Dirichle
     Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
   have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
     rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
-    calc ‖χ p‖ * (p : ℝ) ^ (-s).re
-      _ ≤ 1 * (p : ℝ) ^ (-s.re) := by gcongr; exact DirichletCharacter.norm_le_one χ _
-      _ = _ := one_mul _
+    conv_rhs => rw [← one_mul (_ ^ _)]
+    gcongr
+    exact DirichletCharacter.norm_le_one χ _
   refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
     |>.of_norm.neg_clog_one_sub
   simp only [neg_re, neg_lt_neg_iff, hs]
 
-private
-lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
+private lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
   have hac₀ : ‖(a : ℂ)‖ < 1 := by
     simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
@@ -184,25 +183,23 @@ lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn
   by_cases hn' : IsUnit (n : ZMod N)
   · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg n.cast_nonneg _
     have ha₁ : (n : ℝ) ^ (-x) < 1 := by
-      simpa only [Real.rpow_lt_one_iff n.cast_nonneg, Nat.cast_eq_zero, Nat.one_lt_cast,
-        Left.neg_neg_iff, Nat.cast_lt_one, Left.neg_pos_iff]
-        using .inr <| .inl ⟨hn, zero_lt_one.trans hx⟩
+      rw [Real.rpow_neg (Nat.cast_nonneg n), inv_lt_one_iff₀]
+      exact .inr <| Real.one_lt_rpow (mod_cast one_lt_two.trans_le hn) <| zero_lt_one.trans hx
     have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1 := by
-      rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit, one_mul,
-        norm_eq_abs, abs_cpow_of_imp fun h ↦ False.elim <| by linarith [Nat.cast_eq_zero.mp h, hn]]
-      simp only [abs_natCast, neg_re, mul_re, I_re, ofReal_re, zero_mul, I_im, ofReal_im, mul_zero,
-        sub_self, neg_zero, Real.rpow_zero, natCast_arg, neg_im, mul_im, one_mul, zero_add, mul_neg,
-        Real.exp_zero, ne_eq, one_ne_zero, not_false_eq_true, div_self]
+      rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit,
+        norm_eq_abs, ← ofReal_natCast, abs_cpow_eq_rpow_re_of_pos (mod_cast by omega)]
+      simp only [neg_re, mul_re, I_re, ofReal_re, zero_mul, I_im, ofReal_im, mul_zero, sub_self,
+        neg_zero, Real.rpow_zero, one_mul]
     rw [MulChar.one_apply hn', one_mul]
     convert _root_.re_log_comb_nonneg ha₀ ha₁ hz using 6
     · congr 2
       exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
     · congr 2
-      rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
-        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast, mul_left_comm]
-    · rw [neg_add, cpow_add _ _ <| by norm_cast; linarith, ← ofReal_neg,
-        ofReal_cpow n.cast_nonneg (-x), ofReal_natCast,
-        show -(2 * I * y) = (2 : ℕ) * -(I * y) by ring, cpow_nat_mul, mul_pow, mul_left_comm]
+      rw [neg_add, cpow_add _ _ <| mod_cast by omega, ← ofReal_neg, ofReal_cpow n.cast_nonneg (-x),
+        ofReal_natCast, mul_left_comm]
+    · rw [neg_add, cpow_add _ _ <| mod_cast by omega, ← ofReal_neg, ofReal_cpow n.cast_nonneg (-x),
+        ofReal_natCast, show -(2 * I * y) = (2 : ℕ) * -(I * y) by ring, cpow_nat_mul, mul_pow,
+        mul_left_comm]
   · simp only [MulChar.map_nonunit _ hn', zero_mul, sub_zero, log_one, neg_zero, zero_re, mul_zero,
       neg_add_rev, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, le_refl]
 
