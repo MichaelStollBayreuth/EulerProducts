@@ -14,18 +14,8 @@ open Complex
 
 section nonvanishing
 
-lemma summable_neg_log_one_sub_character_mul_prime_cpow {N : ℕ} (χ : DirichletCharacter ℂ N)
-    {s : ℂ} (hs : 1 < s.re) :
-    Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
-  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
-    rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
-    conv_rhs => rw [← one_mul (_ ^ _)]
-    gcongr
-    exact DirichletCharacter.norm_le_one χ _
-  refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
-    |>.of_norm.clog_one_sub.neg
-  simp only [neg_re, neg_lt_neg_iff, hs]
-
+-- This is the key positivity lemma that is used to show that the L-functions
+-- of Dirichlet-characters `χ` do not vanish for `s.re ≥ 1` (unless `χ^2 = 1` and `s = 1`).
 private lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
       0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
   have hac₀ : ‖(a : ℂ)‖ < 1 := by
@@ -51,8 +41,10 @@ private lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z 
 
 namespace DirichletCharacter
 
-private lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : ℕ} (hn : 2 ≤ n) {x : ℝ}
-    (hx : 1 < x) (y : ℝ) :
+variable {N : ℕ} (χ : DirichletCharacter ℂ N)
+
+-- This is the version of the technical positivity lemma for logarithms of Euler factors.
+private lemma re_log_comb_nonneg {n : ℕ} (hn : 2 ≤ n) {x : ℝ} (hx : 1 < x) (y : ℝ) :
     0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
           4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
           (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
@@ -79,14 +71,23 @@ private lemma re_log_comb_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) {n : 
   · simp only [MulChar.map_nonunit _ hn', zero_mul, sub_zero, log_one, neg_zero, zero_re, mul_zero,
       neg_add_rev, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, le_refl]
 
-variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
+/-- The logarithms of the Euler factors of a Dirichlet L-series form a summable sequence. -/
+lemma summable_neg_log_one_sub_mul_prime_cpow {N : ℕ}
+    (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
+  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
+    rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
+    conv_rhs => rw [← one_mul (_ ^ _)]
+    gcongr
+    exact DirichletCharacter.norm_le_one χ _
+  refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
+    |>.of_norm.clog_one_sub.neg
+  simp only [neg_re, neg_lt_neg_iff, hs]
 
 private lemma one_lt_re_one_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
     1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
   simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
     ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
-
-variable {N : ℕ} (χ : DirichletCharacter ℂ N)
 
 open scoped LSeries.notation in
 /-- For positive `x` and nonzero `y` we have that
@@ -95,20 +96,18 @@ lemma norm_LSeries_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
       L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
   have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
-  have hsum₀ :=
-    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow
-      (1 : DirichletCharacter ℂ N) h₀).hasSum).summable |>.mul_left 3
-  have hsum₁ :=
-    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
-  have hsum₂ :=
-    (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
-  rw [← DirichletCharacter.LSeries_eulerProduct_exp_log _ h₀, ← DirichletCharacter.LSeries_eulerProduct_exp_log χ h₁, ← DirichletCharacter.LSeries_eulerProduct_exp_log _ h₂]
-  simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
-    Real.one_le_exp_iff, ← exp_nat_mul, ← exp_add, norm_eq_abs, abs_exp]
-  rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
-    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₁,
-    re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₂, ← tsum_mul_left,
-    ← tsum_mul_left, ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
+  have H₀ := summable_neg_log_one_sub_mul_prime_cpow (N := N) 1 h₀
+  have H₁ := summable_neg_log_one_sub_mul_prime_cpow χ h₁
+  have H₂ := summable_neg_log_one_sub_mul_prime_cpow (χ ^ 2) h₂
+  have hsum₀ := (hasSum_re H₀.hasSum).summable.mul_left 3
+  have hsum₁ := (hasSum_re H₁.hasSum).summable.mul_left 4
+  have hsum₂ := (hasSum_re H₂.hasSum).summable
+  rw [← LSeries_eulerProduct_exp_log _ h₀, ← LSeries_eulerProduct_exp_log χ h₁,
+    ← LSeries_eulerProduct_exp_log _ h₂]
+  simp only [← exp_nat_mul, Nat.cast_ofNat, ← exp_add, norm_eq_abs, abs_exp, add_re, mul_re,
+    re_ofNat, im_ofNat, zero_mul, sub_zero, Real.one_le_exp_iff]
+  rw [re_tsum H₀, re_tsum H₁, re_tsum H₂, ← tsum_mul_left, ← tsum_mul_left,
+    ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
   simp only [χ.pow_apply' two_ne_zero]
   have hx₁ : (1 + x : ℂ).re = 1 + (x : ℂ) := by
     simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
@@ -241,6 +240,9 @@ is a trivial Dirichlet character.
 
 namespace DirichletCharacter
 
+-- probably should add the attribute where defined
+attribute [local fun_prop] differentiableAt_LFunction
+
 section trivial
 
 variable (n : ℕ) [NeZero n]
@@ -255,7 +257,7 @@ noncomputable def LFunctionTrivChar₁ : ℂ → ℂ :=
 
 lemma LFunctionTrivChar₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) :
     LFunctionTrivChar₁ n z = LFunctionTrivChar n z * (z - 1) := by
-  simp [LFunctionTrivChar₁, hz]
+  simp only [LFunctionTrivChar₁, ne_eq, hz, not_false_eq_true, Function.update_noteq]
 
 lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunctionTrivChar₁ n) := by
   rw [← differentiableOn_univ,
@@ -264,9 +266,7 @@ lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunctionTrivC
   refine ⟨DifferentiableOn.congr (f := fun z ↦ LFunctionTrivChar n z * (z - 1))
     (fun z hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
     continuousWithinAt_compl_self.mp ?_⟩
-  · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
-    exact (differentiableAt_LFunction _ z (.inl hz)).mul <| (differentiableAt_id').sub <|
-      differentiableAt_const _
+  · fun_prop (disch := simp_all [hz])
   · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
     simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
   · conv in (_ * _) => rw [mul_comm]
@@ -285,13 +285,13 @@ lemma deriv_LFunctionTrivChar₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
   rw [H, deriv_mul (differentiableAt_LFunction _ z (.inl hz)) <| differentiableAt_id'.sub <|
     differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
 
-lemma neg_logDeriv_LFunctionTrivChar₁_eq {z : ℂ} (hz₁ : z ≠ 1)
+/- lemma neg_logDeriv_LFunctionTrivChar₁_eq {z : ℂ} (hz₁ : z ≠ 1)
     (hz₂ : LFunctionTrivChar n z ≠ 0) :
     -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z =
       -deriv (LFunctionTrivChar n) z / LFunctionTrivChar n z - 1 / (z - 1) := by
   rw [deriv_LFunctionTrivChar₁_apply_of_ne_one n hz₁, LFunctionTrivChar₁_apply_of_ne_one n hz₁]
   field_simp [sub_ne_zero.mpr hz₁]
-  ring
+  ring -/
 
 lemma continuousOn_neg_logDeriv_LFunctionTrivChar₁ :
     ContinuousOn (fun z ↦ -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z)
@@ -305,8 +305,8 @@ lemma continuousOn_neg_logDeriv_LFunctionTrivChar₁ :
     rw [sub_ne_zero, ne_eq, one_eq_inv]
     exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_one
   · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
-    simp only [LFunctionTrivChar₁, ne_eq, hw', not_false_eq_true, Function.update_noteq, _root_.mul_eq_zero, hw,
-      false_or]
+    simp only [LFunctionTrivChar₁, ne_eq, hw', not_false_eq_true, Function.update_noteq,
+      mul_eq_zero, hw, false_or]
     exact sub_ne_zero.mpr hw'
 
 lemma eq_one_or_LFunctionTrivChar_ne_zero_of_one_le_re :
@@ -322,11 +322,10 @@ section nontrivial
 
 variable {n : ℕ} [NeZero n] {χ : DirichletCharacter ℂ n}
 
-/-- The negative logarithmic derivative of a Dirichlet L-function is continuous away from
-the zeros of the L-function. -/
+/-- The negative logarithmic derivative of the L-function of a nontrivial Dirichlet character
+is continuous away from the zeros of the L-function. -/
 lemma continuousOn_neg_logDeriv_LFunction_nontriv_char (hχ : χ ≠ 1) :
-    ContinuousOn (fun z ↦ -deriv (LFunction χ) z / LFunction χ z)
-      {z | LFunction χ z ≠ 0} := by
+    ContinuousOn (fun z ↦ -deriv (LFunction χ) z / LFunction χ z) {z | LFunction χ z ≠ 0} := by
   simp_rw [neg_div]
   have h₁ := differentiable_LFunction hχ
   exact ((h₁.contDiff.continuous_deriv le_rfl).continuousOn.div
@@ -336,8 +335,7 @@ lemma LFunction_nontriv_char_ne_zero_of_one_le_re (hχ : χ ≠ 1) :
     {s : ℂ | 1 ≤ s.re} ⊆ {s | LFunction χ s ≠ 0} := by
   intro s hs
   simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
-  have := Lfunction_ne_zero_of_one_le_re χ (s := s)
-  tauto
+  exact Lfunction_ne_zero_of_one_le_re χ (.inl hχ) hs
 
 end nontrivial
 
