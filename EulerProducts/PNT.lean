@@ -343,45 +343,6 @@ end nontrivial
 
 end DirichletCharacter
 
-section zeta
-/-
-/-!
-### The logarithmic derivative of ζ has a simple pole at s = 1 with residue -1
-
-We show that `s ↦ ζ' s / ζ s + 1 / (s - 1)` (or rather, its negative, which is the function
-we need for the Wiener-Ikehara Theorem) is continuous outside the zeros of `ζ`.
--/
-
-/-- We use `ζ` to denote the Riemann zeta function. -/
-local notation (name := rzeta) "ζ" => riemannZeta
-
-/-- The function obtained by "multiplying away" the pole of `ζ`. Its (negative) logarithmic
-derivative is the function used in the Wiener-Ikehara Theorem to prove the Prime Number
-Theorem. -/
-noncomputable def ζ₁ : ℂ → ℂ := Function.update (fun z ↦ ζ z * (z - 1)) 1 1
-
-open DirichletCharacter
-
-lemma riemannZeta_eq_LFunctionTrivChar_one : ζ = LFunctionTrivChar 1 :=
-  LFunction_modOne_eq.symm
-
-lemma ζ₁_eq_LFunctionTrivChar₁_one : ζ₁ = LFunctionTrivChar₁ 1 := by
-  ext1
-  simp only [ζ₁, LFunctionTrivChar₁, LFunction_modOne_eq, Nat.primeFactors_one,
-    Finset.prod_empty]
-
-lemma neg_logDeriv_ζ₁_eq {z : ℂ} (hz₁ : z ≠ 1) (hz₂ : ζ z ≠ 0) :
-    -deriv ζ₁ z / ζ₁ z = -deriv ζ z / ζ z - 1 / (z - 1) := by
-  simp only [ζ₁_eq_LFunctionTrivChar₁_one, riemannZeta_eq_LFunctionTrivChar_one] at hz₂ ⊢
-  exact neg_logDeriv_LFunctionTrivChar₁_eq 1 hz₁ hz₂
-
-lemma continuousOn_neg_logDeriv_ζ₁ :
-    ContinuousOn (fun z ↦ -deriv ζ₁ z / ζ₁ z) {z | z = 1 ∨ ζ z ≠ 0} := by
-  simp only [ζ₁_eq_LFunctionTrivChar₁_one, riemannZeta_eq_LFunctionTrivChar_one]
-  exact continuousOn_neg_logDeriv_LFunctionTrivChar₁ 1
-
-end zeta
- -/
 
 /-!
 ### Proof of Lemma 9
