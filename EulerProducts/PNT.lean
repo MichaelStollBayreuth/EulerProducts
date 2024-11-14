@@ -1,6 +1,5 @@
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-import Mathlib.NumberTheory.EulerProduct.ExpLog
 import Mathlib.NumberTheory.LSeries.Linearity
 import Mathlib.NumberTheory.LSeries.QuadraticNonvanishing
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
@@ -12,40 +11,6 @@ open scoped LSeries.notation
 -/
 
 open Complex
-
-section EulerProduct
-
--- This gets moved to `NumberTheory.EulerProduct.DirichletLSeries`
-
-open LSeries Nat EulerProduct
-
-/-- A variant of the Euler product for Dirichlet L-series. -/
-theorem DirichletCharacter.LSeries_eulerProduct' {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
-    (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -log (1 - χ p * p ^ (-s))) = L ↗χ s := by
-  let f := dirichletSummandHom χ <| ne_zero_of_one_lt_re hs
-  have h n : term ↗χ s n = f n := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp only [term_zero, map_zero]
-    · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, div_eq_mul_inv,
-        dirichletSummandHom, cpow_neg, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, f]
-  simpa only [LSeries, h]
-    using exp_tsum_primes_log_eq_tsum (f := f) <| summable_dirichletSummand χ hs
-
-open DirichletCharacter
-
-/-- A variant of the Euler product for the L-series of `ζ`. -/
-theorem ArithmeticFunction.LSeries_zeta_eulerProduct' {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = L 1 s := by
-  convert modOne_eq_one (R := ℂ) ▸ LSeries_eulerProduct' (1 : DirichletCharacter ℂ 1) hs using 7
-  rw [MulChar.one_apply <| isUnit_of_subsingleton _, one_mul]
-
-/-- A variant of the Euler product for the Riemann zeta function. -/
-theorem riemannZeta_eulerProduct'  {s : ℂ} (hs : 1 < s.re) :
-    exp (∑' p : Nat.Primes, -Complex.log (1 - p ^ (-s))) = riemannZeta s :=
-  LSeries_one_eq_riemannZeta hs ▸ ArithmeticFunction.LSeries_zeta_eulerProduct' hs
-
-end EulerProduct
 
 section nonvanishing
 
@@ -137,7 +102,7 @@ lemma norm_LSeries_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow χ h₁).hasSum).summable.mul_left 4
   have hsum₂ :=
     (hasSum_re (summable_neg_log_one_sub_character_mul_prime_cpow (χ ^ 2) h₂).hasSum).summable
-  rw [← LSeries_eulerProduct' _ h₀, ← LSeries_eulerProduct' χ h₁, ← LSeries_eulerProduct' _ h₂]
+  rw [← DirichletCharacter.LSeries_eulerProduct_exp_log _ h₀, ← DirichletCharacter.LSeries_eulerProduct_exp_log χ h₁, ← DirichletCharacter.LSeries_eulerProduct_exp_log _ h₂]
   simp only [Nat.cast_ofNat, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero,
     Real.one_le_exp_iff, ← exp_nat_mul, ← exp_add, norm_eq_abs, abs_exp]
   rw [re_tsum <| summable_neg_log_one_sub_character_mul_prime_cpow _ h₀,
