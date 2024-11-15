@@ -231,11 +231,10 @@ lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤
 end nonvanishing
 
 /-!
-### The logarithmic derivative of the L-function of a trivial character has a simple pole at s = 1 with residue -1
+### The logarithmic derivative of the L-function of a trivial character
 
-We show that `s ↦ L'(χ) s / L(χ) s + 1 / (s - 1)` (or rather, its negative, which is the function
-we need for the Wiener-Ikehara Theorem) is continuous outside the zeros of `L(χ)` when `χ`
-is a trivial Dirichlet character.
+We show that `s ↦ -L'(χ) s / L(χ) s + 1 / (s - 1)` is continuous outside the zeros of `L(χ)`
+when `χ` is a trivial Dirichlet character.
 -/
 
 namespace DirichletCharacter
@@ -251,27 +250,25 @@ variable (n : ℕ) [NeZero n]
 character `χ`. Its (negative) logarithmic derivative is used in the Wiener-Ikehara Theorem
 to prove the Prime Number Theorem version of Dirichlet's Theorem on primes in arithmetic
 progressions. -/
-noncomputable def LFunctionTrivChar₁ : ℂ → ℂ :=
+noncomputable abbrev LFunctionTrivChar₁ : ℂ → ℂ :=
   Function.update (fun z ↦ LFunctionTrivChar n z * (z - 1)) 1
     (∏ p ∈ n.primeFactors, (1 - (p : ℂ)⁻¹))
 
 lemma LFunctionTrivChar₁_apply_of_ne_one {z : ℂ} (hz : z ≠ 1) :
     LFunctionTrivChar₁ n z = LFunctionTrivChar n z * (z - 1) := by
-  simp only [LFunctionTrivChar₁, ne_eq, hz, not_false_eq_true, Function.update_noteq]
+  simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
 
-lemma LFunction_triv_char₁_differentiable : Differentiable ℂ (LFunctionTrivChar₁ n) := by
+lemma LFunctionTrivChar₁_differentiable : Differentiable ℂ (LFunctionTrivChar₁ n) := by
   rw [← differentiableOn_univ,
-    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem,
-    LFunctionTrivChar₁]
+    ← differentiableOn_compl_singleton_and_continuousAt_iff (c := 1) Filter.univ_mem]
   refine ⟨DifferentiableOn.congr (f := fun z ↦ LFunctionTrivChar n z * (z - 1))
-    (fun z hz ↦ DifferentiableAt.differentiableWithinAt ?_) fun _ hz ↦ ?_,
+    (fun _ hz ↦ DifferentiableAt.differentiableWithinAt <| by fun_prop (disch := simp_all [hz]))
+    fun _ hz ↦ ?_,
     continuousWithinAt_compl_self.mp ?_⟩
-  · fun_prop (disch := simp_all [hz])
   · simp only [Set.mem_diff, Set.mem_univ, Set.mem_singleton_iff, true_and] at hz
     simp only [ne_eq, hz, not_false_eq_true, Function.update_noteq]
-  · conv in (_ * _) => rw [mul_comm]
-    simp only [continuousWithinAt_compl_self, continuousAt_update_same]
-    exact LFunctionTrivChar_residue_one
+  · simpa only [mul_comm (LFunctionTrivChar ..), continuousWithinAt_compl_self,
+      continuousAt_update_same] using LFunctionTrivChar_residue_one
 
 lemma deriv_LFunctionTrivChar₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
     deriv (LFunctionTrivChar₁ n) z =
@@ -280,41 +277,23 @@ lemma deriv_LFunctionTrivChar₁_apply_of_ne_one  {z : ℂ} (hz : z ≠ 1) :
       deriv (fun w ↦ LFunctionTrivChar n w * (w - 1)) z := by
     refine Filter.EventuallyEq.deriv_eq <| Filter.eventuallyEq_iff_exists_mem.mpr ?_
     refine ⟨{w | w ≠ 1}, IsOpen.mem_nhds isOpen_ne hz, fun w hw ↦ ?_⟩
-    simp only [LFunctionTrivChar₁, ne_eq, Set.mem_setOf.mp hw, not_false_eq_true,
-      Function.update_noteq]
-  rw [H, deriv_mul (differentiableAt_LFunction _ z (.inl hz)) <| differentiableAt_id'.sub <|
-    differentiableAt_const 1, deriv_sub_const, deriv_id'', mul_one]
-
-/- lemma neg_logDeriv_LFunctionTrivChar₁_eq {z : ℂ} (hz₁ : z ≠ 1)
-    (hz₂ : LFunctionTrivChar n z ≠ 0) :
-    -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z =
-      -deriv (LFunctionTrivChar n) z / LFunctionTrivChar n z - 1 / (z - 1) := by
-  rw [deriv_LFunctionTrivChar₁_apply_of_ne_one n hz₁, LFunctionTrivChar₁_apply_of_ne_one n hz₁]
-  field_simp [sub_ne_zero.mpr hz₁]
-  ring -/
+    simp only [ne_eq, Set.mem_setOf.mp hw, not_false_eq_true, Function.update_noteq]
+  rw [H, deriv_mul (differentiableAt_LFunction _ z (.inl hz)) <| by fun_prop, deriv_sub_const,
+    deriv_id'', mul_one]
 
 lemma continuousOn_neg_logDeriv_LFunctionTrivChar₁ :
     ContinuousOn (fun z ↦ -deriv (LFunctionTrivChar₁ n) z / LFunctionTrivChar₁ n z)
       {z | z = 1 ∨ LFunctionTrivChar n z ≠ 0} := by
   simp_rw [neg_div]
-  refine (((LFunction_triv_char₁_differentiable n).contDiff.continuous_deriv le_rfl).continuousOn.div
-    (LFunction_triv_char₁_differentiable n).continuous.continuousOn fun w hw ↦ ?_).neg
+  refine (((LFunctionTrivChar₁_differentiable n).contDiff.continuous_deriv le_rfl).continuousOn.div
+    (LFunctionTrivChar₁_differentiable n).continuous.continuousOn fun w hw ↦ ?_).neg
   rcases eq_or_ne w 1 with rfl | hw'
-  · simp only [LFunctionTrivChar₁, Function.update_same]
+  · simp only [Function.update_same]
     refine Finset.prod_ne_zero_iff.mpr fun p hp ↦ ?_
     rw [sub_ne_zero, ne_eq, one_eq_inv]
     exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_one
-  · simp only [ne_eq, Set.mem_setOf_eq, hw', false_or] at hw
-    simp only [LFunctionTrivChar₁, ne_eq, hw', not_false_eq_true, Function.update_noteq,
-      mul_eq_zero, hw, false_or]
-    exact sub_ne_zero.mpr hw'
-
-lemma eq_one_or_LFunctionTrivChar_ne_zero_of_one_le_re :
-    {s : ℂ | 1 ≤ s.re} ⊆ {s | s = 1 ∨ LFunction (1 : DirichletCharacter ℂ n) s ≠ 0} := by
-  intro s hs
-  simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
-  have := Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ n) (s := s)
-  tauto
+  · rw [LFunctionTrivChar₁_apply_of_ne_one n hw', mul_ne_zero_iff]
+    exact ⟨(Set.mem_setOf.mp hw).resolve_left hw', sub_ne_zero_of_ne hw'⟩
 
 end trivial
 
@@ -324,18 +303,12 @@ variable {n : ℕ} [NeZero n] {χ : DirichletCharacter ℂ n}
 
 /-- The negative logarithmic derivative of the L-function of a nontrivial Dirichlet character
 is continuous away from the zeros of the L-function. -/
-lemma continuousOn_neg_logDeriv_LFunction_nontriv_char (hχ : χ ≠ 1) :
+lemma continuousOn_neg_logDeriv_LFunction_of_nontriv (hχ : χ ≠ 1) :
     ContinuousOn (fun z ↦ -deriv (LFunction χ) z / LFunction χ z) {z | LFunction χ z ≠ 0} := by
   simp_rw [neg_div]
-  have h₁ := differentiable_LFunction hχ
-  exact ((h₁.contDiff.continuous_deriv le_rfl).continuousOn.div
-    h₁.continuous.continuousOn fun w hw ↦ hw).neg
-
-lemma LFunction_nontriv_char_ne_zero_of_one_le_re (hχ : χ ≠ 1) :
-    {s : ℂ | 1 ≤ s.re} ⊆ {s | LFunction χ s ≠ 0} := by
-  intro s hs
-  simp only [Set.mem_setOf_eq, ne_eq] at hs ⊢
-  exact Lfunction_ne_zero_of_one_le_re χ (.inl hχ) hs
+  have h := differentiable_LFunction hχ
+  exact ((h.contDiff.continuous_deriv le_rfl).continuousOn.div
+    h.continuous.continuousOn fun _ hw ↦ hw).neg
 
 end nontrivial
 
@@ -418,13 +391,14 @@ lemma continuousOn_weakDirichlet_auxFun :
   rw [show weakDirichlet_auxFun q a = fun s ↦ _ from rfl]
   simp only [weakDirichlet_auxFun, sub_eq_add_neg]
   refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
-  · exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q)
-      (eq_one_or_LFunctionTrivChar_ne_zero_of_one_le_re q)
+  · refine ContinuousOn.mono (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q) fun s hs ↦ ?_
+    have := Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
+    tauto
   · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
     refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
     replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
-    exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_nontriv_char hχ)
-      (LFunction_nontriv_char_ne_zero_of_one_le_re hχ)
+    exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ)
+      fun _ hs ↦ Lfunction_ne_zero_of_one_le_re χ (.inl hχ) hs
 
 end arith_prog
 
