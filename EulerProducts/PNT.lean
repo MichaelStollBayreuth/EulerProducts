@@ -333,7 +333,7 @@ variable {q : ℕ} [NeZero q] {a : ZMod q}
 prime residue class `a` mod `q` as a linear combination of logarithmic derivatives of
 L functions of the Dirichlet characters mod `q`. -/
 lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
-     LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s =
+    LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s =
       -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
         (deriv (LFunction χ) s / LFunction χ s) := by
   simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg,
