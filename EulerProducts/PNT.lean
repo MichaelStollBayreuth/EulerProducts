@@ -1,234 +1,12 @@
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import Mathlib.NumberTheory.LSeries.Linearity
-import Mathlib.NumberTheory.LSeries.QuadraticNonvanishing
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 open scoped LSeries.notation
 
-/-!
-### The L-function of a Dirichlet character does not vanish on Re(s) = 1
--/
-
 open Complex
-
-section nonvanishing
-
--- This is the key positivity lemma that is used to show that the L-functions
--- of Dirichlet-characters `χ` do not vanish for `s.re ≥ 1` (unless `χ^2 = 1` and `s = 1`).
-private lemma re_log_comb_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a < 1) {z : ℂ} (hz : ‖z‖ = 1) :
-      0 ≤ 3 * (-log (1 - a)).re + 4 * (-log (1 - a * z)).re + (-log (1 - a * z ^ 2)).re := by
-  have hac₀ : ‖(a : ℂ)‖ < 1 := by
-    simp only [norm_eq_abs, abs_ofReal, _root_.abs_of_nonneg ha₀, ha₁]
-  have hac₁ : ‖a * z‖ < 1 := by rwa [norm_mul, hz, mul_one]
-  have hac₂ : ‖a * z ^ 2‖ < 1 := by rwa [norm_mul, norm_pow, hz, one_pow, mul_one]
-  have H₀ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₀).mul_left 3
-  have H₁ := (hasSum_re <| hasSum_taylorSeries_neg_log hac₁).mul_left 4
-  have H₂ := hasSum_re <| hasSum_taylorSeries_neg_log hac₂
-  rw [← ((H₀.add H₁).add H₂).tsum_eq]; clear H₀ H₁ H₂
-  refine tsum_nonneg fun n ↦ ?_
-  simp only [← ofReal_pow, div_natCast_re, ofReal_re, mul_pow, mul_re, ofReal_im, zero_mul,
-    sub_zero]
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp only [pow_zero, CharP.cast_eq_zero, div_zero, mul_zero, one_re, mul_one, add_zero,
-     le_refl]
-  · simp only [← mul_div_assoc, ← add_div]
-    refine div_nonneg ?_ n.cast_nonneg
-    rw [← pow_mul, pow_mul', sq, mul_re, ← sq, ← sq, ← sq_abs_sub_sq_re, ← norm_eq_abs, norm_pow, hz]
-    calc
-     0 ≤ 2 * a ^ n * ((z ^ n).re + 1) ^ 2 := by positivity
-      _ = _  := by ring
-
-namespace DirichletCharacter
-
-variable {N : ℕ} (χ : DirichletCharacter ℂ N)
-
--- This is the version of the technical positivity lemma for logarithms of Euler factors.
-private lemma re_log_comb_nonneg {n : ℕ} (hn : 2 ≤ n) {x : ℝ} (hx : 1 < x) (y : ℝ) :
-    0 ≤ 3 * (-log (1 - (1 : DirichletCharacter ℂ N) n * n ^ (-x : ℂ))).re +
-          4 * (-log (1 - χ n * n ^ (-(x + I * y)))).re +
-          (-log (1 - (χ n ^ 2) * n ^ (-(x + 2 * I * y)))).re := by
-  by_cases hn' : IsUnit (n : ZMod N)
-  · have ha₀ : 0 ≤ (n : ℝ) ^ (-x) := Real.rpow_nonneg n.cast_nonneg _
-    have ha₁ : (n : ℝ) ^ (-x) < 1 := by
-      rw [Real.rpow_neg (Nat.cast_nonneg n), inv_lt_one_iff₀]
-      exact .inr <| Real.one_lt_rpow (mod_cast one_lt_two.trans_le hn) <| zero_lt_one.trans hx
-    have hz : ‖χ n * (n : ℂ) ^ (-(I * y))‖ = 1 := by
-      rw [norm_mul, ← hn'.unit_spec, DirichletCharacter.unit_norm_eq_one χ hn'.unit,
-        norm_eq_abs, ← ofReal_natCast, abs_cpow_eq_rpow_re_of_pos (mod_cast by omega)]
-      simp only [neg_re, mul_re, I_re, ofReal_re, zero_mul, I_im, ofReal_im, mul_zero, sub_self,
-        neg_zero, Real.rpow_zero, one_mul]
-    rw [MulChar.one_apply hn', one_mul]
-    convert _root_.re_log_comb_nonneg ha₀ ha₁ hz using 6
-    · congr 2
-      exact_mod_cast (ofReal_cpow n.cast_nonneg (-x)).symm
-    · congr 2
-      rw [neg_add, cpow_add _ _ <| mod_cast by omega, ← ofReal_neg, ofReal_cpow n.cast_nonneg (-x),
-        ofReal_natCast, mul_left_comm]
-    · rw [neg_add, cpow_add _ _ <| mod_cast by omega, ← ofReal_neg, ofReal_cpow n.cast_nonneg (-x),
-        ofReal_natCast, show -(2 * I * y) = (2 : ℕ) * -(I * y) by ring, cpow_nat_mul, mul_pow,
-        mul_left_comm]
-  · simp only [MulChar.map_nonunit _ hn', zero_mul, sub_zero, log_one, neg_zero, zero_re, mul_zero,
-      neg_add_rev, add_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, le_refl]
-
-/-- The logarithms of the Euler factors of a Dirichlet L-series form a summable sequence. -/
-lemma summable_neg_log_one_sub_mul_prime_cpow {N : ℕ}
-    (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
-    Summable fun p : Nat.Primes ↦ -log (1 - χ p * (p : ℂ) ^ (-s)) := by
-  have (p : Nat.Primes) : ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (p : ℝ) ^ (-s).re := by
-    rw [norm_mul, norm_natCast_cpow_of_re_ne_zero _ <| re_neg_ne_zero_of_one_lt_re hs]
-    conv_rhs => rw [← one_mul (_ ^ _)]
-    gcongr
-    exact DirichletCharacter.norm_le_one χ _
-  refine (Nat.Primes.summable_rpow.mpr ?_).of_nonneg_of_le (fun _ ↦ norm_nonneg _) this
-    |>.of_norm.clog_one_sub.neg
-  simp only [neg_re, neg_lt_neg_iff, hs]
-
-private lemma one_lt_re_one_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
-    1 < (1 + x : ℂ).re ∧ 1 < (1 + x + I * y).re ∧ 1 < (1 + x + 2 * I * y).re := by
-  simp only [add_re, one_re, ofReal_re, lt_add_iff_pos_right, hx, mul_re, I_re, zero_mul, I_im,
-    ofReal_im, mul_zero, sub_self, add_zero, re_ofNat, im_ofNat, mul_one, mul_im, and_self]
-
-open scoped LSeries.notation in
-/-- For positive `x` and nonzero `y` we have that
-$|L(\chi^0, x)^3 \cdot L(\chi, x+iy)^4 \cdot L(\chi^2, x+2iy)| \ge 1$. -/
-lemma norm_LSeries_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
-    ‖L ↗(1 : DirichletCharacter ℂ N) (1 + x) ^ 3 * L ↗χ (1 + x + I * y) ^ 4 *
-      L ↗(χ ^ 2 :) (1 + x + 2 * I * y)‖ ≥ 1 := by
-  have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
-  have H₀ := summable_neg_log_one_sub_mul_prime_cpow (N := N) 1 h₀
-  have H₁ := summable_neg_log_one_sub_mul_prime_cpow χ h₁
-  have H₂ := summable_neg_log_one_sub_mul_prime_cpow (χ ^ 2) h₂
-  have hsum₀ := (hasSum_re H₀.hasSum).summable.mul_left 3
-  have hsum₁ := (hasSum_re H₁.hasSum).summable.mul_left 4
-  have hsum₂ := (hasSum_re H₂.hasSum).summable
-  rw [← LSeries_eulerProduct_exp_log _ h₀, ← LSeries_eulerProduct_exp_log χ h₁,
-    ← LSeries_eulerProduct_exp_log _ h₂]
-  simp only [← exp_nat_mul, Nat.cast_ofNat, ← exp_add, norm_eq_abs, abs_exp, add_re, mul_re,
-    re_ofNat, im_ofNat, zero_mul, sub_zero, Real.one_le_exp_iff]
-  rw [re_tsum H₀, re_tsum H₁, re_tsum H₂, ← tsum_mul_left, ← tsum_mul_left,
-    ← tsum_add hsum₀ hsum₁, ← tsum_add (hsum₀.add hsum₁) hsum₂]
-  simp only [χ.pow_apply' two_ne_zero]
-  have hx₁ : (1 + x : ℂ).re = 1 + (x : ℂ) := by
-    simp only [add_re, one_re, ofReal_re, ofReal_add, ofReal_one]
-  exact tsum_nonneg fun p ↦ hx₁ ▸ χ.re_log_comb_nonneg p.prop.two_le h₀ y
-
-variable [NeZero N]
-
-/-- A variant of `DirichletCharacter.norm_LSeries_product_ge_one` in terms of the L-functions. -/
-lemma norm_LFunction_product_ge_one {x : ℝ} (hx : 0 < x) (y : ℝ) :
-    ‖LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * y) ^ 4 *
-      LFunction (χ ^ 2) (1 + x + 2 * I * y)‖ ≥ 1 := by
-  have ⟨h₀, h₁, h₂⟩ := one_lt_re_one_add hx y
-  rw [LFunctionTrivChar, DirichletCharacter.LFunction_eq_LSeries 1 h₀,
-    χ.LFunction_eq_LSeries h₁, (χ ^ 2).LFunction_eq_LSeries h₂]
-  exact norm_LSeries_product_ge_one χ hx y
-
-open Asymptotics Topology Filter
-
-open Homeomorph in
-lemma LFunctionTrivChar_isBigO_near_one_horizontal :
-    (fun x : ℝ ↦ LFunctionTrivChar N (1 + x)) =O[𝓝[>] 0] fun x ↦ (1 : ℂ) / x := by
-  have : (fun w : ℂ ↦ LFunctionTrivChar N (1 + w)) =O[𝓝[≠] 0] (1 / ·) := by
-    have H : Tendsto (fun w ↦ w * LFunctionTrivChar N (1 + w)) (𝓝[≠] 0)
-               (𝓝 <| ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹)) := by
-      convert (LFunctionTrivChar_residue_one (N := N)).comp (f := fun w ↦ 1 + w) ?_ using 1
-      · ext1 w
-        simp only [Function.comp_apply, add_sub_cancel_left]
-      · refine tendsto_iff_comap.mpr <| map_le_iff_le_comap.mp <| Eq.le ?_
-        convert map_punctured_nhds_eq (Homeomorph.addLeft (1 : ℂ)) 0 using 2 <;>
-          simp only [coe_addLeft, add_zero]
-    exact ((isBigO_mul_iff_isBigO_div eventually_mem_nhdsWithin).mp <|
-      Tendsto.isBigO_one ℂ H).trans <| isBigO_refl ..
-  exact (isBigO_comp_ofReal_nhds_ne this).mono <| nhds_right'_le_nhds_ne 0
-
-omit [NeZero N] in
-private lemma one_add_I_mul_ne_one_or {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
-    1 + I * y ≠ 1 ∨ χ ≠ 1:= by
-  simpa only [ne_eq, add_right_eq_self, _root_.mul_eq_zero, I_ne_zero, ofReal_eq_zero, false_or]
-    using hy
-
-lemma LFunction_isBigO_horizontal {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1) :
-    (fun x : ℝ ↦ LFunction χ (1 + x + I * y)) =O[𝓝[>] 0] fun _ ↦ (1 : ℂ) := by
-  refine IsBigO.mono ?_ nhdsWithin_le_nhds
-  conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  have := (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or χ hy).continuousAt
-  rw [← zero_add (1 + _)] at this
-  exact this.comp (f := fun x : ℝ ↦ x + (1 + I * y)) (x := 0) (by fun_prop) |>.tendsto.isBigO_one ℂ
-
-lemma LFunction_isBigO_horizontal_of_eq_zero {y : ℝ} (hy : y ≠ 0 ∨ χ ≠ 1)
-    (h : LFunction χ (1 + I * y) = 0) :
-    (fun x : ℝ ↦ LFunction χ (1 + x + I * y)) =O[𝓝[>] 0] fun x : ℝ ↦ (x : ℂ) := by
-  conv => enter [2, x]; rw [add_comm 1, add_assoc]
-  have := (χ.differentiableAt_LFunction _ <| one_add_I_mul_ne_one_or χ hy).hasDerivAt
-  rw [← zero_add (1 + _)] at this
-  simpa only [zero_add, h, sub_zero]
-    using (Complex.isBigO_comp_ofReal_nhds
-      (this.comp_add_const 0 _).differentiableAt.isBigO_sub) |>.mono nhdsWithin_le_nhds
-
-private lemma LFunction_ne_zero_of_not_quadratic_or_ne_one {t : ℝ} (h : χ ^ 2 ≠ 1 ∨ t ≠ 0) :
-    LFunction χ (1 + I * t) ≠ 0 := by
-  intro Hz
-  have hz₁ : t ≠ 0 ∨ χ ≠ 1 := by
-    refine h.casesOn (fun h ↦ .inr fun H ↦ ?_) .inl
-    simp only [H, one_pow, ne_eq, not_true_eq_false] at h
-  have hz₂ : 2 * t ≠ 0 ∨ χ ^ 2 ≠ 1 :=
-    h.casesOn .inr (fun h ↦ .inl <| mul_ne_zero two_ne_zero h)
-  have help (x : ℝ) : ((1 / x) ^ 3 * x ^ 4 * 1 : ℂ) = x := by
-    rcases eq_or_ne x 0 with rfl | h
-    · rw [ofReal_zero, zero_pow (by norm_num), mul_zero, mul_one]
-    · rw [one_div, inv_pow, pow_succ _ 3, ← mul_assoc,
-        inv_mul_cancel₀ <| pow_ne_zero 3 (ofReal_ne_zero.mpr h), one_mul, mul_one]
-  -- put together the various `IsBigO` statements and `norm_LFunction_product_ge_one`
-  -- to derive a contradiction
-  have H₀ : (fun _ : ℝ ↦ (1 : ℝ)) =O[𝓝[>] 0]
-      fun x ↦ LFunctionTrivChar N (1 + x) ^ 3 * LFunction χ (1 + x + I * t) ^ 4 *
-                   LFunction (χ ^ 2) (1 + x + 2 * I * t) :=
-    IsBigO.of_bound' <| eventually_nhdsWithin_of_forall
-      fun _ hx ↦ (norm_one (α := ℝ)).symm ▸ (χ.norm_LFunction_product_ge_one hx t).le
-  have H := ((LFunctionTrivChar_isBigO_near_one_horizontal (N := N)).pow 3).mul
-    ((χ.LFunction_isBigO_horizontal_of_eq_zero hz₁ Hz).pow 4) |>.mul <|
-    LFunction_isBigO_horizontal _ hz₂
-  simp only [ofReal_mul, ofReal_ofNat, mul_left_comm I, ← mul_assoc, help] at H
-  -- go via absolute value to translate into a statement over `ℝ`
-  replace H := (H₀.trans H).norm_right
-  simp only [norm_eq_abs, abs_ofReal] at H
-  refine isLittleO_irrefl ?_ <| H.of_abs_right.trans_isLittleO <|
-    isLittleO_id_one.mono nhdsWithin_le_nhds
-  -- remaining goal: `∃ᶠ (x : ℝ) in 𝓝[>] 0, 1 ≠ 0`
-  simp only [ne_eq, one_ne_zero, not_false_eq_true, frequently_true_iff_neBot]
-  exact mem_closure_iff_nhdsWithin_neBot.mp <| closure_Ioi (0 : ℝ) ▸ Set.left_mem_Ici
-
-/-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish when `s.re = 1`
-except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_re_eq_one {s : ℂ} (hs : s.re = 1) (hχs : χ ≠ 1 ∨ s ≠ 1) :
-    LFunction χ s ≠ 0 := by
-  by_cases h : χ ^ 2 = 1 ∧ s = 1
-  · exact h.2 ▸ LFunction_at_one_ne_zero_of_quadratic h.1 <| hχs.neg_resolve_right h.2
-  · have hs' : s = 1 + I * s.im := by
-      conv_lhs => rw [← re_add_im s, hs, ofReal_one, mul_comm]
-    rw [not_and_or, ← ne_eq, ← ne_eq, hs', add_right_ne_self] at h
-    replace h : χ ^ 2 ≠ 1 ∨ s.im ≠ 0 :=
-      h.casesOn .inl (fun H ↦ .inr <| by exact_mod_cast right_ne_zero_of_mul H)
-    exact hs'.symm ▸ χ.LFunction_ne_zero_of_not_quadratic_or_ne_one h
-
-/-- If `χ` is a Dirichlet character, then `L(χ, s)` does not vanish for `s.re ≥ 1`
-except when `χ` is trivial and `s = 1` (then `L(χ, s)` has a simple pole at `s = 1`). -/
-theorem Lfunction_ne_zero_of_one_le_re ⦃s : ℂ⦄ (hχs : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) :
-    LFunction χ s ≠ 0 := by
-  rcases hs.eq_or_lt with hs | hs
-  · exact Lfunction_ne_zero_of_re_eq_one χ hs.symm hχs
-  · exact LFunction_eq_LSeries χ hs ▸ LSeries_ne_zero_of_one_lt_re χ hs
-
-end DirichletCharacter
-
-open DirichletCharacter in
-/-- The Riemann Zeta Function does not vanish on the closed half-plane `re z ≥ 1`. -/
-lemma riemannZeta_ne_zero_of_one_le_re ⦃z : ℂ⦄ (hz : z ≠ 1) (hz' : 1 ≤ z.re) :
-    riemannZeta z ≠ 0 :=
-  LFunction_modOne_eq (χ := 1) ▸ Lfunction_ne_zero_of_one_le_re _ (.inr hz) hz'
-
-end nonvanishing
 
 /-!
 ### The logarithmic derivative of the L-function of a trivial character
@@ -316,91 +94,213 @@ end DirichletCharacter
 
 
 /-!
-### Proof of Lemma 9
-
-We prove Lemma 9 of
-[Section 2 in the PNT+ Project](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/sect0002.html).
+### The L-function of Λ restricted to a residue class
 -/
 
 section arith_prog
 
-open scoped ArithmeticFunction.vonMangoldt
+namespace ArithmeticFunction
+
 open DirichletCharacter
 
 variable {q : ℕ} [NeZero q] {a : ZMod q}
 
-/-- Lemma 9 of Section 2 of PNT+: The L-series of the von Mangoldt function restricted to the
-prime residue class `a` mod `q` as a linear combination of logarithmic derivatives of
-L functions of the Dirichlet characters mod `q`. -/
-lemma WeakPNT_character (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
-    LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s =
+namespace vonMangoldt
+
+variable (a) in
+/-- The von Mangoldt function restricted to the prime residue class `a` mod `q`. -/
+noncomputable abbrev residue_class : ℕ → ℂ :=
+  {n : ℕ | (n : ZMod q) = a}.indicator (vonMangoldt ·)
+
+lemma residue_class_apply (ha : IsUnit a) (n : ℕ) :
+    residue_class a n =
+      (q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ * χ n * vonMangoldt n := by
+  rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
+  simp only [residue_class, Set.indicator_apply, Set.mem_setOf_eq, mul_ite, mul_zero,
+    ← Finset.sum_mul, sum_char_inv_mul_char_eq ℂ ha n, eq_comm (a := a), ite_mul, zero_mul]
+
+lemma residue_class_eq (ha : IsUnit a) :
+    residue_class a = (q.totient : ℂ)⁻¹ •
+      ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ • (fun n : ℕ ↦ χ n * vonMangoldt n) := by
+  ext1 n
+  simpa only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul, ← mul_assoc]
+    using residue_class_apply ha n
+
+/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
+is a linear combination of logarithmic derivatives of L-functions of the Dirichlet characters
+mod `q` (on `re s ≥ 1`). -/
+lemma LSeries_residue_class_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
+    LSeries (residue_class a) s =
       -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
         (deriv (LFunction χ) s / LFunction χ s) := by
   simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg,
     ← Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
   rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
-  simp only [← LSeries_smul]
-  classical
-  rw [← LSeries_sum <| fun χ _ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
+  simp_rw [← LSeries_smul,
+    ← LSeries_sum <| fun χ _ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
   refine LSeries_congr s fun {n} _ ↦ ?_
-  simp only [Pi.smul_apply, smul_eq_mul, Finset.sum_apply, Pi.mul_apply, Set.indicator_apply]
-  conv_lhs => rw [← one_mul (Λ n : ℂ), ← zero_mul (Λ n : ℂ), ← ite_mul]
-  simp only [← mul_assoc, ← Finset.sum_mul, mul_ite, mul_one, mul_zero, Set.mem_setOf_eq]
-  congrm (?_ * (Λ n : ℂ))
-  simpa only [Nat.cast_ite, Nat.cast_zero, eq_comm (a := a)]
-    using (sum_char_inv_mul_char_eq ℂ ha n).symm
+  simp only [Pi.smul_apply, residue_class_apply ha, smul_eq_mul, ← mul_assoc,
+    mul_inv_cancel_of_invertible, one_mul, Finset.sum_apply, Pi.mul_apply]
 
-variable (q a) in
+end vonMangoldt
+
+namespace DirichletsThm
+
+variable (q)
+
+variable (a) in
 open Classical in
 /-- The function `F` used in the Wiener-Ikehara Theorem to prove Dirichlet's Theorem. -/
 noncomputable
-def weakDirichlet_auxFun (s : ℂ) : ℂ :=
+abbrev auxFun (s : ℂ) : ℂ :=
   (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
     ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
 
-lemma weakDirichlet_auxFun_prop (ha : IsUnit a) :
-    Set.EqOn (weakDirichlet_auxFun q a)
-      (fun s ↦ LSeries ({n : ℕ | (n : ZMod q) = a}.indicator ↗Λ) s - (q.totient : ℂ)⁻¹ / (s - 1))
+variable {q}
+
+lemma auxFun_prop (ha : IsUnit a) :
+    Set.EqOn (auxFun q a)
+      (fun s ↦ L (vonMangoldt.residue_class a) s - (q.totient : ℂ)⁻¹ / (s - 1))
       {s | 1 < s.re} := by
-  classical
   intro s hs
   simp only [Set.mem_setOf_eq] at hs
-  simp only [WeakPNT_character ha hs]
-  rw [weakDirichlet_auxFun, neg_div, ← neg_add', mul_neg, ← neg_mul,
-    div_eq_mul_one_div (q.totient : ℂ)⁻¹, sub_eq_add_neg, ← neg_mul, ← mul_add]
+  simp only [vonMangoldt.LSeries_residue_class_eq ha hs, auxFun]
+  rw [neg_div, ← neg_add', mul_neg, ← neg_mul,  div_eq_mul_one_div (q.totient : ℂ)⁻¹,
+    sub_eq_add_neg, ← neg_mul, ← mul_add]
   congrm (_ * ?_)
   -- this should be easier, but `IsUnit.inv ha` does not work here
   have ha' : IsUnit a⁻¹ := isUnit_of_dvd_one ⟨a, (ZMod.inv_mul_of_unit a ha).symm⟩
+  classical -- for `Fintype.sum_eq_add_sum_compl`
   rw [Fintype.sum_eq_add_sum_compl 1, MulChar.one_apply ha', one_mul, add_right_comm]
   simp only [mul_div_assoc]
   congrm (?_ + _)
-  have hs₁ : s ≠ 1 := by
-    rintro rfl
-    simp only [one_re, lt_self_iff_false] at hs
+  have hs₁ : s ≠ 1 := fun h ↦ ((h ▸ hs).trans_eq one_re).false
   rw [deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs₁, LFunctionTrivChar₁_apply_of_ne_one _ hs₁]
   simp only [LFunctionTrivChar]
   rw [add_div, mul_div_mul_right _ _ (sub_ne_zero_of_ne hs₁)]
   conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
-  rw [mul_div_mul_left _ _ <| Lfunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
+  rw [mul_div_mul_left _ _ <| LFunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
 
-/-- (A version of) Proposition 2 of Section 2 of PNT+: the L-series of the von Mangoldt function
-restricted to the prime residue class `a` mod `q` is continuous on `s.re ≥ 1` except
-for a single pole at `s = 1` with residue `(q.totient)⁻¹`.-/
-lemma continuousOn_weakDirichlet_auxFun :
-    ContinuousOn (weakDirichlet_auxFun q a) {s | 1 ≤ s.re} := by
-  rw [show weakDirichlet_auxFun q a = fun s ↦ _ from rfl]
-  simp only [weakDirichlet_auxFun, sub_eq_add_neg]
+lemma auxFun_prop' (ha : IsUnit a) :
+    Set.EqOn (L (vonMangoldt.residue_class a) - auxFun q a) (fun s ↦ (q.totient : ℂ)⁻¹ / (s - 1))
+    {s | 1 < s.re} := by
+  intro s hs
+  simp only [Pi.sub_apply, auxFun_prop ha hs, sub_sub_cancel]
+
+variable (a) in
+/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
+is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`. -/
+lemma continuousOn_auxFun : ContinuousOn (auxFun q a) {s | 1 ≤ s.re} := by
+  rw [show auxFun q a = fun s ↦ _ from rfl]
+  simp only [auxFun, sub_eq_add_neg]
   refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
   · refine ContinuousOn.mono (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q) fun s hs ↦ ?_
-    have := Lfunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
+    have := LFunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
     tauto
   · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
     refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
     replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
     exact ContinuousOn.mono (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ)
-      fun _ hs ↦ Lfunction_ne_zero_of_one_le_re χ (.inl hχ) hs
+      fun _ hs ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) hs
+
+open Filter Topology in
+lemma not_continuousAt_LSeries_residue_class (ha : IsUnit a) :
+  ¬ ContinuousAt (L <| vonMangoldt.residue_class a) 1 := by
+  by_contra H
+  have h : (1 : ℂ) ∈ {s | 1 ≤ s.re} := by
+    simp only [Set.mem_setOf_eq, one_re, le_refl]
+  have H₁ := H.continuousWithinAt (s := {s | 1 ≤ s.re})
+  have H₂ := (continuousOn_auxFun a).continuousWithinAt h
+  have H₃ := H₁.sub H₂
+
+
+  stop
+  have : Tendsto (L <| vonMangoldt.residue_class a) (𝓝[{s | 1 < s.re}] 1) (cocompact ℂ) := by
+    refine (tendsto_congr' <| eventuallyEq_nhdsWithin_of_eqOn <| auxFun_prop' ha).mpr ?_
+    refine tendsto_nhdsWithin_mono_left (t := {s | 1 ≤ s.re}) (fun ⦃s⦄ hs ↦ le_of_lt hs) ?_
+
+    sorry
+  have inst : NeBot <| nhdsWithin (1 : ℂ) {s | 1 < s.re} := by
+    refine mem_closure_iff_nhdsWithin_neBot.mp ?_
+
+
+    refine mem_closure_iff_nhds.mpr fun t ht ↦ ?_
+    refine Set.inter_nonempty.mpr ?_
+
+    sorry
+  refine not_continuousAt_of_tendsto this ?_ ?_
+  · sorry
+  · sorry
+
+lemma abscissaOfAbsConv_vonMangoldt_residue_class (ha : IsUnit a) :
+    LSeries.abscissaOfAbsConv (vonMangoldt.residue_class a) = 1 := by
+  refine le_antisymm ?_ ?_
+  · rw [vonMangoldt.residue_class_eq ha]
+    refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun h hy ↦ ?_
+    refine (LSeriesSummable.sum fun χ _ ↦ LSeriesSummable.smul _ ?_).smul _
+    exact χ.LSeriesSummable_mul <| ArithmeticFunction.LSeriesSummable_vonMangoldt <|
+      by simp only [ofReal_re, hy]
+  · by_contra! H
+    change LSeries.abscissaOfAbsConv (vonMangoldt.residue_class a) < (1 : ℂ).re at H
+    exact not_continuousAt_LSeries_residue_class ha <|
+      HasDerivAt.continuousAt <| LSeries_hasDerivAt H
+
+end DirichletsThm
+
+end ArithmeticFunction
 
 end arith_prog
+
+namespace LSeries
+
+/- lemma analyticOn_term (f : ℕ → ℂ) (n : ℕ) :
+    AnalyticOn ℂ (fun s ↦ term f s n) Set.univ := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simpa only [term_zero] using analyticOn_const
+  · have : NeZero n := ⟨hn⟩
+    simp only [term_of_ne_zero hn]
+    exact AnalyticOn.div analyticOn_const
+      (analyticOn_univ_iff_differentiable.mpr <| differentiable_const_cpow_of_neZero n)
+      fun s _ ↦ by rw [cpow_def_of_ne_zero (mod_cast hn)]; exact exp_ne_zero _
+
+/-- The L-series of a function with finite support is entire. -/
+lemma analyticOn_of_finite_support {f : ℕ → ℂ} (hf : ∃ n, ∀ m ≥ n, f m = 0) :
+    AnalyticOn ℂ (LSeries f) Set.univ := by
+  obtain ⟨n, hn⟩ := hf
+  have : LSeries f = fun s ↦ ∑ m ∈ Finset.range n, term f s m := by
+    refine funext fun s ↦ tsum_eq_sum fun m hm ↦ ?_
+    refine (eq_or_ne m 0).casesOn (fun H ↦ H ▸ term_zero ..) (fun H ↦ ?_)
+    simp only [Finset.mem_range, not_lt] at hm
+    simp only [term_of_ne_zero H, hn m hm, zero_div]
+  exact this ▸ Finset.analyticOn_sum _ fun m _ ↦ analyticOn_term f m -/
+
+end LSeries
+
+open LSeries
+
+-- We need a statement along the lines of:
+-- if `f n = 0` for all large enough `n` *that are not perfect powers*, then
+-- `LSeries f` is holomorphic at `s = 1`.
+
+/-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
+integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
+such that `(p : ZMod q) = a`. -/
+theorem dirchlet_primes_in_arith_progression (q : ℕ) [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+    ∀ n : ℕ, ∃ p > n, p.Prime ∧ (p : ZMod q) = a := by
+  have H₁ := ArithmeticFunction.DirichletsThm.auxFun_prop ha
+  have H₂ := ArithmeticFunction.DirichletsThm.continuousOn_auxFun a
+  by_contra! H
+  obtain ⟨n, hn⟩ := H
+  -- have key : abscissaOfAbsConv
+  have H₃ : ∃ n : ℕ, ∀ m ≥ n,
+      ({(n : ℕ) | (n : ZMod q) = a}.indicator ↗ArithmeticFunction.vonMangoldt) m = 0 := by
+    refine ⟨n + 1, fun m hm ↦ ?_⟩
+    by_cases H₀ : (m : ZMod q) = a
+    · simp only [Set.mem_setOf_eq, H₀, Set.indicator_of_mem, ofReal_eq_zero]
+      rw [ArithmeticFunction.vonMangoldt_eq_zero_iff]
+      sorry
+    · simp only [Set.mem_setOf_eq, H₀, not_false_eq_true, Set.indicator_of_not_mem]
+  sorry
 
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
@@ -420,7 +320,7 @@ def WienerIkeharaTheorem : Prop :=
 ### Derivation of the Prime Number Theorem and Dirichlet's Theorem from the Wiener-Ikehara Theorem
 -/
 
-open Filter ArithmeticFunction Topology
+open Filter ArithmeticFunction Topology ArithmeticFunction.DirichletsThm
 
 /--  The *Wiener-Ikehara Theorem* implies *Dirichlet's Theorem* in the form that
 `ψ x ∼ q.totient⁻¹ * x`, where `ψ x = ∑ n < x ∧ n ≡ a mod q, Λ n`
@@ -436,14 +336,14 @@ theorem Dirichlet_vonMangoldt (WIT : WienerIkeharaTheorem) {q : ℕ} [NeZero q] 
       (Finset.range N).sum ({n : ℕ | (n : ZMod q) = a}.indicator Λ) :=
     (Finset.sum_indicator_eq_sum_filter _ _ (fun _ ↦ {n : ℕ | n = a}) _).symm
   simp only [H]
-  refine WIT (F := weakDirichlet_auxFun q a) (fun n ↦ ?_) ?_ ?_
+  refine WIT (F := auxFun q a) (fun n ↦ ?_) ?_ ?_
   · exact Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
-  · convert weakDirichlet_auxFun_prop ha with s n
+  · convert auxFun_prop ha with s n
     · by_cases hn : n = a
       · simp only [Set.mem_setOf_eq, hn, Set.indicator_of_mem]
       · simp only [Set.mem_setOf_eq, hn, not_false_eq_true, Set.indicator_of_not_mem, ofReal_zero]
     · rw [ofReal_inv, ofReal_natCast]
-  · exact continuousOn_weakDirichlet_auxFun
+  · exact continuousOn_auxFun a
 
 /-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
 `ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
