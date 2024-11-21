@@ -8,7 +8,34 @@ open scoped LSeries.notation
 
 open Complex
 
+/-!
+### Auxiliary statements
+-/
 
+lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
+    (h : abscissaOfAbsConv ↗f < x) :
+    Summable fun n : ℕ ↦ f n * (n : ℝ) ^ (-x) := by
+  have h' : abscissaOfAbsConv ↗f < (x : ℂ).re := by
+    simpa only [ofReal_re] using h
+  have := LSeriesSummable_of_abscissaOfAbsConv_lt_re h'
+  rw [LSeriesSummable, show term _ _ =  fun n ↦ _ from rfl] at this
+  conv at this =>
+    enter [1, n]
+    rw [term_def]
+    enter [3]
+    rw [show (n : ℂ) = (n : ℝ) from rfl, ← ofReal_cpow n.cast_nonneg]
+    norm_cast
+  conv at this =>
+    enter [1, n]
+    rw [show (0 : ℂ) = (0 : ℝ) from rfl, ← apply_ite]
+  rw [summable_ofReal] at this
+  refine this.congr_cofinite ?_
+  have hf : {n : ℕ | n ≠ 0} ∈ Filter.cofinite := by
+    refine Filter.mem_cofinite.mpr ?_
+    simp only [ne_eq, Set.compl_ne_eq_singleton, Set.finite_singleton]
+  filter_upwards [hf] with n hn
+  simpa only [hn, ↓reduceIte, div_eq_mul_inv, mul_eq_mul_left_iff]
+    using .inl (Real.rpow_neg n.cast_nonneg x).symm
 
 /-!
 ### The L-function of Λ restricted to a residue class
