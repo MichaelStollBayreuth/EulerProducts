@@ -135,6 +135,19 @@ lemma residue_class_apply_zero : residue_class a 0 = 0 := by
   simp only [Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Nat.cast_zero, map_zero, ofReal_zero,
     implies_true]
 
+lemma abscissaOfAbsConv_vonMangoldt_residue_class_le_one :
+    LSeries.abscissaOfAbsConv ↗(vonMangoldt.residue_class a) ≤ 1 := by
+  refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
+  simp only [vonMangoldt.residue_class]
+  have := ArithmeticFunction.LSeriesSummable_vonMangoldt <|
+    show 1 < (y : ℂ).re by simp only [ofReal_re, hy]
+  convert this.indicator {n : ℕ | (n : ZMod q) = a}
+  refine summable_congr fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [Set.indicator_apply, Set.mem_setOf_eq, LSeries.term_zero, Nat.cast_zero, ite_self]
+  · simp+contextual only [Set.indicator_apply, Set.mem_setOf_eq, apply_ite, ofReal_zero, ne_eq, hn,
+      not_false_eq_true, LSeries.term_of_ne_zero, ↓reduceIte, zero_div, ite_self]
+
 variable [NeZero q] {a}
 
 lemma residue_class_apply (ha : IsUnit a) (n : ℕ) :
@@ -167,20 +180,6 @@ lemma LSeries_residue_class_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
   refine LSeries_congr s fun {n} _ ↦ ?_
   simp only [Pi.smul_apply, residue_class_apply ha, smul_eq_mul, ← mul_assoc,
     mul_inv_cancel_of_invertible, one_mul, Finset.sum_apply, Pi.mul_apply]
-
-omit [NeZero q] in
-variable (a) in
-lemma abscissaOfAbsConv_vonMangoldt_residue_class_le_one :
-    LSeries.abscissaOfAbsConv ↗(vonMangoldt.residue_class a) ≤ 1 := by
-  refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
-  simp only [vonMangoldt.residue_class]
-  have := ArithmeticFunction.LSeriesSummable_vonMangoldt <| show 1 < (y : ℂ).re by simp only [ofReal_re, hy]
-  convert this.indicator {n : ℕ | (n : ZMod q) = a}
-  refine summable_congr fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [Set.indicator_apply, Set.mem_setOf_eq, LSeries.term_zero, Nat.cast_zero, ite_self]
-  · simp+contextual only [Set.indicator_apply, Set.mem_setOf_eq, apply_ite, ofReal_zero, ne_eq, hn,
-      not_false_eq_true, LSeries.term_of_ne_zero, ↓reduceIte, zero_div, ite_self]
 
 end vonMangoldt
 
@@ -273,12 +272,18 @@ lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
   · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
     exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
 
+end DirichletsThm
+
 /-!
 ### Derivation of Dirichlet's Theorem (without Wiener-Ikehara)
 -/
 
+variable {q : ℕ} {a : ZMod q}
+
+open DirichletsThm
+
 open Topology Filter in
-lemma LSeries_vonMangoldt_residue_class_tendsto_atTop (ha : IsUnit a) :
+lemma LSeries_vonMangoldt_residue_class_tendsto_atTop [NeZero q] (ha : IsUnit a) :
     Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residue_class a n * (n : ℝ) ^ (-x))
       (𝓝[>] 1) atTop := by
   have H {x : ℝ} (hx : 1 < x) :
@@ -353,16 +358,13 @@ private lemma tsum_primes_le : ∃ C : ℝ, ∑' p : Nat.Primes, (p : ℝ) ^ (-2
   · positivity
   · exact Real.summable_nat_rpow.mpr <| by norm_num
 
-omit [NeZero q] in
-variable (a) in
+variable (a)
+
 lemma summable_residue_class_real_mul_pow {x : ℝ} (hx : x > 1) :
     Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) * (n : ℝ) ^ (-x) :=
   LSeries.summable_real_of_abscissaOfAbsConv_lt <|
     (vonMangoldt.abscissaOfAbsConv_vonMangoldt_residue_class_le_one a).trans_lt <| mod_cast hx.lt
 
-
-omit [NeZero q] in
-variable (a) in
 lemma vonMangoldt_non_primes_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ,
       (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) * (n : ℝ) ^ (-x) ≤ C := by
@@ -511,8 +513,6 @@ lemma vonMangoldt_non_primes_residue_class_bound :
     ← div_eq_mul_inv, ← zpow_natCast, inv_zpow']
   exact log_div_bound p
 
-omit [NeZero q] in
-variable (a) in
 lemma vonMangoldt_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ, vonMangoldt.residue_class a n * (n : ℝ) ^ (-x) ≤
       (∑' p : Nat.Primes, vonMangoldt.residue_class a p * (p : ℝ) ^ (-x)) + C := by
@@ -557,17 +557,17 @@ lemma vonMangoldt_residue_class_bound :
     have : ¬ Nat.Prime ((p : ℕ) ^ (k + 2)) := Nat.Prime.not_prime_pow <| Nat.le_add_left 2 k
     simp only [Nat.cast_pow, this, ↓reduceIte]
 
-end DirichletsThm
-
 end ArithmeticFunction
 
 end arith_prog
+
+section DirichletsTheorem
 
 open ArithmeticFunction DirichletsThm in
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
 integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
 such that `(p : ZMod q) = a`. -/
-theorem dirchlet_primes_in_arith_progression (q : ℕ) [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+theorem dirchlet_primes_in_arith_progression {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
     ∀ n : ℕ, ∃ p > n, p.Prime ∧ (p : ZMod q) = a := by
   by_contra! H
   obtain ⟨N, hN⟩ := H
@@ -624,6 +624,8 @@ theorem dirchlet_primes_in_arith_progression (q : ℕ) [NeZero q] {a : ZMod q} (
     simp only [add_le_iff_nonpos_right] at this
     exact zero_lt_one.not_le this
   simp only [h, Set.setOf_false, Filter.empty_not_mem] at this
+
+end DirichletsTheorem
 
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
