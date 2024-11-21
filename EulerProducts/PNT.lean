@@ -74,8 +74,6 @@ lemma Nat.Primes.prodNatEquiv_symm_apply (n : {n : ℕ // IsPrimePow n}) :
 
 section
 
-open Filter Finset Function
-
 variable {α β γ : Type*} [CommGroup α] [UniformSpace α] [UniformGroup α] [CompleteSpace α]
 
 @[to_additive Summable.prod]
@@ -83,12 +81,9 @@ lemma Multipliable.prod {f : β × γ → α} (h : Multipliable f) :
     Multipliable fun b ↦ ∏' c, f (b, c) :=
   ((Equiv.sigmaEquivProd β γ).multipliable_iff.mpr h).sigma
 
-end
-
 open Nat.Primes in
 @[to_additive tsum_eq_tsum_primes_of_support_subset_prime_powers]
-lemma tprod_eq_tprod_primes_of_mulSupport_subset_prime_powers {α : Type*} [CommGroup α]
-     [UniformSpace α] [UniformGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
+lemma tprod_eq_tprod_primes_of_mulSupport_subset_prime_powers [T0Space α] {f : ℕ → α}
      (hfm : Multipliable f) (hf : Function.mulSupport f ⊆ {n | IsPrimePow n}) :
     ∏' n : ℕ, f n = ∏' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 1)) := by
   have hfm' : Multipliable fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1)) :=
@@ -100,8 +95,7 @@ lemma tprod_eq_tprod_primes_of_mulSupport_subset_prime_powers {α : Type*} [Comm
   refine tprod_congr fun (p, k) ↦ congrArg f <| coe_prodNatEquiv_apply ..
 
 @[to_additive tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers]
-lemma tprod_eq_tprod_primes_mul_tprod_primes_of_mulSupport_subset_prime_powers {α : Type*}
-    [CommGroup α] [UniformSpace α] [UniformGroup α] [CompleteSpace α] [T0Space α]
+lemma tprod_eq_tprod_primes_mul_tprod_primes_of_mulSupport_subset_prime_powers [T0Space α]
     {f : ℕ → α} (hfs : Multipliable f) (hf : Function.mulSupport f ⊆ {n | IsPrimePow n}) :
     ∏' n : ℕ, f n = (∏' p : Nat.Primes, f p) *  ∏' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 2)) := by
   rw [tprod_eq_tprod_primes_of_mulSupport_subset_prime_powers hfs hf]
@@ -112,9 +106,12 @@ lemma tprod_eq_tprod_primes_mul_tprod_primes_of_mulSupport_subset_prime_powers {
     enter [1, p]; rw [tprod_eq_zero_mul (hfs' p), zero_add, pow_one]
     enter [2, 1, k]; rw [add_assoc, one_add_one_eq_two]
   exact tprod_mul (Multipliable.subtype hfs _) <|
-    Multipliable.prod (f := fun (pk : Nat.Primes × ℕ) ↦ f (pk.1 ^ (pk.2 + 2))) <| hfs.comp_injective <|
-    Subtype.val_injective |>.comp Nat.Primes.prodNatEquiv.injective |>.comp  <|
+    Multipliable.prod (f := fun (pk : Nat.Primes × ℕ) ↦ f (pk.1 ^ (pk.2 + 2))) <|
+    hfs.comp_injective <| Subtype.val_injective |>.comp
+    Nat.Primes.prodNatEquiv.injective |>.comp <|
     Function.Injective.prodMap (fun ⦃_ _⦄ a ↦ a) <| add_left_injective 1
+
+end
 
 /-!
 ### The L-function of Λ restricted to a residue class
