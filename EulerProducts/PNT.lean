@@ -12,6 +12,7 @@ open Complex
 ### Auxiliary statements
 -/
 
+-- [Mathlib.NumberTheory.LSeries.Convergence]
 lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
     (h : abscissaOfAbsConv ↗f < x) :
     Summable fun n : ℕ ↦ f n / (n : ℝ) ^ x := by
@@ -40,8 +41,8 @@ lemma Nat.eq_minFac_pow_of_isPrimePow {n : ℕ} (hn : IsPrimePow n) :
 and the set of prime powers given by `(p, k) ↦ p^(k+1)`. -/
 noncomputable -- because `multiplicity` is noncomputable
 def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} where
-  toFun pk := ⟨pk.1 ^ (pk.2 + 1),
-                ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, Nat.zero_lt_succ pk.2, rfl⟩⟩
+  toFun pk :=
+    ⟨pk.1 ^ (pk.2 + 1), ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, pk.2.add_one_pos, rfl⟩⟩
   invFun n :=
     (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (multiplicity n.val.minFac n.val) - 1)
   left_inv := fun (p, k) ↦ by
@@ -50,11 +51,11 @@ def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} w
     have hp₁ : ⟨(p.val ^ (k + 1)).minFac,
         minFac_prime <| mt (pow_eq_one_iff k.add_one_ne_zero).mp p.prop.ne_one⟩ = p :=
       Subtype.ext hp
-    rw [hp₁, hp, multiplicity_pow_self_of_prime p.prop.prime (k + 1)]
-    exact ⟨rfl, rfl⟩
+    rw [hp₁, hp, multiplicity_pow_self_of_prime p.prop.prime]
+    exact ⟨rfl, Nat.add_sub_cancel ..⟩
   right_inv n := by
     ext1
-    simp only [Set.mem_setOf_eq]
+    dsimp only
     rw [sub_one_add_one (multiplicity_ne_zero.mpr <| minFac_dvd n),
       ← eq_minFac_pow_of_isPrimePow n.prop]
 
