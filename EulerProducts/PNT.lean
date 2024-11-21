@@ -14,29 +14,21 @@ open Complex
 
 lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
     (h : abscissaOfAbsConv ↗f < x) :
-    Summable fun n : ℕ ↦ f n * (n : ℝ) ^ (-x) := by
-  have h' : abscissaOfAbsConv ↗f < (x : ℂ).re := by
-    simpa only [ofReal_re] using h
+    Summable fun n : ℕ ↦ f n / (n : ℝ) ^ x := by
+  have h' : abscissaOfAbsConv ↗f < (x : ℂ).re := by simpa only [ofReal_re] using h
   have := LSeriesSummable_of_abscissaOfAbsConv_lt_re h'
-  rw [LSeriesSummable, show term _ _ =  fun n ↦ _ from rfl] at this
+  rw [LSeriesSummable, show term _ _ = fun n ↦ _ from rfl] at this
   conv at this =>
     enter [1, n]
-    rw [term_def]
-    enter [3]
-    rw [show (n : ℂ) = (n : ℝ) from rfl, ← ofReal_cpow n.cast_nonneg]
-    norm_cast
-  conv at this =>
-    enter [1, n]
-    rw [show (0 : ℂ) = (0 : ℝ) from rfl, ← apply_ite]
+    rw [term_def, show (n : ℂ) = (n : ℝ) from rfl, ← ofReal_cpow n.cast_nonneg, ← ofReal_div,
+      show (0 : ℂ) = (0 : ℝ) from rfl, ← apply_ite]
   rw [summable_ofReal] at this
   refine this.congr_cofinite ?_
-  have hf : {n : ℕ | n ≠ 0} ∈ Filter.cofinite := by
-    refine Filter.mem_cofinite.mpr ?_
-    simp only [ne_eq, Set.compl_ne_eq_singleton, Set.finite_singleton]
-  filter_upwards [hf] with n hn
-  simpa only [hn, ↓reduceIte, div_eq_mul_inv, mul_eq_mul_left_iff]
-    using .inl (Real.rpow_neg n.cast_nonneg x).symm
+  filter_upwards [Set.Finite.compl_mem_cofinite <| Set.finite_singleton 0] with n hn
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hn
+  exact if_neg hn
 
+-- [Mathlib.Data.Nat.Factorization.PrimePow]
 /-- If `n` is a prime power, then we can write it explicitly as such. -/
 lemma Nat.eq_minFac_pow_of_isPrimePow {n : ℕ} (hn : IsPrimePow n) :
     n = n.minFac ^ (multiplicity n.minFac n) := by
@@ -284,20 +276,20 @@ open DirichletsThm
 
 open Topology Filter in
 lemma LSeries_vonMangoldt_residue_class_tendsto_atTop [NeZero q] (ha : IsUnit a) :
-    Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residue_class a n * (n : ℝ) ^ (-x))
+    Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x)
       (𝓝[>] 1) atTop := by
   have H {x : ℝ} (hx : 1 < x) :
-      ∑' n, vonMangoldt.residue_class a n * (n : ℝ) ^ (-x) =
+      ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x =
         (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
     apply_fun ((↑) : ℝ → ℂ) using ofReal_injective
     push_cast
     simp_rw [ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast]
     convert_to L ↗(vonMangoldt.residue_class a) x = _
-    · simp only [ofReal_neg, cpow_neg, LSeries, LSeries.term, div_eq_mul_inv]
+    · simp only [div_eq_mul_inv, LSeries, LSeries.term]
       refine tsum_congr fun n ↦ ?_
       rcases eq_or_ne n 0 with rfl | hn
       · simp only [vonMangoldt.residue_class_apply_zero, ofReal_zero, Nat.cast_zero, zero_mul,
-        ↓reduceIte]
+          ↓reduceIte]
       · simp only [hn, ↓reduceIte]
     · rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx)]
       simp only [sub_add_cancel]
@@ -361,13 +353,13 @@ private lemma tsum_primes_le : ∃ C : ℝ, ∑' p : Nat.Primes, (p : ℝ) ^ (-2
 variable (a)
 
 lemma summable_residue_class_real_mul_pow {x : ℝ} (hx : x > 1) :
-    Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) * (n : ℝ) ^ (-x) :=
+    Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) / (n : ℝ) ^ x :=
   LSeries.summable_real_of_abscissaOfAbsConv_lt <|
     (vonMangoldt.abscissaOfAbsConv_vonMangoldt_residue_class_le_one a).trans_lt <| mod_cast hx.lt
 
 lemma vonMangoldt_non_primes_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ,
-      (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) * (n : ℝ) ^ (-x) ≤ C := by
+      (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) / (n : ℝ) ^ x ≤ C := by
   obtain ⟨C, hC⟩ := tsum_primes_le
   use 4 * C
   intro x hx
@@ -375,31 +367,33 @@ lemma vonMangoldt_non_primes_residue_class_bound :
     rw [Real.rpow_neg (by positivity), inv_lt_one₀ (by have := p.prop.pos; positivity)]
     refine Real.one_lt_rpow (mod_cast p.prop.one_lt) (zero_lt_one.trans hx.lt)
   let F (n : ℕ) : ℝ :=
-    (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) * (n : ℝ) ^ (-x)
+    (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) / (n : ℝ) ^ x
   have hF₀ (p : Nat.Primes) : F p = 0 := by
-    simp only [ite_mul, zero_mul, p.prop, ↓reduceIte, F]
+    simp only [p.prop, ↓reduceIte, zero_div, F]
   have hF₁ (p : Nat.Primes) (k : ℕ) : F ((p : ℕ) ^ (k + 2)) =
       if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0 := by
-    simp only [vonMangoldt.residue_class, Set.indicator, Set.mem_setOf_eq, ite_mul, zero_mul,
-      le_add_iff_nonneg_left, zero_le, Nat.Prime.not_prime_pow, ↓reduceIte, Nat.cast_pow, F]
+    simp only [vonMangoldt.residue_class, Set.indicator, Set.mem_setOf_eq, div_eq_mul_inv, ite_mul,
+      zero_mul, le_add_iff_nonneg_left, zero_le, Nat.Prime.not_prime_pow, ↓reduceIte, Nat.cast_pow,
+      F]
     refine ite_congr rfl (fun _ ↦ ?_) fun _ ↦ rfl
     rw [vonMangoldt_apply_pow (by omega), vonMangoldt_apply_prime p.prop,
-      ← Real.rpow_natCast_mul (by positivity), ← Real.rpow_mul_natCast (by positivity), mul_comm (-x)]
+      ← Real.rpow_natCast_mul (by positivity), ← Real.rpow_mul_natCast (by positivity), neg_mul,
+      mul_comm x, Real.rpow_neg p.val.cast_nonneg]
   have hs : Summable F := by
     have := summable_residue_class_real_mul_pow a hx
-    have H₁ (n : ℕ) : 0 ≤ {n : ℕ | (n : ZMod q) = a}.indicator (fun n ↦ Λ n) n * (n : ℝ) ^ (-x) := by
-      simp only [Set.indicator, Set.mem_setOf_eq, ite_mul, zero_mul]
+    have H₁ (n : ℕ) : 0 ≤ {n : ℕ | (n : ZMod q) = a}.indicator (fun n ↦ Λ n) n / (n : ℝ) ^ x := by
+      simp only [Set.indicator, Set.mem_setOf_eq]
       split_ifs with h
       · have : 0 ≤ vonMangoldt n := vonMangoldt_nonneg
         positivity
-      · exact le_rfl
+      · rw [zero_div]
     have hFnonneg (n : ℕ) : 0 ≤ F n := by
       simp only [vonMangoldt.residue_class, ite_mul, zero_mul, F]
       split_ifs with hn
-      · exact le_rfl
+      · rw [zero_div]
       · exact H₁ n
     refine this.of_nonneg_of_le hFnonneg fun n ↦ ?_
-    simp only [vonMangoldt.residue_class, ite_mul, zero_mul, F]
+    simp only [vonMangoldt.residue_class, ite_div, zero_div, F]
     refine (ite_le_sup ..).trans ?_
     simp only [H₁, sup_of_le_right, le_refl]
   have hF : Function.support F ⊆ {n | IsPrimePow n} := by
@@ -407,9 +401,8 @@ lemma vonMangoldt_non_primes_residue_class_bound :
     simp only [Function.mem_support] at hn
     contrapose! hn
     simp only [Set.mem_setOf_eq] at hn
-    simp only [ite_mul, zero_mul, mt Nat.Prime.isPrimePow hn, ↓reduceIte, mul_eq_zero,
-      Set.indicator_apply_eq_zero, Set.mem_setOf_eq, vonMangoldt_apply, hn, implies_true,
-      Nat.cast_nonneg, true_or, F]
+    simp only [mt Nat.Prime.isPrimePow hn, ↓reduceIte, div_eq_zero_iff, Set.indicator_apply_eq_zero,
+      Set.mem_setOf_eq, vonMangoldt_apply, hn, implies_true, Nat.cast_nonneg, true_or, F]
   rw [tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers hs hF]
   conv_lhs => enter [1, 1, p]; rw [hF₀ p]
   simp only [tsum_zero, zero_add]
@@ -514,16 +507,16 @@ lemma vonMangoldt_non_primes_residue_class_bound :
   exact log_div_bound p
 
 lemma vonMangoldt_residue_class_bound :
-    ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ, vonMangoldt.residue_class a n * (n : ℝ) ^ (-x) ≤
-      (∑' p : Nat.Primes, vonMangoldt.residue_class a p * (p : ℝ) ^ (-x)) + C := by
+    ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ, vonMangoldt.residue_class a n / (n : ℝ) ^ x ≤
+      (∑' p : Nat.Primes, vonMangoldt.residue_class a p / (p : ℝ) ^ x) + C := by
   obtain ⟨C, hC⟩ := vonMangoldt_non_primes_residue_class_bound a
   use C
   intro x hx
-  have hs₁ : Summable fun n : ℕ ↦ vonMangoldt.residue_class a n * (n : ℝ) ^ (-x) :=
+  have hs₁ : Summable fun n : ℕ ↦ vonMangoldt.residue_class a n / (n : ℝ) ^ x :=
     summable_residue_class_real_mul_pow a hx
-  have hf₁ : Function.support (fun n ↦ vonMangoldt.residue_class a n * (n : ℝ) ^ (-x)) ⊆
+  have hf₁ : Function.support (fun n ↦ vonMangoldt.residue_class a n / (n : ℝ) ^ x) ⊆
       {n | IsPrimePow n} := by
-    simp only [Function.support_mul, Set.support_indicator]
+    simp only [Function.support_div, Set.support_indicator]
     refine Set.inter_subset_left.trans <| Set.inter_subset_right.trans ?_
     simp only [Function.support_subset_iff, ne_eq, vonMangoldt_ne_zero_iff, Set.mem_setOf_eq,
       imp_self, implies_true]
@@ -531,23 +524,23 @@ lemma vonMangoldt_residue_class_bound :
   gcongr
   convert hC hx
   have hs₂ : Summable fun n : ℕ ↦
-      (if Nat.Prime n then 0 else vonMangoldt.residue_class a n) * ↑n ^ (-x) := by
+      (if Nat.Prime n then 0 else vonMangoldt.residue_class a n) / ↑n ^ x := by
     convert_to Summable <|
-      {n : ℕ | ¬ n.Prime}.indicator (fun n ↦ vonMangoldt.residue_class a n * ↑n ^ (-x))
+      {n : ℕ | ¬ n.Prime}.indicator (fun n ↦ vonMangoldt.residue_class a n / ↑n ^ x)
     · ext1 n
-      simp only [Set.indicator, Set.mem_setOf_eq, ite_mul, zero_mul, ite_not]
+      simp only [Set.indicator, Set.mem_setOf_eq, ite_div, zero_div, ite_not]
     · exact Summable.indicator hs₁ _
   have hf₂ : Function.support
-      (fun n : ℕ ↦ (if Nat.Prime n then 0 else vonMangoldt.residue_class a n) * ↑n ^ (-x)) ⊆
+      (fun n : ℕ ↦ (if Nat.Prime n then 0 else vonMangoldt.residue_class a n) / ↑n ^ x) ⊆
         {n | IsPrimePow n} := by
-    rw [Function.support_mul]
+    rw [Function.support_div]
     refine Set.inter_subset_left.trans ?_
     simp only [Function.support_subset_iff, ne_eq, ite_eq_left_iff, Set.indicator_apply_eq_zero,
       Set.mem_setOf_eq, Classical.not_imp, vonMangoldt_ne_zero_iff, and_imp, imp_self, implies_true]
   rw [tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers hs₂ hf₂]
   conv_lhs => rw [← zero_add (tsum _)]
   have hs₃ : Summable fun p : Nat.Primes ↦
-      (if Nat.Prime ↑p then 0 else vonMangoldt.residue_class a ↑p) * ↑↑p ^ (-x) :=
+      (if Nat.Prime ↑p then 0 else vonMangoldt.residue_class a ↑p) / ↑↑p ^ x :=
     hs₂.subtype _
   congr
   · conv_rhs => enter [1, p]; simp [p.prop]
@@ -587,16 +580,16 @@ theorem dirchlet_primes_in_arith_progression {q : ℕ} [NeZero q] {a : ZMod q} (
       exact hsupp p h
   have hsupp' (x : ℝ) :
       (Function.support
-        (fun p : Nat.Primes ↦ vonMangoldt.residue_class a p * (p : ℝ) ^ (-x))).Finite := by
-    rw [Function.support_mul]
+        (fun p : Nat.Primes ↦ vonMangoldt.residue_class a p / (p : ℝ) ^ x)).Finite := by
+    rw [Function.support_div]
     exact Set.Finite.inter_of_left hsupp _
   obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1),
-      (∑' p : Nat.Primes, vonMangoldt.residue_class a p * (p : ℝ) ^ (-x)) ≤ C := by
+      (∑' p : Nat.Primes, vonMangoldt.residue_class a p / (p : ℝ) ^ x) ≤ C := by
     use ∑' p : Nat.Primes, vonMangoldt.residue_class a p
     intro x hx
     refine tsum_le_tsum (fun p ↦ ?_) (summable_of_finite_support <| hsupp' x) <|
       summable_of_finite_support hsupp
-    conv_rhs => rw [← mul_one (vonMangoldt.residue_class ..)]
+    conv_rhs => rw [← div_one (vonMangoldt.residue_class ..)]
     gcongr
     · simp only [vonMangoldt.residue_class, Set.indicator, Set.mem_setOf_eq]
       have := vonMangoldt_nonneg (n := p)
@@ -604,21 +597,21 @@ theorem dirchlet_primes_in_arith_progression {q : ℕ} [NeZero q] {a : ZMod q} (
     · rw [← Real.rpow_zero p]
       gcongr
       · exact_mod_cast p.prop.one_le
-      · exact neg_nonpos_of_nonneg <| zero_le_one.trans hx.lt.le
+      · exact zero_le_one.trans hx.lt.le
   obtain ⟨C', hC'⟩ := vonMangoldt_residue_class_bound a
   have key : ∀ {x : ℝ} (_ : x > 1),
-      ∑' n : ℕ, vonMangoldt.residue_class a n * ↑n ^ (-x) ≤ C + C' :=
+      ∑' n : ℕ, vonMangoldt.residue_class a n / ↑n ^ x ≤ C + C' :=
     fun {x} hx ↦ (hC' hx).trans <| add_le_add_right (hC hx) C'
   have := LSeries_vonMangoldt_residue_class_tendsto_atTop ha
   rw [Filter.tendsto_atTop] at this
   specialize this (C + C' + 1)
-  have H : ∀ᶠ (a_1 : ℝ) in nhdsWithin 1 (Set.Ioi 1),
-      ∑' (n : ℕ), vonMangoldt.residue_class a n * ↑n ^ (-a_1) ≤ C + C' := by
+  have H : ∀ᶠ (x : ℝ) in nhdsWithin 1 (Set.Ioi 1),
+      ∑' (n : ℕ), vonMangoldt.residue_class a n / ↑n ^ x ≤ C + C' := by
     exact eventually_nhdsWithin_of_forall fun _ ↦ key
   have := this.and H
   rw [Filter.eventually_iff] at this
-  have h (x : ℝ) : ¬ (C + C' + 1 ≤ ∑' (n : ℕ), vonMangoldt.residue_class a n * ↑n ^ (-x) ∧
-      ∑' (n : ℕ), vonMangoldt.residue_class a n * ↑n ^ (-x) ≤ C + C') := by
+  have h (x : ℝ) : ¬ (C + C' + 1 ≤ ∑' (n : ℕ), vonMangoldt.residue_class a n / ↑n ^ x ∧
+      ∑' (n : ℕ), vonMangoldt.residue_class a n / ↑n ^ x ≤ C + C') := by
     intro h'
     have := h'.1.trans h'.2
     simp only [add_le_iff_nonpos_right] at this
