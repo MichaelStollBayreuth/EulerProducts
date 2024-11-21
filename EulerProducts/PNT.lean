@@ -39,11 +39,11 @@ lemma IsPrimePow.factorization_minFac_ne_zero {n : ℕ} (hn : IsPrimePow n) :
 
 /-- The canonical equivalence between pairs `(p, k)` with `p` a prime and `k : ℕ`
 and the set of prime powers given by `(p, k) ↦ p^(k+1)`. -/
-def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} where
+def Nat.Primes.prodNatEquiv : Nat.Primes × ℕ ≃ {n : ℕ // IsPrimePow n} where
   toFun pk :=
-    ⟨pk.1 ^ (pk.2 + 1), ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, pk.2.add_one_pos, rfl⟩⟩
+    ⟨pk.1 ^ (pk.2 + 1), ⟨pk.1, pk.2 + 1, prime_iff.mp pk.1.prop, pk.2.add_one_pos, rfl⟩⟩
   invFun n :=
-    (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (n.val.factorization n.val.minFac) - 1)
+    (⟨n.val.minFac, minFac_prime n.prop.ne_one⟩, n.val.factorization n.val.minFac - 1)
   left_inv := fun (p, k) ↦ by
     simp only [p.prop.pow_minFac k.add_one_ne_zero, Subtype.coe_eta, factorization_pow, p.prop,
       Prime.factorization, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_add,
@@ -53,25 +53,40 @@ def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} w
     dsimp only
     rw [sub_one_add_one n.prop.factorization_minFac_ne_zero, n.prop.minFac_pow_factorization_eq]
 
+@[simp]
+lemma Nat.Primes.prodNatEquiv_apply (p : Nat.Primes) (k : ℕ) :
+    prodNatEquiv (p, k) = ⟨p ^ (k + 1), p, k + 1, prime_iff.mp p.prop, k.add_one_pos, rfl⟩ := by
+  rfl
+
+@[simp]
+lemma Nat.Primes.coe_prodNatEquiv_apply (p : Nat.Primes) (k : ℕ) :
+    (prodNatEquiv (p, k) : ℕ) = p ^ (k + 1) :=
+  rfl
+
+@[simp]
+lemma Nat.Primes.prodNatEquiv_symm_apply {n : ℕ} (hn : IsPrimePow n) :
+    prodNatEquiv.symm ⟨n, hn⟩ =
+      (⟨n.minFac, minFac_prime hn.ne_one⟩, n.factorization n.minFac - 1) :=
+  rfl
+
 lemma tsum_eq_tsum_primes_of_support_subset_prime_powers {α : Type*} [AddCommGroup α]
      [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
      (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
     ∑' n : ℕ, f n = ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 1)) := by
   change _ = ∑' (p : Nat.Primes) (k : ℕ), (fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) (p, k)
   have hfs' : Summable fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1)) := by
-    refine Nat.Primes.prod_nat_equiv.symm.summable_iff.mp ?_
-    simp only [Set.coe_setOf, Nat.Primes.prod_nat_equiv, Set.mem_setOf_eq,
-      Equiv.coe_fn_symm_mk, Function.comp_def]
+    refine Nat.Primes.prodNatEquiv.symm.summable_iff.mp ?_
+    simp only [Nat.Primes.prodNatEquiv, Equiv.coe_fn_symm_mk, Function.comp_def]
     conv =>
       enter [1, n, 1]
       rw [Nat.sub_one_add_one n.prop.factorization_minFac_ne_zero,
         n.prop.minFac_pow_factorization_eq]
     exact Summable.subtype hfs _
   have H := tsum_prod (f := fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) hfs'
-  rw [← tsum_subtype_eq_of_support_subset hf, ← H, ← Equiv.tsum_eq Nat.Primes.prod_nat_equiv]
+  simp only [← tsum_subtype_eq_of_support_subset hf, Set.coe_setOf, Set.mem_setOf_eq, ←
+    Equiv.tsum_eq Nat.Primes.prodNatEquiv, ← H]
   refine tsum_congr fun (p, k) ↦ ?_
-  simp only [Set.mem_setOf_eq, Set.coe_setOf, Nat.Primes.prod_nat_equiv, Nat.pred_eq_sub_one,
-    Equiv.coe_fn_mk]
+  simp only [Nat.Primes.prodNatEquiv, Equiv.coe_fn_mk]
 
 lemma tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers {α : Type*}
     [AddCommGroup α] [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α]
@@ -90,11 +105,11 @@ lemma tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers {α : T
     have hF : Summable F := by
       refine hfs.comp_injective ?_
       have H (p : Nat.Primes) (k : ℕ) : (p : ℕ) ^ (k + 2) =
-          (⇑Nat.Primes.prod_nat_equiv ∘ Prod.map (@_root_.id Nat.Primes) fun k ↦ k + 1) (p, k) := by
-        simp only [Set.mem_setOf_eq, Set.coe_setOf, Nat.Primes.prod_nat_equiv, Equiv.coe_fn_mk,
-          Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd]
+          (⇑Nat.Primes.prodNatEquiv ∘ Prod.map (@_root_.id Nat.Primes) fun k ↦ k + 1) (p, k) := by
+        simp only [Nat.Primes.prodNatEquiv, Equiv.coe_fn_mk, Function.comp_apply, Prod.map_apply,
+          id_eq]
       conv => enter [1, pk]; rw [H]
-      exact (Subtype.val_injective.comp <| Nat.Primes.prod_nat_equiv.injective.comp  <|
+      exact (Subtype.val_injective.comp <| Nat.Primes.prodNatEquiv.injective.comp  <|
         Function.Injective.prodMap (fun ⦃_ _⦄ a ↦ a) <| add_left_injective 1)
         |>.comp (Equiv.sigmaEquivProd ..).injective
     exact hF.sigma
