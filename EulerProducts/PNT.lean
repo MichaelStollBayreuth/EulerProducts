@@ -37,6 +37,82 @@ lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
   simpa only [hn, ↓reduceIte, div_eq_mul_inv, mul_eq_mul_left_iff]
     using .inl (Real.rpow_neg n.cast_nonneg x).symm
 
+/-- If `n` is a prime power, then we can write it explicitly as such. -/
+lemma Nat.eq_minFac_pow_of_isPrimePow {n : ℕ} (hn : IsPrimePow n) :
+    n = n.minFac ^ (multiplicity n.minFac n) := by
+  obtain ⟨p, k, hp, hk, rfl⟩ := hn
+  replace hp : p.Prime := Prime.nat_prime hp
+  rw [hp.pow_minFac hk.ne', multiplicity_pow_self hp.ne_zero <| mt Nat.isUnit_iff.mp hp.ne_one]
+
+/-- The canonical equivalence between pairs `(p, k)` with `p` a prime and `k : ℕ`
+and the set of prime powers given by `(p, k) ↦ p^(k+1)`. -/
+noncomputable -- because `multiplicity` is noncomputable
+def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} where
+  toFun pk := ⟨pk.1 ^ (pk.2 + 1),
+                ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, Nat.zero_lt_succ pk.2, rfl⟩⟩
+  invFun n :=
+    (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (multiplicity n.val.minFac n.val) - 1)
+  left_inv := fun (p, k) ↦ by
+    simp only [Prod.mk.injEq]
+    have hp := p.prop.pow_minFac k.add_one_ne_zero
+    have hp₁ : ⟨(p.val ^ (k + 1)).minFac,
+        minFac_prime <| mt (pow_eq_one_iff k.add_one_ne_zero).mp p.prop.ne_one⟩ = p :=
+      Subtype.ext hp
+    rw [hp₁, hp, multiplicity_pow_self_of_prime p.prop.prime (k + 1)]
+    exact ⟨rfl, rfl⟩
+  right_inv n := by
+    ext1
+    simp only [Set.mem_setOf_eq]
+    rw [sub_one_add_one (multiplicity_ne_zero.mpr <| minFac_dvd n),
+      ← eq_minFac_pow_of_isPrimePow n.prop]
+
+lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGroup α]
+     [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
+     (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
+    ∑' n : ℕ, f n = ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 1)) := by
+  change _ = ∑' (p : Nat.Primes) (k : ℕ), (fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) (p, k)
+  have hfs' : Summable fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1)) := by
+    refine Nat.Primes.prod_nat_equiv.symm.summable_iff.mp ?_
+    simp only [Set.coe_setOf, Nat.Primes.prod_nat_equiv, Set.mem_setOf_eq,
+      Equiv.coe_fn_symm_mk, Function.comp_def]
+    conv =>
+      enter [1, n, 1]
+      rw [Nat.sub_one_add_one (multiplicity_ne_zero.mpr <| n.val.minFac_dvd),
+        ← Nat.eq_minFac_pow_of_isPrimePow n.prop]
+    exact Summable.subtype hfs _
+  have H := tsum_prod (f := fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) hfs'
+  rw [← tsum_subtype_eq_of_support_subset hf, ← H, ← Equiv.tsum_eq Nat.Primes.prod_nat_equiv]
+  refine tsum_congr fun (p, k) ↦ ?_
+  simp only [Set.mem_setOf_eq, Set.coe_setOf, Nat.Primes.prod_nat_equiv, Nat.pred_eq_sub_one,
+    Equiv.coe_fn_mk]
+
+lemma tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*}
+    [AddCommGroup α] [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α]
+    {f : ℕ → α} (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
+    ∑' n : ℕ, f n = (∑' p : Nat.Primes, f p) +  ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 2)) := by
+  rw [tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers hfs hf]
+  have hfs' (p : Nat.Primes) : Summable fun k : ℕ ↦ f (p ^ (k + 1)) :=
+    hfs.comp_injective <| (strictMono_nat_of_lt_succ
+      fun n ↦ pow_lt_pow_right₀ p.prop.one_lt (add_lt_add_right (lt_add_one n) 1)).injective
+  conv_lhs => enter [1, p]; rw [tsum_eq_zero_add (hfs' p), zero_add, pow_one]
+  conv_lhs => enter [1, p, 2, 1, k]; rw [add_assoc, one_add_one_eq_two]
+  have hfs₁ : Summable fun p : Nat.Primes ↦ f p := Summable.subtype hfs _
+  have hfs₂ : Summable fun p : Nat.Primes ↦ ∑' k : ℕ, f (↑p ^ (k + 2)) := by
+    let F (pk : (_ : Nat.Primes) × ℕ) : α := f (pk.1 ^ (pk.2 + 2))
+    change Summable fun p : Nat.Primes ↦ ∑' k : ℕ, F ⟨p, k⟩
+    have hF : Summable F := by
+      refine hfs.comp_injective ?_
+      have H (p : Nat.Primes) (k : ℕ) : (p : ℕ) ^ (k + 2) =
+          (⇑Nat.Primes.prod_nat_equiv ∘ Prod.map (@_root_.id Nat.Primes) fun k ↦ k + 1) (p, k) := by
+        simp only [Set.mem_setOf_eq, Set.coe_setOf, Nat.Primes.prod_nat_equiv, Equiv.coe_fn_mk,
+          Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd]
+      conv => enter [1, pk]; rw [H]
+      exact (Subtype.val_injective.comp <| Nat.Primes.prod_nat_equiv.injective.comp  <|
+        Function.Injective.prodMap (fun ⦃_ _⦄ a ↦ a) <| add_left_injective 1)
+        |>.comp (Equiv.sigmaEquivProd ..).injective
+    exact hF.sigma
+  rw [tsum_add hfs₁ hfs₂]
+
 /-!
 ### The L-function of Λ restricted to a residue class
 -/
@@ -243,76 +319,6 @@ lemma LSeries_vonMangoldt_residue_class_tendsto_atTop (ha : IsUnit a) :
       · simp only [Set.image_sub_const_Ioi, sub_self]
       · exact (continuous_add_right (-1)).continuousWithinAt
 
-lemma eq_of_isPrimePow {n : ℕ} (hn : IsPrimePow n) :
-    n = n.minFac ^ ((multiplicity n.minFac n) - 1 + 1) := by
-  obtain ⟨p, k, hp, hk, rfl⟩ := hn
-  replace hp : p.Prime := Prime.nat_prime hp
-  have : ¬ IsUnit p := mt Nat.isUnit_iff.mp hp.ne_one
-  rw [hp.pow_minFac hk.ne', multiplicity_pow_self hp.ne_zero this, Nat.sub_one_add_one hk.ne']
-
-noncomputable
-def natPrimes_prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} where
-  toFun pk := ⟨pk.1 ^ (pk.2 + 1),
-                ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, Nat.zero_lt_succ pk.2, rfl⟩⟩
-  invFun n :=
-    (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (multiplicity n.val.minFac n.val) - 1)
-  left_inv := fun (p, k) ↦ by
-    unfold Nat.Primes
-    simp only [Prod.mk.injEq]
-    have hp := Nat.Prime.pow_minFac p.prop <| Nat.add_one_ne_zero k
-    have hp₁ : ⟨(p.val ^ (k + 1)).minFac,
-        Nat.minFac_prime <| mt (pow_eq_one_iff <| Nat.add_one_ne_zero k).mp p.prop.ne_one⟩ = p :=
-      Subtype.ext hp
-    rw [hp₁, hp, multiplicity_pow_self_of_prime p.prop.prime (k + 1)]
-    exact ⟨rfl, rfl⟩
-  right_inv n := by
-    ext
-    simp only [Set.mem_setOf_eq]
-    rw [← eq_of_isPrimePow n.prop]
-
-lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGroup α]
-     [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
-     (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
-    ∑' n : ℕ, f n = ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 1)) := by
-  change _ = ∑' (p : Nat.Primes) (k : ℕ), (fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) (p, k)
-  have hfs' : Summable fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1)) := by
-    refine natPrimes_prod_nat_equiv.symm.summable_iff.mp ?_
-    simp only [Set.coe_setOf, natPrimes_prod_nat_equiv, Set.mem_setOf_eq,
-      Equiv.coe_fn_symm_mk, Function.comp_def]
-    conv => enter [1, n, 1]; rw [← eq_of_isPrimePow n.prop]
-    exact Summable.subtype hfs _
-  have H := tsum_prod (f := fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) hfs'
-  rw [← tsum_subtype_eq_of_support_subset hf, ← H, ← Equiv.tsum_eq natPrimes_prod_nat_equiv]
-  refine tsum_congr fun (p, k) ↦ ?_
-  simp only [Set.mem_setOf_eq, Set.coe_setOf, natPrimes_prod_nat_equiv, Nat.pred_eq_sub_one,
-    Equiv.coe_fn_mk]
-
-lemma tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*}
-    [AddCommGroup α] [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α]
-    {f : ℕ → α} (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
-    ∑' n : ℕ, f n = (∑' p : Nat.Primes, f p) +  ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 2)) := by
-  rw [tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers hfs hf]
-  have hfs' (p : Nat.Primes) : Summable fun k : ℕ ↦ f (p ^ (k + 1)) :=
-    hfs.comp_injective <| (strictMono_nat_of_lt_succ
-      fun n ↦ pow_lt_pow_right₀ p.prop.one_lt (add_lt_add_right (lt_add_one n) 1)).injective
-  conv_lhs => enter [1, p]; rw [tsum_eq_zero_add (hfs' p), zero_add, pow_one]
-  conv_lhs => enter [1, p, 2, 1, k]; rw [add_assoc, one_add_one_eq_two]
-  have hfs₁ : Summable fun p : Nat.Primes ↦ f p := Summable.subtype hfs _
-  have hfs₂ : Summable fun p : Nat.Primes ↦ ∑' k : ℕ, f (↑p ^ (k + 2)) := by
-    let F (pk : (_ : Nat.Primes) × ℕ) : α := f (pk.1 ^ (pk.2 + 2))
-    change Summable fun p : Nat.Primes ↦ ∑' k : ℕ, F ⟨p, k⟩
-    have hF : Summable F := by
-      refine hfs.comp_injective ?_
-      have H (p : Nat.Primes) (k : ℕ) : (p : ℕ) ^ (k + 2) =
-          (⇑natPrimes_prod_nat_equiv ∘ Prod.map (@_root_.id Nat.Primes) fun k ↦ k + 1) (p, k) := by
-        simp only [Set.mem_setOf_eq, Set.coe_setOf, natPrimes_prod_nat_equiv, Equiv.coe_fn_mk,
-          Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd]
-      conv => enter [1, pk]; rw [H]
-      exact (Subtype.val_injective.comp <| natPrimes_prod_nat_equiv.injective.comp  <|
-        Function.Injective.prodMap (fun ⦃_ _⦄ a ↦ a) <| add_left_injective 1)
-        |>.comp (Equiv.sigmaEquivProd ..).injective
-    exact hF.sigma
-  rw [tsum_add hfs₁ hfs₂]
 
 private lemma inv_lt_one (p : Nat.Primes) : (p : ℝ)⁻¹ < 1 := by
   rw [inv_lt_one₀ <| mod_cast p.prop.pos]
