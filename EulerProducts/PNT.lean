@@ -51,13 +51,9 @@ def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} w
   right_inv n := by
     ext1
     dsimp only
-    rw [sub_one_add_one, n.prop.minFac_pow_factorization_eq]
-    -- side goal from `sub_one_add_one`
-    refine mt (Nat.factorization_eq_zero_iff _ _).mp ?_
-    push_neg
-    exact ⟨n.val.minFac_prime n.prop.ne_one, n.val.minFac_dvd, n.prop.ne_zero⟩
+    rw [sub_one_add_one n.prop.factorization_minFac_ne_zero, n.prop.minFac_pow_factorization_eq]
 
-lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGroup α]
+lemma tsum_eq_tsum_primes_of_support_subset_prime_powers {α : Type*} [AddCommGroup α]
      [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
      (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
     ∑' n : ℕ, f n = ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 1)) := by
@@ -77,11 +73,11 @@ lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGr
   simp only [Set.mem_setOf_eq, Set.coe_setOf, Nat.Primes.prod_nat_equiv, Nat.pred_eq_sub_one,
     Equiv.coe_fn_mk]
 
-lemma tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*}
+lemma tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers {α : Type*}
     [AddCommGroup α] [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α]
     {f : ℕ → α} (hfs : Summable f) (hf : Function.support f ⊆ {n | IsPrimePow n}) :
     ∑' n : ℕ, f n = (∑' p : Nat.Primes, f p) +  ∑' (p : Nat.Primes) (k : ℕ), f (p ^ (k + 2)) := by
-  rw [tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers hfs hf]
+  rw [tsum_eq_tsum_primes_of_support_subset_prime_powers hfs hf]
   have hfs' (p : Nat.Primes) : Summable fun k : ℕ ↦ f (p ^ (k + 1)) :=
     hfs.comp_injective <| (strictMono_nat_of_lt_succ
       fun n ↦ pow_lt_pow_right₀ p.prop.one_lt (add_lt_add_right (lt_add_one n) 1)).injective
@@ -402,7 +398,7 @@ lemma vonMangoldt_non_primes_residue_class_bound :
     simp only [Set.mem_setOf_eq] at hn
     simp only [mt Nat.Prime.isPrimePow hn, ↓reduceIte, div_eq_zero_iff, Set.indicator_apply_eq_zero,
       Set.mem_setOf_eq, vonMangoldt_apply, hn, implies_true, Nat.cast_nonneg, true_or, F]
-  rw [tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers hs hF]
+  rw [tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers hs hF]
   conv_lhs => enter [1, 1, p]; rw [hF₀ p]
   simp only [tsum_zero, zero_add]
   conv_lhs => enter [1, p, 1, k]; rw [hF₁ p k]
@@ -519,7 +515,7 @@ lemma vonMangoldt_residue_class_bound :
     refine Set.inter_subset_left.trans <| Set.inter_subset_right.trans ?_
     simp only [Function.support_subset_iff, ne_eq, vonMangoldt_ne_zero_iff, Set.mem_setOf_eq,
       imp_self, implies_true]
-  rw [tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers hs₁ hf₁]
+  rw [tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers hs₁ hf₁]
   gcongr
   convert hC hx
   have hs₂ : Summable fun n : ℕ ↦
@@ -536,7 +532,7 @@ lemma vonMangoldt_residue_class_bound :
     refine Set.inter_subset_left.trans ?_
     simp only [Function.support_subset_iff, ne_eq, ite_eq_left_iff, Set.indicator_apply_eq_zero,
       Set.mem_setOf_eq, Classical.not_imp, vonMangoldt_ne_zero_iff, and_imp, imp_self, implies_true]
-  rw [tsum_eq_tsum_primes_add_tsum_primes_of_eq_zero_on_non_prime_powers hs₂ hf₂]
+  rw [tsum_eq_tsum_primes_add_tsum_primes_of_support_subset_prime_powers hs₂ hf₂]
   conv_lhs => rw [← zero_add (tsum _)]
   have hs₃ : Summable fun p : Nat.Primes ↦
       (if Nat.Prime ↑p then 0 else vonMangoldt.residue_class a ↑p) / ↑↑p ^ x :=
