@@ -181,6 +181,35 @@ abbrev auxFun (s : ℂ) : ℂ :=
   (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
     ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
 
+lemma continuousOn_auxFun' :
+    ContinuousOn (auxFun a) {s | s = 1 ∨ ∀ χ : DirichletCharacter ℂ q, LFunction χ s ≠ 0} := by
+  rw [show auxFun a = fun s ↦ _ from rfl]
+  simp only [auxFun, sub_eq_add_neg]
+  refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
+  · refine (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q).mono fun s hs ↦ ?_
+    have := LFunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
+    simp only [ne_eq, Set.mem_setOf_eq] at hs
+    tauto
+  · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
+    refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
+    replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
+    refine (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ).mono fun s hs ↦ ?_
+    simp only [ne_eq, Set.mem_setOf_eq] at hs
+    rcases hs with rfl | hs
+    · simp only [ne_eq, Set.mem_setOf_eq, one_re, le_refl,
+        LFunction_ne_zero_of_one_le_re χ (.inl hχ), not_false_eq_true]
+    · exact hs χ
+
+/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
+is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`.
+The statement as given here is equivalent. -/
+lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
+  refine (continuousOn_auxFun' a).mono fun s hs ↦ ?_
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp only [ne_eq, Set.mem_setOf_eq, true_or]
+  · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
+    exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
+
 variable {a}
 
 lemma auxFun_prop (ha : IsUnit a) :
@@ -227,37 +256,6 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
       norm_cast
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
     norm_cast
-
-variable (a) in
-lemma continuousOn_auxFun' :
-    ContinuousOn (auxFun a) {s | s = 1 ∨ ∀ χ : DirichletCharacter ℂ q, LFunction χ s ≠ 0} := by
-  rw [show auxFun a = fun s ↦ _ from rfl]
-  simp only [auxFun, sub_eq_add_neg]
-  refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
-  · refine (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q).mono fun s hs ↦ ?_
-    have := LFunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
-    simp only [ne_eq, Set.mem_setOf_eq] at hs
-    tauto
-  · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
-    refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
-    replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
-    refine (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ).mono fun s hs ↦ ?_
-    simp only [ne_eq, Set.mem_setOf_eq] at hs
-    rcases hs with rfl | hs
-    · simp only [ne_eq, Set.mem_setOf_eq, one_re, le_refl,
-        LFunction_ne_zero_of_one_le_re χ (.inl hχ), not_false_eq_true]
-    · exact hs χ
-
-variable (a) in
-/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
-is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`.
-The statement as given here is equivalent. -/
-lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
-  refine (continuousOn_auxFun' a).mono fun s hs ↦ ?_
-  rcases eq_or_ne s 1 with rfl | hs₁
-  · simp only [ne_eq, Set.mem_setOf_eq, true_or]
-  · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
-    exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
 
 end DirichletsThm
 
