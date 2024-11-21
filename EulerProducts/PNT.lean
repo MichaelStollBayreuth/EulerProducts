@@ -14,9 +14,9 @@ open Complex
 
 -- [Mathlib.NumberTheory.LSeries.Convergence]
 lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
-    (h : abscissaOfAbsConv ↗f < x) :
+    (h : abscissaOfAbsConv (f ·) < x) :
     Summable fun n : ℕ ↦ f n / (n : ℝ) ^ x := by
-  have h' : abscissaOfAbsConv ↗f < (x : ℂ).re := by simpa only [ofReal_re] using h
+  have h' : abscissaOfAbsConv (f ·) < (x : ℂ).re := by simpa only [ofReal_re] using h
   have := LSeriesSummable_of_abscissaOfAbsConv_lt_re h'
   rw [LSeriesSummable, show term _ _ = fun n ↦ _ from rfl] at this
   conv at this =>
@@ -30,34 +30,32 @@ lemma LSeries.summable_real_of_abscissaOfAbsConv_lt {f : ℕ → ℝ} {x : ℝ}
   exact if_neg hn
 
 -- [Mathlib.Data.Nat.Factorization.PrimePow]
-/-- If `n` is a prime power, then we can write it explicitly as such. -/
-lemma Nat.eq_minFac_pow_of_isPrimePow {n : ℕ} (hn : IsPrimePow n) :
-    n = n.minFac ^ (multiplicity n.minFac n) := by
-  obtain ⟨p, k, hp, hk, rfl⟩ := hn
-  replace hp : p.Prime := Prime.nat_prime hp
-  rw [hp.pow_minFac hk.ne', multiplicity_pow_self hp.ne_zero <| mt Nat.isUnit_iff.mp hp.ne_one]
+
+lemma IsPrimePow.factorization_minFac_ne_zero {n : ℕ} (hn : IsPrimePow n) :
+    n.factorization n.minFac ≠ 0 := by
+  refine mt (Nat.factorization_eq_zero_iff _ _).mp ?_
+  push_neg
+  exact ⟨n.minFac_prime hn.ne_one, n.minFac_dvd, hn.ne_zero⟩
 
 /-- The canonical equivalence between pairs `(p, k)` with `p` a prime and `k : ℕ`
 and the set of prime powers given by `(p, k) ↦ p^(k+1)`. -/
-noncomputable -- because `multiplicity` is noncomputable
 def Nat.Primes.prod_nat_equiv : Nat.Primes × ℕ ≃ {n : ℕ | IsPrimePow n} where
   toFun pk :=
     ⟨pk.1 ^ (pk.2 + 1), ⟨pk.1, pk.2 + 1, Nat.prime_iff.mp pk.1.prop, pk.2.add_one_pos, rfl⟩⟩
   invFun n :=
-    (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (multiplicity n.val.minFac n.val) - 1)
+    (⟨n.val.minFac, Nat.minFac_prime n.prop.ne_one⟩, (n.val.factorization n.val.minFac) - 1)
   left_inv := fun (p, k) ↦ by
-    simp only [Prod.mk.injEq]
-    have hp := p.prop.pow_minFac k.add_one_ne_zero
-    have hp₁ : ⟨(p.val ^ (k + 1)).minFac,
-        minFac_prime <| mt (pow_eq_one_iff k.add_one_ne_zero).mp p.prop.ne_one⟩ = p :=
-      Subtype.ext hp
-    rw [hp₁, hp, multiplicity_pow_self_of_prime p.prop.prime]
-    exact ⟨rfl, Nat.add_sub_cancel ..⟩
+    simp only [p.prop.pow_minFac k.add_one_ne_zero, Subtype.coe_eta, factorization_pow, p.prop,
+      Prime.factorization, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_add,
+      Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same, add_tsub_cancel_right]
   right_inv n := by
     ext1
     dsimp only
-    rw [sub_one_add_one (multiplicity_ne_zero.mpr <| minFac_dvd n),
-      ← eq_minFac_pow_of_isPrimePow n.prop]
+    rw [sub_one_add_one, n.prop.minFac_pow_factorization_eq]
+    -- side goal from `sub_one_add_one`
+    refine mt (Nat.factorization_eq_zero_iff _ _).mp ?_
+    push_neg
+    exact ⟨n.val.minFac_prime n.prop.ne_one, n.val.minFac_dvd, n.prop.ne_zero⟩
 
 lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGroup α]
      [UniformSpace α] [UniformAddGroup α] [CompleteSpace α] [T0Space α] {f : ℕ → α}
@@ -70,8 +68,8 @@ lemma tsum_eq_tsum_primes_of_eq_zero_on_non_prime_powers {α : Type*} [AddCommGr
       Equiv.coe_fn_symm_mk, Function.comp_def]
     conv =>
       enter [1, n, 1]
-      rw [Nat.sub_one_add_one (multiplicity_ne_zero.mpr <| n.val.minFac_dvd),
-        ← Nat.eq_minFac_pow_of_isPrimePow n.prop]
+      rw [Nat.sub_one_add_one n.prop.factorization_minFac_ne_zero,
+        n.prop.minFac_pow_factorization_eq]
     exact Summable.subtype hfs _
   have H := tsum_prod (f := fun pk : Nat.Primes × ℕ ↦ f (pk.fst ^ (pk.snd + 1))) hfs'
   rw [← tsum_subtype_eq_of_support_subset hf, ← H, ← Equiv.tsum_eq Nat.Primes.prod_nat_equiv]
