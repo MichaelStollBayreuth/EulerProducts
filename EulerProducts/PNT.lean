@@ -30,7 +30,7 @@ lemma residue_class_apply_zero : residue_class a 0 = 0 := by
   simp only [Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Nat.cast_zero, map_zero, ofReal_zero,
     implies_true]
 
-lemma abscissaOfAbsConv_vonMangoldt_residue_class_le_one :
+lemma abscissaOfAbsConv_residue_class_le_one :
     LSeries.abscissaOfAbsConv ↗(vonMangoldt.residue_class a) ≤ 1 := by
   refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
   simp only [vonMangoldt.residue_class]
@@ -159,7 +159,7 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
           ofReal_cpow n.cast_nonneg]
         norm_cast
     · refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
-      refine (vonMangoldt.abscissaOfAbsConv_vonMangoldt_residue_class_le_one a).trans_lt ?_
+      refine (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt ?_
       simp only [Set.mem_setOf_eq, ofReal_re] at hx ⊢
       norm_cast
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
@@ -256,7 +256,7 @@ variable (a)
 lemma summable_residue_class_real_mul_pow {x : ℝ} (hx : x > 1) :
     Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) / (n : ℝ) ^ x :=
   LSeries.summable_real_of_abscissaOfAbsConv_lt <|
-    (vonMangoldt.abscissaOfAbsConv_vonMangoldt_residue_class_le_one a).trans_lt <| mod_cast hx.lt
+    (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt <| mod_cast hx.lt
 
 lemma vonMangoldt_non_primes_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ,
