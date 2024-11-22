@@ -150,39 +150,6 @@ lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
 
 --
 
-private lemma inv_lt_one (p : Nat.Primes) : (p : ℝ)⁻¹ < 1 := by
-  rw [inv_lt_one₀ <| mod_cast p.prop.pos]
-  exact_mod_cast p.prop.one_lt
-
-private lemma log_div_bound (p : Nat.Primes) :
-    Real.log p * (p : ℝ) ^ (-2 : ℤ) / (1 - (p : ℝ)⁻¹) ≤ 4 * (p : ℝ) ^ (-2 + 1 / 2 : ℝ) := by
-  have hp₁ : 0 < (p : ℝ) := mod_cast p.prop.pos
-  have key : Real.log p / (1 - (p : ℝ)⁻¹) ≤ 4 * (p : ℝ) ^ (1 / 2 : ℝ) := by
-    have : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr <| inv_lt_one p
-    rw [div_le_iff₀ this]
-    have : 1 ≤ 2 * (1 - (p : ℝ)⁻¹) := by
-      have : (p : ℝ)⁻¹ ≤ 2⁻¹ :=
-        (inv_le_inv₀ (mod_cast p.prop.pos) zero_lt_two).mpr <| mod_cast p.prop.two_le
-      linarith
-    calc Real.log p
-      _ ≤ (p : ℝ) ^ (1 / 2 : ℝ) / (1 / 2) := Real.log_le_rpow_div p.val.cast_nonneg one_half_pos
-      _ = 2 * (p : ℝ) ^ (1 / 2 : ℝ) := by field_simp; ring
-      _ ≤ 2 * (p : ℝ) ^ (1 / 2 : ℝ) * (2 * (1 - (p : ℝ)⁻¹)) := by
-        nth_rw 1 [← mul_one (2 * _ ^ _)]
-        gcongr
-      _ = 4 * (p : ℝ) ^ (1 / 2 : ℝ) * (1 - (p : ℝ)⁻¹) := by ring
-  rw [mul_div_right_comm, add_comm, Real.rpow_add hp₁, ← mul_assoc,
-    show (-2 : ℝ) = (-2 : ℤ) by norm_cast, Real.rpow_intCast]
-  gcongr
-
-private lemma tsum_primes_le : ∃ C : ℝ, ∑' p : Nat.Primes, (p : ℝ) ^ (-2 + 1 / 2 : ℝ) ≤ C := by
-  norm_num
-  use ∑' n : ℕ, (n : ℝ) ^ (-(3 / 2 : ℝ))
-  convert tsum_subtype_le (γ := ℝ) _ {p : ℕ | p.Prime} (fun n ↦ ?_) ?_ using 3 with e p
-  · rfl
-  · positivity
-  · exact Real.summable_nat_rpow.mpr <| by norm_num
-
 omit [NeZero q] in
 open Nat.Primes in
 lemma summable_vonMangoldt_residueClass_non_primes :
