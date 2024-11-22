@@ -33,18 +33,20 @@ lemma residue_class_apply_zero : residue_class a 0 = 0 := by
 lemma abscissaOfAbsConv_residue_class_le_one :
     LSeries.abscissaOfAbsConv ↗(vonMangoldt.residue_class a) ≤ 1 := by
   refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
-  simp only [vonMangoldt.residue_class]
-  have := ArithmeticFunction.LSeriesSummable_vonMangoldt <|
-    show 1 < (y : ℂ).re by simp only [ofReal_re, hy]
+  unfold LSeriesSummable
+  have := LSeriesSummable_vonMangoldt <| show 1 < (y : ℂ).re by simp only [ofReal_re, hy]
   convert this.indicator {n : ℕ | (n : ZMod q) = a}
-  refine summable_congr fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [Set.indicator_apply, Set.mem_setOf_eq, LSeries.term_zero, Nat.cast_zero, ite_self]
-  · simp+contextual only [Set.indicator_apply, Set.mem_setOf_eq, apply_ite, ofReal_zero, ne_eq, hn,
-      not_false_eq_true, LSeries.term_of_ne_zero, ↓reduceIte, zero_div, ite_self]
+  ext1 n
+  by_cases hn : (n : ZMod q) = a
+  · simp +contextual only [LSeries.term, Set.indicator, Set.mem_setOf_eq, hn, ↓reduceIte,
+      apply_ite, ite_self]
+  · simp +contextual only [LSeries.term, Set.mem_setOf_eq, hn, not_false_eq_true,
+      Set.indicator_of_not_mem, ofReal_zero, zero_div, ite_self]
 
 variable [NeZero q] {a}
 
+/-- We can express `ArithmeticFunction.vonMangoldt.residue_class` as a linear combination
+of twists of the von Mangoldt function with Dirichlet charaters. -/
 lemma residue_class_apply (ha : IsUnit a) (n : ℕ) :
     residue_class a n =
       (q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ * χ n * vonMangoldt n := by
@@ -53,6 +55,8 @@ lemma residue_class_apply (ha : IsUnit a) (n : ℕ) :
     ofReal_zero, mul_zero, ← Finset.sum_mul, sum_char_inv_mul_char_eq ℂ ha n, eq_comm (a := a),
     ite_mul, zero_mul, ↓reduceIte, ite_self]
 
+/-- We can express `ArithmeticFunction.vonMangoldt.residue_class` as a linear combination
+of twists of the von Mangoldt function with Dirichlet charaters. -/
 lemma residue_class_eq (ha : IsUnit a) :
     ↗(residue_class a) = (q.totient : ℂ)⁻¹ •
       ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ • (fun n : ℕ ↦ χ n * vonMangoldt n) := by
@@ -62,7 +66,7 @@ lemma residue_class_eq (ha : IsUnit a) :
 
 /-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
 is a linear combination of logarithmic derivatives of L-functions of the Dirichlet characters
-mod `q` (on `re s ≥ 1`). -/
+mod `q` (on `re s > 1`). -/
 lemma LSeries_residue_class_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
     LSeries ↗(residue_class a) s =
       -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
