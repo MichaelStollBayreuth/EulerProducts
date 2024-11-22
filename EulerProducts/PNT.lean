@@ -113,6 +113,11 @@ lemma summable_vonMangoldt_residueClass_non_primes :
     rw [inv_lt_one₀ <| mod_cast p.prop.pos]
     exact_mod_cast p.prop.one_lt
   have hp₂ (p : Nat.Primes) : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (hp₁ p)
+  have hp₃ (p : Nat.Primes) : (1 - (p : ℝ)⁻¹)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (hp₂ p) zero_lt_two, le_sub_comm]
+    norm_num
+    rw [one_div, inv_le_inv₀ (mod_cast p.prop.pos) zero_lt_two]
+    exact_mod_cast p.prop.two_le
   let F₀ (n : ℕ) : ℝ := (if n.Prime then 0 else vonMangoldt n) / n
   have hnonneg (n : ℕ) : 0 ≤ (if n.Prime then 0 else residueClass a n) / n := by
     have := residueClass_nonneg a n
@@ -190,10 +195,7 @@ lemma summable_vonMangoldt_residueClass_non_primes :
       · have := hp₂ p
         positivity
       · gcongr
-        rw [inv_le_comm₀ (hp₂ p) zero_lt_two, le_sub_comm]
-        norm_num
-        rw [one_div, inv_le_inv₀ (mod_cast p.prop.pos) zero_lt_two]
-        exact_mod_cast p.prop.two_le
+        exact hp₃ p
     refine Summable.mul_left _ ?_
     conv => enter [1, p]; rw [Real.inv_rpow_eq_rpow_neg p.val.cast_nonneg]
     exact Nat.Primes.summable_rpow.mpr <| by norm_num
@@ -380,59 +382,13 @@ theorem dirchlet_primes_in_arith_progression {q : ℕ} [NeZero q] {a : ZMod q} (
     ∀ n : ℕ, ∃ p > n, p.Prime ∧ (p : ZMod q) = a := by
   by_contra! H
   obtain ⟨N, hN⟩ := H
-  have hsupp (p : Nat.Primes) (hp : p > N) : vonMangoldt.residueClass a p = 0 := by
-    simp only [vonMangoldt.residueClass, Set.mem_setOf_eq, hN p.val hp p.prop,
-      not_false_eq_true, Set.indicator_of_not_mem]
-  replace hsupp :
-      (Function.support (fun p : Nat.Primes ↦ vonMangoldt.residueClass a p)).Finite := by
-    refine Set.Finite.subset (s := {p : Nat.Primes | p ≤ N}) ?_ fun p h ↦ ?_
-    · refine Set.Finite.of_finite_image (f := Subtype.val) ?_ ?_
-      · exact (Set.finite_le_nat N).subset (s := {n : ℕ | n ≤ N}) <|
-          Set.image_subset_iff.mpr fun ⦃_⦄ a ↦ a
-      · exact Function.Injective.injOn Nat.Primes.coe_nat_injective
-    · simp only [Function.mem_support] at h
-      simp only [Set.mem_setOf_eq]
-      contrapose! h
-      exact hsupp p h
-  have hsupp' (x : ℝ) :
-      (Function.support
-        (fun p : Nat.Primes ↦ vonMangoldt.residueClass a p / (p : ℝ) ^ x)).Finite := by
-    rw [Function.support_div]
-    exact Set.Finite.inter_of_left hsupp _
-  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1),
-      (∑' p : Nat.Primes, vonMangoldt.residueClass a p / (p : ℝ) ^ x) ≤ C := by
-    use ∑' p : Nat.Primes, vonMangoldt.residueClass a p
-    intro x hx
-    refine tsum_le_tsum (fun p ↦ ?_) (summable_of_finite_support <| hsupp' x) <|
-      summable_of_finite_support hsupp
-    conv_rhs => rw [← div_one (vonMangoldt.residueClass ..)]
-    gcongr
-    · simp only [vonMangoldt.residueClass, Set.indicator, Set.mem_setOf_eq]
-      have := vonMangoldt_nonneg (n := p)
-      positivity
-    · rw [← Real.rpow_zero p]
-      gcongr
-      · exact_mod_cast p.prop.one_le
-      · exact zero_le_one.trans hx.lt.le
-  obtain ⟨C', hC'⟩ := vonMangoldt_residueClass_bound a
-  have key : ∀ {x : ℝ} (_ : x > 1),
-      ∑' n : ℕ, vonMangoldt.residueClass a n / ↑n ^ x ≤ C + C' :=
-    fun {x} hx ↦ (hC' hx).trans <| add_le_add_right (hC hx) C'
-  have := LSeries_vonMangoldt_residueClass_tendsto_atTop ha
-  rw [Filter.tendsto_atTop] at this
-  specialize this (C + C' + 1)
-  have H : ∀ᶠ (x : ℝ) in nhdsWithin 1 (Set.Ioi 1),
-      ∑' (n : ℕ), vonMangoldt.residueClass a n / ↑n ^ x ≤ C + C' := by
-    exact eventually_nhdsWithin_of_forall fun _ ↦ key
-  have := this.and H
-  rw [Filter.eventually_iff] at this
-  have h (x : ℝ) : ¬ (C + C' + 1 ≤ ∑' (n : ℕ), vonMangoldt.residueClass a n / ↑n ^ x ∧
-      ∑' (n : ℕ), vonMangoldt.residueClass a n / ↑n ^ x ≤ C + C') := by
-    intro h'
-    have := h'.1.trans h'.2
-    simp only [add_le_iff_nonpos_right] at this
-    exact zero_lt_one.not_le this
-  simp only [h, Set.setOf_false, Filter.empty_not_mem] at this
+  refine not_summable_vonMangoldt_residueClass_prime_div ha <| summable_of_finite_support ?_
+  refine Set.Finite.subset (Set.finite_le_nat N) fun n hn ↦ ?_
+  simp only [Function.support_div, Set.mem_inter_iff, Function.mem_support, ne_eq, ite_eq_right_iff,
+    Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Classical.not_imp, Nat.cast_eq_zero] at hn
+  simp only [Set.mem_setOf_eq]
+  contrapose! hn
+  exact fun H ↦ (hN n hn.gt H.1 H.2.1).elim
 
 end DirichletsTheorem
 
