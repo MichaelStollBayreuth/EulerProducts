@@ -12,13 +12,9 @@ open Complex
 ### The L-series of Λ restricted to a residue class
 -/
 
-section arith_prog
-
-namespace ArithmeticFunction
-
 open LSeries DirichletCharacter
 
-namespace vonMangoldt
+namespace ArithmeticFunction.vonMangoldt
 
 variable {q : ℕ} (a : ZMod q)
 
@@ -80,14 +76,19 @@ lemma LSeries_residue_class_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
   simp only [Pi.smul_apply, residue_class_apply ha, smul_eq_mul, ← mul_assoc,
     mul_inv_cancel_of_invertible, one_mul, Finset.sum_apply, Pi.mul_apply]
 
-end vonMangoldt
+end ArithmeticFunction.vonMangoldt
 
 namespace DirichletsThm
+
+open ArithmeticFunction
 
 variable {q : ℕ} [NeZero q] (a : ZMod q)
 
 open Classical in
-/-- The function `F` used in the Wiener-Ikehara Theorem to prove Dirichlet's Theorem. -/
+/-- The auxiliary function used, e.g., with the Wiener-Ikehara Theorem to prove
+Dirichlet's Theorem. On `re s > 1`, it agrees with the L-series of the von Mangoldt
+function restricted to the residue class `a : ZMod q` minus the principal part
+`(q.totient)⁻¹/(s-1)` of the pole at `s = 1`; see `DirichletsThm.auxFun_prop`. -/
 noncomputable
 abbrev auxFun (s : ℂ) : ℂ :=
   (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
@@ -114,7 +115,7 @@ lemma continuousOn_auxFun' :
 
 /-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
 is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`.
-The statement as given here is equivalent. -/
+The statement as given here in terms auf `DirichletsThm.auxFun` is equivalent. -/
 lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
   refine (continuousOn_auxFun' a).mono fun s hs ↦ ?_
   rcases eq_or_ne s 1 with rfl | hs₁
@@ -122,105 +123,7 @@ lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
   · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
     exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
 
-variable {a}
-
-lemma auxFun_prop (ha : IsUnit a) :
-    Set.EqOn (auxFun a)
-      (fun s ↦ L ↗(vonMangoldt.residue_class a) s - (q.totient : ℂ)⁻¹ / (s - 1))
-      {s | 1 < s.re} := by
-  intro s hs
-  simp only [Set.mem_setOf_eq] at hs
-  simp only [vonMangoldt.LSeries_residue_class_eq ha hs, auxFun]
-  rw [neg_div, ← neg_add', mul_neg, ← neg_mul,  div_eq_mul_one_div (q.totient : ℂ)⁻¹,
-    sub_eq_add_neg, ← neg_mul, ← mul_add]
-  congrm (_ * ?_)
-  -- this should be easier, but `IsUnit.inv ha` does not work here
-  have ha' : IsUnit a⁻¹ := isUnit_of_dvd_one ⟨a, (ZMod.inv_mul_of_unit a ha).symm⟩
-  classical -- for `Fintype.sum_eq_add_sum_compl`
-  rw [Fintype.sum_eq_add_sum_compl 1, MulChar.one_apply ha', one_mul, add_right_comm]
-  simp only [mul_div_assoc]
-  congrm (?_ + _)
-  have hs₁ : s ≠ 1 := fun h ↦ ((h ▸ hs).trans_eq one_re).false
-  rw [deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs₁, LFunctionTrivChar₁,
-    Function.update_noteq hs₁]
-  simp only [LFunctionTrivChar]
-  rw [add_div, mul_div_mul_left _ _ (sub_ne_zero_of_ne hs₁)]
-  conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
-  rw [mul_comm _ 1, mul_div_mul_right _ _ <| LFunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
-
-lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun a x).re := by
-  replace hx : (x : ℂ) ∈ {s | 1 < s.re} := by
-    simp only [Set.mem_setOf_eq, ofReal_re, hx]
-  rw [auxFun_prop ha hx]
-  simp only [sub_re, ofReal_sub]
-  congr 1
-  · rw [LSeries, re_tsum ?_]
-    · push_cast
-      refine tsum_congr fun n ↦ ?_
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp only [term_zero, zero_re, ofReal_zero]
-      · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, ← ofReal_natCast n,
-          ← ofReal_cpow n.cast_nonneg]
-        norm_cast
-    · refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
-      refine (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt ?_
-      simp only [Set.mem_setOf_eq, ofReal_re] at hx ⊢
-      norm_cast
-  · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
-    norm_cast
-
-end DirichletsThm
-
-/-!
-### Derivation of Dirichlet's Theorem (without Wiener-Ikehara)
--/
-
-variable {q : ℕ} {a : ZMod q}
-
-open DirichletsThm
-
-open Topology Filter in
-lemma LSeries_vonMangoldt_residue_class_tendsto_atTop [NeZero q] (ha : IsUnit a) :
-    Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x)
-      (𝓝[>] 1) atTop := by
-  have H {x : ℝ} (hx : 1 < x) :
-      ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x =
-        (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
-    apply_fun ((↑) : ℝ → ℂ) using ofReal_injective
-    push_cast
-    simp_rw [ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast]
-    convert_to L ↗(vonMangoldt.residue_class a) x = _
-    · simp only [div_eq_mul_inv, LSeries, term]
-      refine tsum_congr fun n ↦ ?_
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp only [vonMangoldt.residue_class_apply_zero, ofReal_zero, Nat.cast_zero, zero_mul,
-          ↓reduceIte]
-      · simp only [hn, ↓reduceIte]
-    · rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx)]
-      simp only [sub_add_cancel]
-  refine Tendsto.congr' (eventuallyEq_nhdsWithin_of_eqOn fun ⦃x⦄ hx ↦ H hx).symm ?_
-  clear H
-  have : ContinuousWithinAt (fun x : ℝ ↦ (auxFun a x).re) {x | 1 < x} 1 := by
-    refine continuous_re.continuousWithinAt.comp (t := (Set.univ : Set ℂ)) ?_ fun ⦃_⦄ _ ↦ trivial
-    change ContinuousWithinAt ((auxFun a) ∘ ofReal) ..
-    refine ContinuousWithinAt.comp (t := {s | 1 < s.re}) ?_ continuous_ofReal.continuousWithinAt
-      fun ⦃_⦄ a ↦ a
-    refine ContinuousWithinAt.mono (t := {s | 1 ≤ s.re}) ?_
-       fun s hs ↦ Set.mem_setOf.mpr <| (Set.mem_setOf.mp hs).le
-    exact ContinuousOn.continuousWithinAt (continuousOn_auxFun a) <| by
-      simp only [ofReal_one, Set.mem_setOf_eq, one_re, le_refl]
-  refine tendsto_atTop_add_left_of_le' (𝓝[>] 1) ((auxFun a 1).re - 1) ?_ ?_
-  · exact Tendsto.eventually_const_le (ofReal_one ▸ sub_one_lt _) this.tendsto
-  · conv => enter [1, x]; rw [div_eq_mul_inv]
-    refine Tendsto.comp (y := atTop) ?_ ?_
-    · refine tendsto_atTop_atTop.mpr fun x ↦ ⟨q.totient * x, fun y hy ↦ ?_⟩
-      exact (le_inv_mul_iff₀' <| mod_cast q.totient.pos_of_neZero).mpr hy
-    · refine tendsto_inv_zero_atTop.comp (y := 𝓝[>] 0) ?_
-      convert ContinuousWithinAt.tendsto_nhdsWithin_image ?_
-      · exact (sub_self _).symm
-      · simp only [Set.image_sub_const_Ioi, sub_self]
-      · exact (continuous_add_right (-1)).continuousWithinAt
-
+--
 
 private lemma inv_lt_one (p : Nat.Primes) : (p : ℝ)⁻¹ < 1 := by
   rw [inv_lt_one₀ <| mod_cast p.prop.pos]
@@ -255,13 +158,7 @@ private lemma tsum_primes_le : ∃ C : ℝ, ∑' p : Nat.Primes, (p : ℝ) ^ (-2
   · positivity
   · exact Real.summable_nat_rpow.mpr <| by norm_num
 
-variable (a)
-
-lemma summable_residue_class_real_mul_pow {x : ℝ} (hx : x > 1) :
-    Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) / (n : ℝ) ^ x :=
-  summable_real_of_abscissaOfAbsConv_lt <|
-    (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt <| mod_cast hx.lt
-
+omit [NeZero q] in
 lemma vonMangoldt_non_primes_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ,
       (if n.Prime then (0 : ℝ) else vonMangoldt.residue_class a n) / (n : ℝ) ^ x ≤ C := by
@@ -285,7 +182,9 @@ lemma vonMangoldt_non_primes_residue_class_bound :
       ← Real.rpow_natCast_mul (by positivity), ← Real.rpow_mul_natCast (by positivity), neg_mul,
       mul_comm x, Real.rpow_neg p.val.cast_nonneg]
   have hs : Summable F := by
-    have := summable_residue_class_real_mul_pow a hx
+    have : Summable fun n : ℕ ↦ (vonMangoldt.residue_class a n) / (n : ℝ) ^ x :=
+    summable_real_of_abscissaOfAbsConv_lt <|
+      (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt <| mod_cast hx.lt
     have H₁ (n : ℕ) : 0 ≤ {n : ℕ | (n : ZMod q) = a}.indicator (fun n ↦ Λ n) n / (n : ℝ) ^ x := by
       simp only [Set.indicator, Set.mem_setOf_eq]
       split_ifs with h
@@ -411,6 +310,7 @@ lemma vonMangoldt_non_primes_residue_class_bound :
     ← div_eq_mul_inv, ← zpow_natCast, inv_zpow']
   exact log_div_bound p
 
+omit [NeZero q] in
 lemma vonMangoldt_residue_class_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ, vonMangoldt.residue_class a n / (n : ℝ) ^ x ≤
       (∑' p : Nat.Primes, vonMangoldt.residue_class a p / (p : ℝ) ^ x) + C := by
@@ -418,7 +318,8 @@ lemma vonMangoldt_residue_class_bound :
   use C
   intro x hx
   have hs₁ : Summable fun n : ℕ ↦ vonMangoldt.residue_class a n / (n : ℝ) ^ x :=
-    summable_residue_class_real_mul_pow a hx
+        summable_real_of_abscissaOfAbsConv_lt <|
+      (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt <| mod_cast hx.lt
   have hf₁ : Function.support (fun n ↦ vonMangoldt.residue_class a n / (n : ℝ) ^ x) ⊆
       {n | IsPrimePow n} := by
     simp only [Function.support_div, Set.support_indicator]
@@ -454,10 +355,110 @@ lemma vonMangoldt_residue_class_bound :
     refine tsum_congr fun k ↦ ?_
     have : ¬ Nat.Prime ((p : ℕ) ^ (k + 2)) := Nat.Prime.not_prime_pow <| Nat.le_add_left 2 k
     simp only [Nat.cast_pow, this, ↓reduceIte]
+variable {a}
 
-end ArithmeticFunction
+/-- The auxiliary function agrees on `re s > 1` with the L-series of the von Mangoldt function
+restricted to the residue class `a : ZMod q` minus the principal part `(q.totient)⁻¹/(s-1)`
+of its pole at `s = 1`. -/
+lemma auxFun_prop (ha : IsUnit a) :
+    Set.EqOn (auxFun a)
+      (fun s ↦ L ↗(vonMangoldt.residue_class a) s - (q.totient : ℂ)⁻¹ / (s - 1))
+      {s | 1 < s.re} := by
+  intro s hs
+  simp only [Set.mem_setOf_eq] at hs
+  simp only [vonMangoldt.LSeries_residue_class_eq ha hs, auxFun]
+  rw [neg_div, ← neg_add', mul_neg, ← neg_mul,  div_eq_mul_one_div (q.totient : ℂ)⁻¹,
+    sub_eq_add_neg, ← neg_mul, ← mul_add]
+  congrm (_ * ?_)
+  -- this should be easier, but `IsUnit.inv ha` does not work here
+  have ha' : IsUnit a⁻¹ := isUnit_of_dvd_one ⟨a, (ZMod.inv_mul_of_unit a ha).symm⟩
+  classical -- for `Fintype.sum_eq_add_sum_compl`
+  rw [Fintype.sum_eq_add_sum_compl 1, MulChar.one_apply ha', one_mul, add_right_comm]
+  simp only [mul_div_assoc]
+  congrm (?_ + _)
+  have hs₁ : s ≠ 1 := fun h ↦ ((h ▸ hs).trans_eq one_re).false
+  rw [deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs₁, LFunctionTrivChar₁,
+    Function.update_noteq hs₁]
+  simp only [LFunctionTrivChar]
+  rw [add_div, mul_div_mul_left _ _ (sub_ne_zero_of_ne hs₁)]
+  conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
+  rw [mul_comm _ 1, mul_div_mul_right _ _ <| LFunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
 
-end arith_prog
+lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun a x).re := by
+  replace hx : (x : ℂ) ∈ {s | 1 < s.re} := by
+    simp only [Set.mem_setOf_eq, ofReal_re, hx]
+  rw [auxFun_prop ha hx]
+  simp only [sub_re, ofReal_sub]
+  congr 1
+  · rw [LSeries, re_tsum ?_]
+    · push_cast
+      refine tsum_congr fun n ↦ ?_
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp only [term_zero, zero_re, ofReal_zero]
+      · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, ← ofReal_natCast n,
+          ← ofReal_cpow n.cast_nonneg]
+        norm_cast
+    · refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
+      refine (vonMangoldt.abscissaOfAbsConv_residue_class_le_one a).trans_lt ?_
+      simp only [Set.mem_setOf_eq, ofReal_re] at hx ⊢
+      norm_cast
+  · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
+    norm_cast
+
+
+open Topology Filter in
+lemma LSeries_vonMangoldt_residue_class_tendsto_atTop (ha : IsUnit a) :
+    Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x)
+      (𝓝[>] 1) atTop := by
+  have H {x : ℝ} (hx : 1 < x) :
+      ∑' n, vonMangoldt.residue_class a n / (n : ℝ) ^ x =
+        (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
+    apply_fun ((↑) : ℝ → ℂ) using ofReal_injective
+    push_cast
+    simp_rw [ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast]
+    convert_to L ↗(vonMangoldt.residue_class a) x = _
+    · simp only [div_eq_mul_inv, LSeries, term]
+      refine tsum_congr fun n ↦ ?_
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp only [vonMangoldt.residue_class_apply_zero, ofReal_zero, Nat.cast_zero, zero_mul,
+          ↓reduceIte]
+      · simp only [hn, ↓reduceIte]
+    · rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx)]
+      simp only [sub_add_cancel]
+  refine Tendsto.congr' (eventuallyEq_nhdsWithin_of_eqOn fun ⦃x⦄ hx ↦ H hx).symm ?_
+  clear H
+  have : ContinuousWithinAt (fun x : ℝ ↦ (auxFun a x).re) {x | 1 < x} 1 := by
+    refine continuous_re.continuousWithinAt.comp (t := (Set.univ : Set ℂ)) ?_ fun ⦃_⦄ _ ↦ trivial
+    change ContinuousWithinAt ((auxFun a) ∘ ofReal) ..
+    refine ContinuousWithinAt.comp (t := {s | 1 < s.re}) ?_ continuous_ofReal.continuousWithinAt
+      fun ⦃_⦄ a ↦ a
+    refine ContinuousWithinAt.mono (t := {s | 1 ≤ s.re}) ?_
+       fun s hs ↦ Set.mem_setOf.mpr <| (Set.mem_setOf.mp hs).le
+    exact ContinuousOn.continuousWithinAt (continuousOn_auxFun a) <| by
+      simp only [ofReal_one, Set.mem_setOf_eq, one_re, le_refl]
+  refine tendsto_atTop_add_left_of_le' (𝓝[>] 1) ((auxFun a 1).re - 1) ?_ ?_
+  · exact Tendsto.eventually_const_le (ofReal_one ▸ sub_one_lt _) this.tendsto
+  · conv => enter [1, x]; rw [div_eq_mul_inv]
+    refine Tendsto.comp (y := atTop) ?_ ?_
+    · refine tendsto_atTop_atTop.mpr fun x ↦ ⟨q.totient * x, fun y hy ↦ ?_⟩
+      exact (le_inv_mul_iff₀' <| mod_cast q.totient.pos_of_neZero).mpr hy
+    · refine tendsto_inv_zero_atTop.comp (y := 𝓝[>] 0) ?_
+      convert ContinuousWithinAt.tendsto_nhdsWithin_image ?_
+      · exact (sub_self _).symm
+      · simp only [Set.image_sub_const_Ioi, sub_self]
+      · exact (continuous_add_right (-1)).continuousWithinAt
+
+
+
+variable (a)
+
+
+
+end DirichletsThm
+
+/-!
+### Derivation of Dirichlet's Theorem (without Wiener-Ikehara)
+-/
 
 section DirichletsTheorem
 
@@ -543,7 +544,7 @@ def WienerIkeharaTheorem : Prop :=
 ### Derivation of the Prime Number Theorem and Dirichlet's Theorem from the Wiener-Ikehara Theorem
 -/
 
-open Filter ArithmeticFunction Topology ArithmeticFunction.DirichletsThm
+open Filter ArithmeticFunction Topology DirichletsThm
 
 /--  The *Wiener-Ikehara Theorem* implies *Dirichlet's Theorem* in the form that
 `ψ x ∼ q.totient⁻¹ * x`, where `ψ x = ∑ n < x ∧ n ≡ a mod q, Λ n`
