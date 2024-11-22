@@ -282,26 +282,20 @@ lemma auxFun_prop (ha : IsUnit a) :
   rw [mul_comm _ 1, mul_div_mul_right _ _ <| LFunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
 
 lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun a x).re := by
-  replace hx : (x : ℂ) ∈ {s | 1 < s.re} := by
-    simp only [Set.mem_setOf_eq, ofReal_re, hx]
   rw [auxFun_prop ha hx]
   simp only [sub_re, ofReal_sub]
   congr 1
-  · rw [LSeries, re_tsum ?_]
-    · push_cast
-      refine tsum_congr fun n ↦ ?_
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp only [term_zero, zero_re, ofReal_zero]
-      · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, ← ofReal_natCast n,
-          ← ofReal_cpow n.cast_nonneg]
-        norm_cast
-    · refine LSeriesSummable_of_abscissaOfAbsConv_lt_re ?_
-      refine (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt ?_
-      simp only [Set.mem_setOf_eq, ofReal_re] at hx ⊢
+  · rw [LSeries, re_tsum <| LSeriesSummable_of_abscissaOfAbsConv_lt_re <|
+      (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt <| by norm_cast]
+    push_cast
+    refine tsum_congr fun n ↦ ?_
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp only [term_zero, zero_re, ofReal_zero]
+    · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, ← ofReal_natCast n,
+        ← ofReal_cpow n.cast_nonneg]
       norm_cast
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
     norm_cast
-
 
 open Topology Filter in
 lemma LSeries_vonMangoldt_residueClass_tendsto_atTop (ha : IsUnit a) :
