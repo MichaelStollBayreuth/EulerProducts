@@ -15,9 +15,8 @@ lemma Summable.prod_of_nonneg_of_summable_tsum {β γ : Type*} {f : β × γ →
     Summable f := by
   sorry
 
-lemma Real.inv_rpow_eq_rpow_neg {x : ℝ} (hx : 0 ≤ x) (y : ℝ) : x⁻¹ ^ y = x ^ (-y) := by
-  rw [Real.rpow_neg hx]
-  exact inv_rpow hx y
+lemma Real.inv_rpow_eq_rpow_neg {x : ℝ} (hx : 0 ≤ x) (y : ℝ) : x⁻¹ ^ y = x ^ (-y) :=
+  Real.rpow_neg hx y ▸ inv_rpow hx y
 
 end auxiliary
 
