@@ -99,58 +99,10 @@ lemma LSeries_residueClass_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
   simp only [Pi.smul_apply, residueClass_apply ha, smul_eq_mul, ← mul_assoc,
     mul_inv_cancel_of_invertible, one_mul, Finset.sum_apply, Pi.mul_apply]
 
-end ArithmeticFunction.vonMangoldt
-
 -- PR up to here
 
-namespace DirichletsThm
-
-open ArithmeticFunction vonMangoldt
-
-variable {q : ℕ} [NeZero q] (a : ZMod q)
-
-open Classical in
-/-- The auxiliary function used, e.g., with the Wiener-Ikehara Theorem to prove
-Dirichlet's Theorem. On `re s > 1`, it agrees with the L-series of the von Mangoldt
-function restricted to the residue class `a : ZMod q` minus the principal part
-`(q.totient)⁻¹/(s-1)` of the pole at `s = 1`; see `DirichletsThm.auxFun_prop`. -/
-noncomputable
-abbrev auxFun (s : ℂ) : ℂ :=
-  (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
-    ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
-
-lemma continuousOn_auxFun' :
-    ContinuousOn (auxFun a) {s | s = 1 ∨ ∀ χ : DirichletCharacter ℂ q, LFunction χ s ≠ 0} := by
-  rw [show auxFun a = fun s ↦ _ from rfl]
-  simp only [auxFun, sub_eq_add_neg]
-  refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
-  · refine (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q).mono fun s hs ↦ ?_
-    have := LFunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
-    simp only [ne_eq, Set.mem_setOf_eq] at hs
-    tauto
-  · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
-    refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
-    replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
-    refine (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ).mono fun s hs ↦ ?_
-    simp only [ne_eq, Set.mem_setOf_eq] at hs
-    rcases hs with rfl | hs
-    · simp only [ne_eq, Set.mem_setOf_eq, one_re, le_refl,
-        LFunction_ne_zero_of_one_le_re χ (.inl hχ), not_false_eq_true]
-    · exact hs χ
-
-/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
-is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`.
-The statement as given here in terms auf `DirichletsThm.auxFun` is equivalent. -/
-lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
-  refine (continuousOn_auxFun' a).mono fun s hs ↦ ?_
-  rcases eq_or_ne s 1 with rfl | hs₁
-  · simp only [ne_eq, Set.mem_setOf_eq, true_or]
-  · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
-    exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
-
---
-
 omit [NeZero q] in
+variable (a) in
 open Nat.Primes in
 lemma summable_vonMangoldt_residueClass_non_primes :
     Summable fun n : ℕ ↦ (if n.Prime then 0 else residueClass a n) / n := by
@@ -190,7 +142,7 @@ lemma summable_vonMangoldt_residueClass_non_primes :
   have hF' : Summable F' := by
     have hF'₀ (p : Nat.Primes) : F' (p, 0) = 0 := by
       simp only [zero_add, pow_one, hF₀, F']
-    have hF'₁ : F'' = F' ∘ (Prod.map id (· + 1)) := by
+    have hF'₁ : F'' = F' ∘ (Prod.map _root_.id (· + 1)) := by
       ext1
       simp only [Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd, F'', F']
     suffices Summable F'' by
@@ -252,6 +204,57 @@ lemma summable_vonMangoldt_residueClass_non_primes :
     simp +contextual only [div_eq_zero_iff, ite_eq_left_iff, vonMangoldt_eq_zero_iff, hn,
       not_false_eq_true, implies_true, Nat.cast_eq_zero, true_or, F₀]
   exact hsF₀.of_nonneg_of_le hnonneg hleF₀
+
+end ArithmeticFunction.vonMangoldt
+
+
+namespace DirichletsThm
+
+open ArithmeticFunction vonMangoldt
+
+variable {q : ℕ} [NeZero q] (a : ZMod q)
+
+open Classical in
+/-- The auxiliary function used, e.g., with the Wiener-Ikehara Theorem to prove
+Dirichlet's Theorem. On `re s > 1`, it agrees with the L-series of the von Mangoldt
+function restricted to the residue class `a : ZMod q` minus the principal part
+`(q.totient)⁻¹/(s-1)` of the pole at `s = 1`; see `DirichletsThm.auxFun_prop`. -/
+noncomputable
+abbrev auxFun (s : ℂ) : ℂ :=
+  (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
+    ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
+
+lemma continuousOn_auxFun' :
+    ContinuousOn (auxFun a) {s | s = 1 ∨ ∀ χ : DirichletCharacter ℂ q, LFunction χ s ≠ 0} := by
+  rw [show auxFun a = fun s ↦ _ from rfl]
+  simp only [auxFun, sub_eq_add_neg]
+  refine continuousOn_const.mul <| ContinuousOn.add ?_ ?_
+  · refine (continuousOn_neg_logDeriv_LFunctionTrivChar₁ q).mono fun s hs ↦ ?_
+    have := LFunction_ne_zero_of_one_le_re (1 : DirichletCharacter ℂ q) (s := s)
+    simp only [ne_eq, Set.mem_setOf_eq] at hs
+    tauto
+  · simp only [← Finset.sum_neg_distrib, mul_div_assoc, ← mul_neg, ← neg_div]
+    refine continuousOn_finset_sum _ fun χ hχ ↦ continuousOn_const.mul ?_
+    replace hχ : χ ≠ 1 := by simpa only [ne_eq, Finset.mem_compl, Finset.mem_singleton] using hχ
+    refine (continuousOn_neg_logDeriv_LFunction_of_nontriv hχ).mono fun s hs ↦ ?_
+    simp only [ne_eq, Set.mem_setOf_eq] at hs
+    rcases hs with rfl | hs
+    · simp only [ne_eq, Set.mem_setOf_eq, one_re, le_refl,
+        LFunction_ne_zero_of_one_le_re χ (.inl hχ), not_false_eq_true]
+    · exact hs χ
+
+/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
+is continuous on `re s ≥ 1` except for a single pole at `s = 1` with residue `(q.totient)⁻¹`.
+The statement as given here in terms auf `DirichletsThm.auxFun` is equivalent. -/
+lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
+  refine (continuousOn_auxFun' a).mono fun s hs ↦ ?_
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp only [ne_eq, Set.mem_setOf_eq, true_or]
+  · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
+    exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
+
+--
+
 
 variable {a}
 
