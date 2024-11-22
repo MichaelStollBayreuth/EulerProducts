@@ -4,6 +4,23 @@ import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.PrimesInAP
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
+/-!
+### Auxiliary stuff
+-/
+
+section auxiliary
+
+lemma Summable.prod_of_nonneg_of_summable_tsum {β γ : Type*} {f : β × γ → ℝ} (h₁ : ∀ x, 0 ≤ f x)
+    (h₂ : ∀ b, Summable fun c ↦ f (b, c)) (h₃ : Summable fun b ↦ ∑' c, f (b, c)) :
+    Summable f := by
+  sorry
+
+lemma Real.inv_rpow_eq_rpow_neg {x : ℝ} (hx : 0 ≤ x) (y : ℝ) : x⁻¹ ^ y = x ^ (-y) := by
+  rw [Real.rpow_neg hx]
+  exact inv_rpow hx y
+
+end auxiliary
+
 open scoped LSeries.notation
 
 open Complex
@@ -22,8 +39,11 @@ variable {q : ℕ} (a : ZMod q)
 noncomputable abbrev residueClass : ℕ → ℝ :=
   {n : ℕ | (n : ZMod q) = a}.indicator (vonMangoldt ·)
 
-lemma residueClass_nonneg : 0 ≤ residueClass a :=
-  fun _ ↦ Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
+lemma residueClass_nonneg (n : ℕ) : 0 ≤ residueClass a n :=
+  Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
+
+lemma residueClass_le (n : ℕ) : residueClass a n ≤ vonMangoldt n :=
+  Set.indicator_apply_le' (fun _ ↦ le_rfl) (fun _ ↦ vonMangoldt_nonneg)
 
 lemma residueClass_apply_zero : residueClass a 0 = 0 := by
   simp only [Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Nat.cast_zero, map_zero, ofReal_zero,
@@ -85,7 +105,7 @@ end ArithmeticFunction.vonMangoldt
 
 namespace DirichletsThm
 
-open ArithmeticFunction
+open ArithmeticFunction vonMangoldt
 
 variable {q : ℕ} [NeZero q] (a : ZMod q)
 
@@ -164,47 +184,127 @@ private lemma tsum_primes_le : ∃ C : ℝ, ∑' p : Nat.Primes, (p : ℝ) ^ (-2
   · exact Real.summable_nat_rpow.mpr <| by norm_num
 
 omit [NeZero q] in
+open Nat.Primes in
+lemma summable_vonMangoldt_residueClass_non_primes :
+    Summable fun n : ℕ ↦ (if n.Prime then 0 else residueClass a n) / n := by
+  have hp₀ (p : Nat.Primes) : 0 < (p : ℝ)⁻¹ := by
+    have := p.prop.pos
+    positivity
+  have hp₁ (p : Nat.Primes) : (p : ℝ)⁻¹ < 1 := by
+    rw [inv_lt_one₀ <| mod_cast p.prop.pos]
+    exact_mod_cast p.prop.one_lt
+  have hp₂ (p : Nat.Primes) : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (hp₁ p)
+  let F₀ (n : ℕ) : ℝ := (if n.Prime then 0 else vonMangoldt n) / n
+  have hnonneg (n : ℕ) : 0 ≤ (if n.Prime then 0 else residueClass a n) / n := by
+    have := residueClass_nonneg a n
+    positivity
+  have hleF₀ (n : ℕ) : (if n.Prime then 0 else residueClass a n) / n ≤ F₀ n := by
+    simp only [F₀]
+    refine div_le_div_of_nonneg_right ?_ n.cast_nonneg
+    split_ifs with hn
+    · exact le_rfl
+    · exact residueClass_le a n
+  have hF₀ (p : Nat.Primes) : F₀ p.val = 0 := by
+    simp only [p.prop, ↓reduceIte, zero_div, F₀]
+  let F (n : {n : ℕ // IsPrimePow n}) : ℝ := F₀ n.val
+  -- have hFF₀ : F = F₀ ∘ Subtype.val := rfl
+  let F' (pk : Nat.Primes × ℕ) : ℝ := F₀ (pk.1 ^ (pk.2 + 1))
+  let F'' (pk : Nat.Primes × ℕ) : ℝ := F₀ (pk.1 ^ (pk.2 + 2))
+  have hFF' : F = F' ∘ ⇑prodNatEquiv.symm := by
+    refine (Equiv.eq_comp_symm prodNatEquiv F F').mpr ?_
+    ext1 n
+    simp only [Function.comp_apply, F, F']
+    congr
+  have hF₁ (p : Nat.Primes) (k : ℕ) :
+      F₀ ((p : ℕ) ^ (k + 2)) = Real.log p * (p : ℝ)⁻¹ ^ (k + 2) := by
+    simp only [div_eq_mul_inv, ite_mul, zero_mul, le_add_iff_nonneg_left, zero_le,
+      Nat.Prime.not_prime_pow, ↓reduceIte, Nat.cast_pow, F₀]
+    rw [vonMangoldt_apply_pow (by omega), vonMangoldt_apply_prime p.prop, inv_pow (p : ℝ) (k + 2)]
+  have hF' : Summable F' := by
+    have hF'₀ (p : Nat.Primes) : F' (p, 0) = 0 := by
+      simp only [zero_add, pow_one, hF₀, F']
+    have hF'₁ : F'' = F' ∘ (Prod.map id (· + 1)) := by
+      ext1
+      simp only [Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd, F'', F']
+    suffices Summable F'' by
+      rw [hF'₁] at this
+      refine (Function.Injective.summable_iff ?_ fun u hu ↦ ?_).mp this
+      · exact Function.Injective.prodMap (fun ⦃a₁ a₂⦄ a ↦ a) <| add_left_injective 1
+      · simp only [Set.range_prod_map, Set.range_id, Set.mem_prod, Set.mem_univ, Set.mem_range,
+          Nat.exists_add_one_eq, true_and, not_lt, nonpos_iff_eq_zero] at hu
+        rw [← hF'₀ u.1, ← hu]
+    simp only [F'', hF₁]
+    suffices Summable fun (pk : Nat.Primes × ℕ) ↦ 2 * (pk.1 : ℝ)⁻¹ ^ (pk.2 + 3 / 2 : ℝ) by
+      refine this.of_nonneg_of_le (fun _ ↦ by positivity) (fun pk ↦ ?_)
+      calc _
+        _ ≤ (pk.1 : ℝ) ^ (1 / 2 : ℝ) / (1 / 2) * (pk.1 : ℝ)⁻¹ ^ (pk.2 + 2) := by
+          gcongr
+          exact Real.log_le_rpow_div (by positivity) one_half_pos
+        _ = 2 * (pk.1 : ℝ)⁻¹ ^ (-1 / 2 : ℝ) * (pk.1 : ℝ)⁻¹ ^ (pk.2 + 2) := by
+          congr
+          rw [← div_mul, div_one, mul_comm, Real.inv_rpow pk.1.val.cast_nonneg,
+            ← Real.rpow_neg pk.1.val.cast_nonneg, neg_div, neg_neg]
+        _ = _ := by
+          rw [mul_assoc, ← Real.rpow_natCast,
+            ← Real.rpow_add <| by have := pk.1.prop.pos; positivity, Nat.cast_add, Nat.cast_two,
+            add_comm, add_assoc]
+          norm_num
+    refine Summable.mul_left _ ?_
+    refine Summable.prod_of_nonneg_of_summable_tsum (fun _ ↦ by positivity) (fun p ↦ ?_) ?_
+    · conv =>
+        enter [1, k]
+        dsimp only
+        rw [Real.rpow_add <| hp₀ p, Real.rpow_natCast]
+      exact Summable.mul_right _ <| summable_geometric_of_lt_one (hp₀ p).le (hp₁ p)
+    · conv =>
+        enter [1, p, 1, k]
+        dsimp only
+        rw [Real.rpow_add <| hp₀ p, Real.rpow_natCast]
+      conv =>
+        enter [1, p]
+        rw [tsum_mul_right, tsum_geometric_of_lt_one (hp₀ p).le (hp₁ p)]
+      suffices Summable fun p : Nat.Primes ↦ 2 * (p : ℝ)⁻¹ ^ (3 / 2 : ℝ) by
+        refine this.of_nonneg_of_le (fun p ↦ ?_) (fun p ↦ ?_)
+        · have := hp₂ p
+          positivity
+        · gcongr
+          rw [inv_le_comm₀ (hp₂ p) zero_lt_two, le_sub_comm]
+          norm_num
+          rw [one_div, inv_le_inv₀ (mod_cast p.prop.pos) zero_lt_two]
+          exact_mod_cast p.prop.two_le
+      refine Summable.mul_left _ ?_
+      conv => enter [1, p]; rw [Real.inv_rpow_eq_rpow_neg p.val.cast_nonneg]
+      exact Nat.Primes.summable_rpow.mpr <| by norm_num
+  have hF : Summable F := by
+    have := (Nat.Primes.prodNatEquiv.symm.summable_iff (f := F')).mpr hF'
+    rwa [← hFF'] at this
+  have hsF₀ : Summable F₀ := by
+    change Summable (F₀ ∘ Subtype.val) at hF
+    refine (summable_subtype_iff_indicator.mp hF).congr
+      fun n ↦ Set.indicator_apply_eq_self.mpr fun (hn : ¬ IsPrimePow n) ↦ ?_
+    simp +contextual only [div_eq_zero_iff, ite_eq_left_iff, vonMangoldt_eq_zero_iff, hn,
+      not_false_eq_true, implies_true, Nat.cast_eq_zero, true_or, F₀]
+  exact hsF₀.of_nonneg_of_le hnonneg hleF₀
+
+
+/- omit [NeZero q] in
 lemma vonMangoldt_non_primes_residueClass_bound :
-    ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ,
-      (if n.Prime then (0 : ℝ) else vonMangoldt.residueClass a n) / (n : ℝ) ^ x ≤ C := by
+    ∃ C : ℝ, ∑' n : ℕ, (if n.Prime then 0 else residueClass a n) / n ≤ C := by
+  let F (n : ℕ) : ℝ := (if n.Prime then 0 else residueClass a n) / n
+  by_cases hs : Summable F
+  swap
+  · rw [tsum_eq_zero_of_not_summable hs]
+    exact ⟨0, le_rfl⟩
   obtain ⟨C, hC⟩ := tsum_primes_le
   use 4 * C
-  intro x hx
-  have hpx (p : Nat.Primes) : (p : ℝ) ^ (-x) < 1 := by
-    rw [Real.rpow_neg (by positivity), inv_lt_one₀ (by have := p.prop.pos; positivity)]
-    refine Real.one_lt_rpow (mod_cast p.prop.one_lt) (zero_lt_one.trans hx.lt)
-  let F (n : ℕ) : ℝ :=
-    (if n.Prime then (0 : ℝ) else vonMangoldt.residueClass a n) / (n : ℝ) ^ x
   have hF₀ (p : Nat.Primes) : F p = 0 := by
     simp only [p.prop, ↓reduceIte, zero_div, F]
   have hF₁ (p : Nat.Primes) (k : ℕ) : F ((p : ℕ) ^ (k + 2)) =
-      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0 := by
-    simp only [vonMangoldt.residueClass, Set.indicator, Set.mem_setOf_eq, div_eq_mul_inv, ite_mul,
-      zero_mul, le_add_iff_nonneg_left, zero_le, Nat.Prime.not_prime_pow, ↓reduceIte, Nat.cast_pow,
-      F]
+      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ)⁻¹) ^ (k + 2) else 0 := by
+    simp only [residueClass, Set.indicator, Set.mem_setOf_eq, div_eq_mul_inv, ite_mul, zero_mul,
+      le_add_iff_nonneg_left, zero_le, Nat.Prime.not_prime_pow, ↓reduceIte, Nat.cast_pow, F]
     refine ite_congr rfl (fun _ ↦ ?_) fun _ ↦ rfl
-    rw [vonMangoldt_apply_pow (by omega), vonMangoldt_apply_prime p.prop,
-      ← Real.rpow_natCast_mul (by positivity), ← Real.rpow_mul_natCast (by positivity), neg_mul,
-      mul_comm x, Real.rpow_neg p.val.cast_nonneg]
-  have hs : Summable F := by
-    have : Summable fun n : ℕ ↦ (vonMangoldt.residueClass a n) / (n : ℝ) ^ x :=
-      summable_real_of_abscissaOfAbsConv_lt <|
-        (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt <| mod_cast hx.lt
-    have H₁ (n : ℕ) : 0 ≤ {n : ℕ | (n : ZMod q) = a}.indicator (fun n ↦ Λ n) n / (n : ℝ) ^ x := by
-      simp only [Set.indicator, Set.mem_setOf_eq]
-      split_ifs with h
-      · have : 0 ≤ vonMangoldt n := vonMangoldt_nonneg
-        positivity
-      · rw [zero_div]
-    have hFnonneg (n : ℕ) : 0 ≤ F n := by
-      simp only [vonMangoldt.residueClass, ite_mul, zero_mul, F]
-      split_ifs with hn
-      · rw [zero_div]
-      · exact H₁ n
-    refine this.of_nonneg_of_le hFnonneg fun n ↦ ?_
-    simp only [vonMangoldt.residueClass, ite_div, zero_div, F]
-    refine (ite_le_sup ..).trans ?_
-    simp only [H₁, sup_of_le_right, le_refl]
+    rw [vonMangoldt_apply_pow (by omega), vonMangoldt_apply_prime p.prop, inv_pow (p : ℝ) (k + 2)]
   have hF : Function.support F ⊆ {n | IsPrimePow n} := by
     intro n hn
     simp only [Function.mem_support] at hn
@@ -232,55 +332,44 @@ lemma vonMangoldt_non_primes_residueClass_bound :
     refine Summable.of_nonneg_of_le (fun k ↦ by positivity) H ?_
     conv => enter [1, k]; rw [pow_succ']
     exact Summable.mul_left _ <| summable_geometric_of_lt_one (by positivity) <| inv_lt_one p
-  have hs₀ (p : Nat.Primes) : Summable fun k ↦ Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) := by
-    refine (hs₄ p).of_nonneg_of_le (fun k ↦ by positivity) fun k ↦ ?_
-    rw [← Real.rpow_neg_one]
-    gcongr
-    exact_mod_cast p.prop.one_le
   have hs₁ : Summable fun p : Nat.Primes ↦ ∑' (k : ℕ),
-      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0 := by
+      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0 := by
     have H (p : Nat.Primes) : ∑' (k : ℕ),
-        (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0) ≤
-        ∑' k : ℕ, Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) := by
+        (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0) ≤
+        ∑' k : ℕ, Real.log p * (p : ℝ)⁻¹ ^ (k + 2) := by
       have H₀ (k : ℕ) : (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then
-          Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0) ≤ Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) := by
+          Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0) ≤ Real.log p * (p : ℝ)⁻¹ ^ (k + 2) := by
         refine (ite_le_sup ..).trans ?_
         simp only [sup_le_iff, le_refl, true_and]
         positivity
-      refine tsum_le_tsum H₀ ?_ (hs₀ p)
-      · refine Summable.of_nonneg_of_le (fun k ↦ ?_) H₀ (hs₀ p)
+      refine tsum_le_tsum H₀ ?_ (hs₄ p)
+      · refine Summable.of_nonneg_of_le (fun k ↦ ?_) H₀ (hs₄ p)
         refine le_trans ?_ (inf_le_ite ..)
         positivity
     refine Summable.of_nonneg_of_le (fun p ↦ tsum_nonneg fun n ↦ ?_) H ?_
     · exact le_trans (by positivity) <| inf_le_ite ..
     · simp_rw [add_comm _ 2, pow_add, ← mul_assoc, tsum_mul_left]
-      conv => enter [1, p, 2]; rw [tsum_geometric_of_lt_one (by positivity) (hpx p)]
+      conv => enter [1, p, 2]; rw [tsum_geometric_of_lt_one (by positivity) (inv_lt_one p)]
       have H₁ (p : Nat.Primes) :
-          Real.log p * ((p : ℝ) ^ (-x)) ^ 2 * (1 - (p : ℝ) ^ (-x))⁻¹ ≤
-            2 * Real.log p * ((p : ℝ) ^ (-x)) ^ 2 := by
-        have h₀ : 0 < 1 - (p : ℝ) ^ (-x) := sub_pos.mpr (hpx p)
-        have h₁ : (1 - (p : ℝ) ^ (-x))⁻¹ ≤ 2 := by
-          rw [inv_le_comm₀ h₀ zero_lt_two, le_sub_comm, Real.rpow_neg (mod_cast p.val.cast_nonneg),
-            show (1 - 2⁻¹ : ℝ) = 2⁻¹ by norm_num,
+          Real.log p * (p : ℝ)⁻¹ ^ 2 * (1 - (p : ℝ)⁻¹)⁻¹ ≤ 2 * Real.log p * (p : ℝ)⁻¹ ^ 2 := by
+        have h₀ : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (inv_lt_one p)
+        have h₁ : (1 - (p : ℝ)⁻¹)⁻¹ ≤ 2 := by
+          rw [inv_le_comm₀ h₀ zero_lt_two, le_sub_comm, show (1 - 2⁻¹ : ℝ) = 2⁻¹ by norm_num,
             inv_le_inv₀ (by have := p.prop.pos; positivity) zero_lt_two, ← Real.rpow_one 2]
-          exact Real.rpow_le_rpow zero_le_two (mod_cast p.prop.two_le : (2 : ℝ) ≤ p) zero_le_one
-            |>.trans <| Real.rpow_le_rpow_of_exponent_le (mod_cast p.prop.one_le) hx.lt.le
+          refine Real.rpow_le_rpow zero_le_two (mod_cast p.prop.two_le : (2 : ℝ) ≤ p) zero_le_one
+            |>.trans <| by simp only [Real.rpow_one, le_refl]
         rw [← mul_rotate]
         gcongr
       refine Summable.of_nonneg_of_le (fun p ↦ ?_) H₁ ?_
-      · have : 0 < 1 - (p : ℝ) ^ (-x) := sub_pos.mpr (hpx p)
+      · have : 0 < 1 - (p : ℝ)⁻¹ := sub_pos.mpr (inv_lt_one p)
         positivity
       · simp_rw [mul_assoc]
         refine Summable.mul_left 2 ?_
         have key (p : Nat.Primes) :
-            Real.log p * ((p : ℝ) ^ (-x)) ^ 2 ≤ 2 * (p : ℝ) ^ (-(3 / 2) : ℝ) := by
+            Real.log p * (p : ℝ)⁻¹ ^ 2 ≤ 2 * (p : ℝ) ^ (-(3 / 2) : ℝ) := by
           have h₁ := Real.log_le_rpow_div p.val.cast_nonneg one_half_pos
-          have h₂ : ((p : ℝ) ^ (-x)) ^ 2 ≤ (p : ℝ) ^ (-2 : ℝ) := by
-            rw [Real.rpow_neg p.val.cast_nonneg 2, ← Real.inv_rpow p.val.cast_nonneg,
-              ← Real.rpow_natCast]
-            refine Real.rpow_le_rpow (by positivity) ?_ zero_le_two
-            rw [← Real.rpow_neg_one]
-            exact (Real.rpow_le_rpow_left_iff <| mod_cast p.prop.one_lt).mpr <| neg_le_neg hx.lt.le
+          have h₂ : (p : ℝ)⁻¹ ^ 2 ≤ (p : ℝ) ^ (-2 : ℝ) := by
+            rw [← Real.rpow_natCast, Real.inv_rpow_eq_rpow_neg p.val.cast_nonneg, Nat.cast_two]
           calc _
             _ ≤ Real.log p * (p : ℝ) ^ (-2 : ℝ) := by gcongr
             _ ≤ (p : ℝ) ^ (1 / 2 : ℝ) / (1 / 2) * (p : ℝ) ^ (-2 : ℝ) := by gcongr
@@ -294,28 +383,26 @@ lemma vonMangoldt_non_primes_residueClass_bound :
   refine le_trans ?_ this
   refine tsum_le_tsum (fun p ↦ ?_) hs₁ hs₂
   have H (k : ℕ) :
-      (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0) ≤
+      (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0) ≤
       Real.log p * (p : ℝ)⁻¹ ^ (k + 2) := by
     refine (ite_le_sup ..).trans ?_
-    rw [sup_eq_left.mpr <| by positivity, ← Real.rpow_neg_one]
-    gcongr
-    exact_mod_cast p.prop.one_le
+    rw [sup_eq_left.mpr <| by positivity]
   have hs₃ : Summable fun k : ℕ ↦
-      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0 := by
+      if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0 := by
     have H (k : ℕ) :
-        (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) else 0) ≤
-          Real.log p * ((p : ℝ) ^ (-x)) ^ (k + 2) := by
+        (if ((p : ℕ) ^ (k + 2) : ZMod q) = a then Real.log p * (p : ℝ)⁻¹ ^ (k + 2) else 0) ≤
+          Real.log p * (p : ℝ)⁻¹  ^ (k + 2) := by
       refine (ite_le_sup ..).trans ?_
       rw [sup_eq_left.mpr <| by positivity]
-    refine Summable.of_nonneg_of_le (fun k ↦ ?_) H (hs₀ p)
+    refine Summable.of_nonneg_of_le (fun k ↦ ?_) H (hs₄ p)
     exact le_trans (by positivity) (inf_le_ite ..)
   refine (tsum_le_tsum H hs₃ <| hs₄ p).trans ?_
   conv_lhs => enter [1, k]; rw [add_comm, pow_add]
   rw [tsum_mul_left, tsum_mul_left, ← mul_assoc, tsum_geometric_of_lt_one (by positivity) (inv_lt_one p),
     ← div_eq_mul_inv, ← zpow_natCast, inv_zpow']
-  exact log_div_bound p
+  exact log_div_bound p -/
 
-omit [NeZero q] in
+/- omit [NeZero q] in
 lemma vonMangoldt_residueClass_bound :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x > 1), ∑' n : ℕ, vonMangoldt.residueClass a n / (n : ℝ) ^ x ≤
       (∑' p : Nat.Primes, vonMangoldt.residueClass a p / (p : ℝ) ^ x) + C := by
@@ -359,7 +446,8 @@ lemma vonMangoldt_residueClass_bound :
   · ext1 p
     refine tsum_congr fun k ↦ ?_
     have : ¬ Nat.Prime ((p : ℕ) ^ (k + 2)) := Nat.Prime.not_prime_pow <| Nat.le_add_left 2 k
-    simp only [Nat.cast_pow, this, ↓reduceIte]
+    simp only [Nat.cast_pow, this, ↓reduceIte] -/
+
 variable {a}
 
 /-- The auxiliary function agrees on `re s > 1` with the L-series of the von Mangoldt function
@@ -454,12 +542,15 @@ lemma LSeries_vonMangoldt_residueClass_tendsto_atTop (ha : IsUnit a) :
       · exact (continuous_add_right (-1)).continuousWithinAt
 
 open vonMangoldt Filter Topology in
-lemma not_summable_vonMangoldt_residueClass_div (ha : IsUnit a) :
-    ¬ Summable fun n : ℕ ↦ residueClass a n / n := by
+lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
+    ¬ Summable fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n := by
   intro H
+  have key : Summable fun n : ℕ ↦ residueClass a n / n := by
+    convert (summable_vonMangoldt_residueClass_non_primes a).add H using 2 with n
+    simp only [← add_div, ite_add_ite, zero_add, add_zero, ite_self]
   let C := ∑' n, residueClass a n / n
   have H₁ {x : ℝ} (hx : 1 < x) : ∑' n, residueClass a n / (n : ℝ) ^ x ≤ C := by
-    refine tsum_le_tsum (fun n ↦ ?_) ?_ H
+    refine tsum_le_tsum (fun n ↦ ?_) ?_ key
     · rcases n.eq_zero_or_pos with rfl | hn
       · simp only [Nat.cast_zero, Real.zero_rpow (by linarith), div_zero, le_refl]
       · refine div_le_div_of_nonneg_left (residueClass_nonneg a _) (mod_cast hn) ?_
@@ -470,10 +561,6 @@ lemma not_summable_vonMangoldt_residueClass_div (ha : IsUnit a) :
   have H₂ := tendsto_atTop.mp (LSeries_vonMangoldt_residueClass_tendsto_atTop ha) (C + 1)
   rcases (H₂.and self_mem_nhdsWithin).exists with ⟨x, hx, h'x⟩
   exact (lt_add_one C).not_le (hx.trans <| H₁ h'x)
-
-variable (a)
-
-
 
 end DirichletsThm
 
