@@ -125,6 +125,8 @@ namespace DirichletsThm
 
 open ArithmeticFunction vonMangoldt
 
+open scoped LSeries.notation
+
 variable {q : ℕ} [NeZero q] (a : ZMod q)
 
 open Classical in
@@ -322,6 +324,8 @@ end DirichletsTheorem
 /-!
 ### Statement of a version of the Wiener-Ikehara Theorem
 -/
+
+open scoped LSeries.notation
 
 open Filter Topology Nat ArithmeticFunction in
 /-- A version of the *Wiener-Ikehara Tauberian Theorem*: If `f` is a nonnegative arithmetic
