@@ -218,11 +218,10 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
     refine tsum_congr fun n ↦ ?_
     rcases eq_or_ne n 0 with rfl | hn
     · simp only [term_zero, zero_re, ofReal_zero]
-    · simp only [ne_eq, hn, not_false_eq_true, term_of_ne_zero, ← ofReal_natCast n,
-        ← ofReal_cpow n.cast_nonneg]
-      norm_cast
-  · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
-    norm_cast
+    · simp only [term_of_ne_zero hn, ← ofReal_natCast n, ← ofReal_cpow n.cast_nonneg, ← ofReal_div,
+        ofReal_re]
+  · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl, ← ofReal_one, ← ofReal_sub, ← ofReal_inv,
+      ← ofReal_div, ofReal_re]
 
 /-- As `x` approaches `1` from the right along the real axis, the L-series of
 `ArithmeticFunction.vonMangoldt.residueClass` is bounded below by `(q.totient)⁻¹/(x-1) - C`. -/
