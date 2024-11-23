@@ -119,15 +119,7 @@ lemma summable_residueClass_non_primes_div :
       Nat.exists_add_one_eq, true_and, not_lt, nonpos_iff_eq_zero] at hu
     rw [← hF'₀ u.1, ← hu]
 
-end ArithmeticFunction.vonMangoldt
-
-namespace DirichletsThm
-
-open ArithmeticFunction vonMangoldt
-
-open scoped LSeries.notation
-
-variable {q : ℕ} [NeZero q] (a : ZMod q)
+variable [NeZero q]
 
 open Classical in
 /-- The auxiliary function used, e.g., with the Wiener-Ikehara Theorem to prove
@@ -172,6 +164,8 @@ lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
 
 variable {a}
 
+open scoped LSeries.notation
+
 /-- The auxiliary function agrees on `re s > 1` with the L-series of the von Mangoldt function
 restricted to the residue class `a : ZMod q` minus the principal part `(q.totient)⁻¹/(s-1)`
 of its pole at `s = 1`. -/
@@ -213,12 +207,6 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
         ofReal_re]
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl, ← ofReal_one, ← ofReal_sub, ← ofReal_inv,
       ← ofReal_div, ofReal_re]
-
-end DirichletsThm
-
-namespace ArithmeticFunction.vonMangoldt
-
-open DirichletsThm
 
 variable {q : ℕ} [NeZero q] {a : ZMod q}
 
@@ -295,7 +283,7 @@ section DirichletsTheorem
 
 namespace Nat
 
-open ArithmeticFunction vonMangoldt DirichletsThm
+open ArithmeticFunction vonMangoldt
 
 variable {q : ℕ} [NeZero q] {a : ZMod q}
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
@@ -341,7 +329,7 @@ def WienerIkeharaTheorem : Prop :=
 ### Derivation of the Prime Number Theorem and Dirichlet's Theorem from the Wiener-Ikehara Theorem
 -/
 
-open Filter ArithmeticFunction Topology DirichletsThm
+open Filter ArithmeticFunction Topology
 
 /--  The *Wiener-Ikehara Theorem* implies *Dirichlet's Theorem* in the form that
 `ψ x ∼ q.totient⁻¹ * x`, where `ψ x = ∑ n < x ∧ n ≡ a mod q, Λ n`
@@ -357,12 +345,12 @@ theorem Dirichlet_vonMangoldt (WIT : WienerIkeharaTheorem) {q : ℕ} [NeZero q] 
       (Finset.range N).sum ({n : ℕ | (n : ZMod q) = a}.indicator Λ) :=
     (Finset.sum_indicator_eq_sum_filter _ _ (fun _ ↦ {n : ℕ | n = a}) _).symm
   simp only [H]
-  refine WIT (F := auxFun a) (fun n ↦ ?_) ?_ ?_
+  refine WIT (F := vonMangoldt.auxFun a) (fun n ↦ ?_) ?_ ?_
   · exact Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
-  · convert eqOn_auxFun ha with s
+  · convert vonMangoldt.eqOn_auxFun ha with s
     push_cast
     rfl
-  · exact continuousOn_auxFun a
+  · exact vonMangoldt.continuousOn_auxFun a
 
 /-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
 `ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/
