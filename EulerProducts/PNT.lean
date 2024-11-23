@@ -29,75 +29,9 @@ namespace ArithmeticFunction.vonMangoldt
 
 variable {q : ℕ} (a : ZMod q)
 
-/-- The von Mangoldt function restricted to the residue class `a` mod `q`. -/
-noncomputable abbrev residueClass : ℕ → ℝ :=
-  {n : ℕ | (n : ZMod q) = a}.indicator (vonMangoldt ·)
-
-lemma residueClass_nonneg (n : ℕ) : 0 ≤ residueClass a n :=
-  Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
-
-lemma residueClass_le (n : ℕ) : residueClass a n ≤ vonMangoldt n :=
-  Set.indicator_apply_le' (fun _ ↦ le_rfl) (fun _ ↦ vonMangoldt_nonneg)
-
-lemma residueClass_apply_zero : residueClass a 0 = 0 := by
-  simp only [Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Nat.cast_zero, map_zero, ofReal_zero,
-    implies_true]
-
-lemma abscissaOfAbsConv_residueClass_le_one :
-    abscissaOfAbsConv ↗(vonMangoldt.residueClass a) ≤ 1 := by
-  refine abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
-  unfold LSeriesSummable
-  have := LSeriesSummable_vonMangoldt <| show 1 < (y : ℂ).re by simp only [ofReal_re, hy]
-  convert this.indicator {n : ℕ | (n : ZMod q) = a}
-  ext1 n
-  by_cases hn : (n : ZMod q) = a
-  · simp +contextual only [term, Set.indicator, Set.mem_setOf_eq, hn, ↓reduceIte, apply_ite,
-      ite_self]
-  · simp +contextual only [term, Set.mem_setOf_eq, hn, not_false_eq_true, Set.indicator_of_not_mem,
-      ofReal_zero, zero_div, ite_self]
-
-variable [NeZero q] {a}
-
-/-- We can express `ArithmeticFunction.vonMangoldt.residueClass` as a linear combination
-of twists of the von Mangoldt function with Dirichlet charaters. -/
-lemma residueClass_apply (ha : IsUnit a) (n : ℕ) :
-    residueClass a n =
-      (q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ * χ n * vonMangoldt n := by
-  rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
-  simp +contextual only [residueClass, Set.indicator_apply, Set.mem_setOf_eq, apply_ite,
-    ofReal_zero, mul_zero, ← Finset.sum_mul, sum_char_inv_mul_char_eq ℂ ha n, eq_comm (a := a),
-    ite_mul, zero_mul, ↓reduceIte, ite_self]
-
-/-- We can express `ArithmeticFunction.vonMangoldt.residueClass` as a linear combination
-of twists of the von Mangoldt function with Dirichlet charaters. -/
-lemma residueClass_eq (ha : IsUnit a) :
-    ↗(residueClass a) = (q.totient : ℂ)⁻¹ •
-      ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ • (fun n : ℕ ↦ χ n * vonMangoldt n) := by
-  ext1 n
-  simpa only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul, ← mul_assoc]
-    using residueClass_apply ha n
-
-/-- The L-series of the von Mangoldt function restricted to the prime residue class `a` mod `q`
-is a linear combination of logarithmic derivatives of L-functions of the Dirichlet characters
-mod `q` (on `re s > 1`). -/
-lemma LSeries_residueClass_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
-    LSeries ↗(residueClass a) s =
-      -(q.totient : ℂ)⁻¹ * ∑ χ : DirichletCharacter ℂ q, χ a⁻¹ *
-        (deriv (LFunction χ) s / LFunction χ s) := by
-  simp only [deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_mul, ← mul_neg,
-    ← Finset.sum_neg_distrib, ← neg_div, ← LSeries_twist_vonMangoldt_eq _ hs]
-  rw [eq_inv_mul_iff_mul_eq₀ <| mod_cast (Nat.totient_pos.mpr q.pos_of_neZero).ne']
-  simp_rw [← LSeries_smul,
-    ← LSeries_sum <| fun χ _ ↦ (LSeriesSummable_twist_vonMangoldt χ hs).smul _]
-  refine LSeries_congr s fun {n} _ ↦ ?_
-  simp only [Pi.smul_apply, residueClass_apply ha, smul_eq_mul, ← mul_assoc,
-    mul_inv_cancel_of_invertible, one_mul, Finset.sum_apply, Pi.mul_apply]
-
--- PR up to here
-
-omit [NeZero q]
-variable (a)
-
+/-- The set we are interested in (prime numbers in the residue class `a`) is the same as the support
+of `ArithmeticFunction.vonMangoldt.residueClass` restricted to primes (and divided by `n`;
+this is how this result is used later). -/
 lemma support_vonMangoldt_residueClass_prime_div :
     Function.support (fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n) =
       {p : ℕ | p.Prime ∧ (p : ZMod q) = a} := by
@@ -109,6 +43,9 @@ lemma support_vonMangoldt_residueClass_prime_div :
     fun H ↦ ⟨⟨H.1, H.2, vonMangoldt_ne_zero_iff.mpr H.1.isPrimePow⟩, H.1.ne_zero⟩⟩
 
 open Nat.Primes in
+/-- The function `n ↦ Λ n / n`, restriced to non-primes in a residue class, is summable.
+This is used to convert results on `ArithmeticFunction.vonMangoldt.residueClass` to results
+on primes in an arithmetic progression. -/
 lemma summable_vonMangoldt_residueClass_non_primes :
     Summable fun n : ℕ ↦ (if n.Prime then 0 else residueClass a n) / n := by
   have hp₀ (p : Nat.Primes) : 0 < (p : ℝ)⁻¹ := by
