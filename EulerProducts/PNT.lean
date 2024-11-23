@@ -189,11 +189,11 @@ restricted to the residue class `a : ZMod q` minus the principal part `(q.totien
 of its pole at `s = 1`. -/
 lemma auxFun_prop (ha : IsUnit a) :
     Set.EqOn (auxFun a)
-      (fun s ↦ L ↗(vonMangoldt.residueClass a) s - (q.totient : ℂ)⁻¹ / (s - 1))
+      (fun s ↦ L ↗(residueClass a) s - (q.totient : ℂ)⁻¹ / (s - 1))
       {s | 1 < s.re} := by
   intro s hs
   simp only [Set.mem_setOf_eq] at hs
-  simp only [vonMangoldt.LSeries_residueClass_eq ha hs, auxFun]
+  simp only [LSeries_residueClass_eq ha hs, auxFun]
   rw [neg_div, ← neg_add', mul_neg, ← neg_mul,  div_eq_mul_one_div (q.totient : ℂ)⁻¹,
     sub_eq_add_neg, ← neg_mul, ← mul_add]
   congrm (_ * ?_)
@@ -216,7 +216,7 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
   simp only [sub_re, ofReal_sub]
   congr 1
   · rw [LSeries, re_tsum <| LSeriesSummable_of_abscissaOfAbsConv_lt_re <|
-      (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt <| by norm_cast]
+      (abscissaOfAbsConv_residueClass_le_one a).trans_lt <| by norm_cast]
     push_cast
     refine tsum_congr fun n ↦ ?_
     rcases eq_or_ne n 0 with rfl | hn
@@ -227,12 +227,13 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
     norm_cast
 
+/-- As `x` approaches `1` from the right along the real axis, the L-series of
+`ArithmeticFunction.vonMangoldt.residueClass` is bounded below by `C₁/(x-1) - C₂`. -/
 lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Ioc 1 2),
-      (q.totient : ℝ)⁻¹ / (x - 1) - C ≤ ∑' n, vonMangoldt.residueClass a n / (n : ℝ) ^ x := by
+      (q.totient : ℝ)⁻¹ / (x - 1) - C ≤ ∑' n, residueClass a n / (n : ℝ) ^ x := by
   have H {x : ℝ} (hx : 1 < x) :
-      ∑' n, vonMangoldt.residueClass a n / (n : ℝ) ^ x =
-        (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
+      ∑' n, residueClass a n / (n : ℝ) ^ x = (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
     refine ofReal_injective ?_
     simp only [ofReal_tsum, ofReal_div, ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast,
       ofReal_add, ofReal_inv, ofReal_sub, ofReal_one]
@@ -243,12 +244,9 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     · simp only [hn, residueClass_apply_zero, ofReal_zero, zero_div]
     · rfl
   have : ContinuousOn (fun x : ℝ ↦ (auxFun a x).re) (Set.Icc 1 2) := by
-    have h : Set.MapsTo ofReal (Set.Icc 1 2) {s | 1 ≤ s.re} := by
-      intro x hx
-      simp only [Set.mem_Icc, Set.mem_setOf_eq, ofReal_re] at hx ⊢
-      exact hx.1
-    exact continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
-      (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn h
+    refine continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
+      (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn fun x hx ↦ ?_
+    simpa only [Set.mem_setOf_eq, ofReal_re] using hx.1
   obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Icc 1 2), C ≤ (auxFun a x).re := by
     obtain ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
     exact ⟨C, fun {x} hx ↦ hC (auxFun a x).re <|
@@ -274,7 +272,7 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
         conv_lhs => rw [← Real.rpow_one n]
         exact Real.rpow_le_rpow_of_exponent_le (by norm_cast) hx.le
     · exact summable_real_of_abscissaOfAbsConv_lt <|
-        (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt <| mod_cast hx
+        (abscissaOfAbsConv_residueClass_le_one a).trans_lt <| mod_cast hx
   obtain ⟨C', hC'⟩ := LSeries_vonMangoldt_residueClass_lower_bound ha
   have H₁ {x} (hx : x ∈ Set.Ioc 1 2) : (q.totient : ℝ)⁻¹ ≤ (C + C') * (x - 1) :=
     (div_le_iff₀ <| sub_pos.mpr hx.1).mp <|
