@@ -95,8 +95,19 @@ lemma LSeries_residueClass_eq (ha : IsUnit a) {s : ℂ} (hs : 1 < s.re) :
 
 -- PR up to here
 
-omit [NeZero q] in
-variable (a) in
+omit [NeZero q]
+variable (a)
+
+lemma support_vonMangoldt_residueClass_prime_div :
+    Function.support (fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n) =
+      {p : ℕ | p.Prime ∧ (p : ZMod q) = a} := by
+  simp only [Function.support, ne_eq, div_eq_zero_iff, ite_eq_right_iff,
+    Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Nat.cast_eq_zero, not_or, Classical.not_imp]
+  ext1 p
+  simp only [Set.mem_setOf_eq]
+  exact ⟨fun H ↦ ⟨H.1.1, H.1.2.1⟩,
+    fun H ↦ ⟨⟨H.1, H.2, vonMangoldt_ne_zero_iff.mpr H.1.isPrimePow⟩, H.1.ne_zero⟩⟩
+
 open Nat.Primes in
 lemma summable_vonMangoldt_residueClass_non_primes :
     Summable fun n : ℕ ↦ (if n.Prime then 0 else residueClass a n) / n := by
@@ -369,21 +380,27 @@ end DirichletsThm
 
 section DirichletsTheorem
 
-open ArithmeticFunction DirichletsThm in
+open ArithmeticFunction vonMangoldt DirichletsThm
+
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
 integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
 such that `(p : ZMod q) = a`. -/
-theorem dirchlet_primes_in_arith_progression {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+theorem Nat.setOf_prime_and_eq_mod_infinite {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+    {p : ℕ | p.Prime ∧ (p : ZMod q) = a}.Infinite := by
+  by_contra H
+  rw [Set.not_infinite] at H
+  have := support_vonMangoldt_residueClass_prime_div a ▸ H
+  exact not_summable_vonMangoldt_residueClass_prime_div ha <|
+    summable_of_finite_support <| support_vonMangoldt_residueClass_prime_div a ▸ H
+
+/-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
+integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
+such that `(p : ZMod q) = a`. -/
+theorem Nat.forall_exists_prime_gt_and_eq_mod {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
     ∀ n : ℕ, ∃ p > n, p.Prime ∧ (p : ZMod q) = a := by
-  by_contra! H
-  obtain ⟨N, hN⟩ := H
-  refine not_summable_vonMangoldt_residueClass_prime_div ha <| summable_of_finite_support ?_
-  refine Set.Finite.subset (Set.finite_le_nat N) fun n hn ↦ ?_
-  simp only [Function.support_div, Set.mem_inter_iff, Function.mem_support, ne_eq, ite_eq_right_iff,
-    Set.indicator_apply_eq_zero, Set.mem_setOf_eq, Classical.not_imp, Nat.cast_eq_zero] at hn
-  simp only [Set.mem_setOf_eq]
-  contrapose! hn
-  exact fun H ↦ (hN n hn.gt H.1 H.2.1).elim
+  intro n
+  obtain ⟨p, hp₁, hp₂⟩ := Set.infinite_iff_exists_gt.mp (setOf_prime_and_eq_mod_infinite ha) n
+  exact ⟨p, hp₂.gt, Set.mem_setOf.mp hp₁⟩
 
 end DirichletsTheorem
 
