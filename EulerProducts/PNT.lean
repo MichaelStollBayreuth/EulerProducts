@@ -208,6 +208,7 @@ lemma auxFun_prop (ha : IsUnit a) :
   conv_lhs => enter [2, 1]; rw [← mul_one (LFunction ..)]
   rw [mul_comm _ 1, mul_div_mul_right _ _ <| LFunction_ne_zero_of_one_le_re 1 (.inr hs₁) hs.le]
 
+/-- The auxiliary function takes real values for real arguments `x > 1`. -/
 lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun a x).re := by
   rw [auxFun_prop ha hx]
   simp only [sub_re, ofReal_sub]
