@@ -119,6 +119,8 @@ lemma summable_residueClass_non_primes_div :
       Nat.exists_add_one_eq, true_and, not_lt, nonpos_iff_eq_zero] at hu
     rw [← hF'₀ u.1, ← hu]
 
+-- PR up to here
+
 variable [NeZero q]
 
 open Classical in
@@ -232,7 +234,7 @@ lemma LSeries_residueClass_lower_bound (ha : IsUnit a) :
         simpa only [Set.mem_setOf_eq, ofReal_re] using hx.1
   obtain ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
   replace hC {x : ℝ} (hx : x ∈ Set.Icc 1 2) : C ≤ (auxFun a x).re :=
-    hC (auxFun a x).re <| Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx
+    hC (auxFun a x).re <| Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a x).re) hx
   refine ⟨-C, fun {x} hx ↦ ?_⟩
   rw [H hx.1, add_comm, sub_neg_eq_add, add_le_add_iff_left]
   exact hC <| Set.mem_Icc_of_Ioc hx
