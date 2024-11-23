@@ -243,14 +243,13 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     split_ifs with hn
     · simp only [hn, residueClass_apply_zero, ofReal_zero, zero_div]
     · rfl
-  have : ContinuousOn (fun x : ℝ ↦ (auxFun a x).re) (Set.Icc 1 2) := by
-    refine continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
-      (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn fun x hx ↦ ?_
-    simpa only [Set.mem_setOf_eq, ofReal_re] using hx.1
-  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Icc 1 2), C ≤ (auxFun a x).re := by
-    obtain ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
-    exact ⟨C, fun {x} hx ↦ hC (auxFun a x).re <|
-      Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx⟩
+  have : ContinuousOn (fun x : ℝ ↦ (auxFun a x).re) (Set.Icc 1 2) :=
+    continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
+      (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn fun x hx ↦ by
+        simpa only [Set.mem_setOf_eq, ofReal_re] using hx.1
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Icc 1 2), C ≤ (auxFun a x).re :=
+    have ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
+    ⟨C, fun {x} hx ↦ hC (auxFun a x).re <| Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx⟩
   refine ⟨-C, fun {x} hx ↦ ?_⟩
   rw [H hx.1, add_comm, sub_le_iff_le_add, add_assoc, le_add_iff_nonneg_right, ← sub_eq_add_neg,
     sub_nonneg]
