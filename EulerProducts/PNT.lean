@@ -150,6 +150,8 @@ abbrev auxFun (s : ℂ) : ℂ :=
   (q.totient : ℂ)⁻¹ * (-deriv (LFunctionTrivChar₁ q) s / LFunctionTrivChar₁ q s -
     ∑ χ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), χ a⁻¹ * deriv (LFunction χ) s / LFunction χ s)
 
+/-- The auxiliary function is continuous away from the zeros of the L-functions of the Dirichlet
+characters mod `q` (including at `s = 1`). -/
 lemma continuousOn_auxFun' :
     ContinuousOn (auxFun a) {s | s = 1 ∨ ∀ χ : DirichletCharacter ℂ q, LFunction χ s ≠ 0} := by
   rw [show auxFun a = fun s ↦ _ from rfl]
