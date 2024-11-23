@@ -46,14 +46,15 @@ private noncomputable def F₀ (n : ℕ) : ℝ := (if n.Prime then 0 else vonMan
 
 private noncomputable def F' (pk : Nat.Primes × ℕ) : ℝ := F₀ (pk.1 ^ (pk.2 + 1))
 
-private noncomputable def F'' (pk : Nat.Primes × ℕ) : ℝ := F₀ (pk.1 ^ (pk.2 + 2))
+private noncomputable def F'' : Nat.Primes × ℕ → ℝ := F' ∘ (Prod.map _root_.id (· + 1))
 
 private lemma F''_le (p : Nat.Primes) (k : ℕ) : F'' (p, k) ≤ 2 * (p : ℝ)⁻¹ ^ (k + 3 / 2 : ℝ) :=
   calc _
     _ = Real.log p * (p : ℝ)⁻¹ ^ (k + 2) := by
-      simp only [F'', F₀, le_add_iff_nonneg_left, zero_le, Nat.Prime.not_prime_pow, ↓reduceIte,
-        vonMangoldt_apply_pow (Nat.zero_ne_add_one _).symm, vonMangoldt_apply_prime p.prop,
-        Nat.cast_pow, div_eq_mul_inv, inv_pow (p : ℝ) (k + 2)]
+      simp only [F'', Function.comp_apply, F', F₀, Prod.map_apply, id_eq, le_add_iff_nonneg_left,
+        zero_le, Nat.Prime.not_prime_pow, ↓reduceIte, vonMangoldt_apply_prime p.prop,
+        vonMangoldt_apply_pow (Nat.zero_ne_add_one _).symm, Nat.cast_pow, div_eq_mul_inv,
+        inv_pow (p : ℝ) (k + 2)]
     _ ≤ (p: ℝ) ^ (1 / 2 : ℝ) / (1 / 2) * (p : ℝ)⁻¹ ^ (k + 2) :=
         mul_le_mul_of_nonneg_right (Real.log_le_rpow_div p.val.cast_nonneg one_half_pos)
           (pow_nonneg (inv_nonneg_of_nonneg (Nat.cast_nonneg ↑p)) (k + 2))
@@ -74,7 +75,7 @@ private lemma summable_F'' : Summable F'' := by
     (inv_lt_one₀ <| mod_cast p.prop.pos).mpr <| Nat.one_lt_cast.mpr <| p.prop.one_lt
   suffices Summable fun (pk : Nat.Primes × ℕ) ↦ (pk.1 : ℝ)⁻¹ ^ (pk.2 + 3 / 2 : ℝ) by
     refine (Summable.mul_left 2 this).of_nonneg_of_le (fun pk ↦ ?_) (fun pk ↦ F''_le pk.1 pk.2)
-    simp only [F'', F₀]
+    simp only [F'', Function.comp_apply, F', F₀, Prod.map_fst, id_eq, Prod.map_snd, Nat.cast_pow]
     have := vonMangoldt_nonneg (n := (pk.1 : ℕ) ^ (pk.2 + 2))
     positivity
   conv => enter [1, pk]; rw [Real.rpow_add <| hp₀ pk.1, Real.rpow_natCast]
@@ -102,11 +103,8 @@ lemma summable_vonMangoldt_residueClass_non_primes_div :
     have := residueClass_nonneg a n
     positivity
   have hleF₀ (n : ℕ) : (if n.Prime then 0 else residueClass a n) / n ≤ F₀ n := by
-    simp only [F₀]
     refine div_le_div_of_nonneg_right ?_ n.cast_nonneg
-    split_ifs with hn
-    · exact le_rfl
-    · exact residueClass_le a n
+    split_ifs; exacts [le_rfl, residueClass_le a n]
   refine Summable.of_nonneg_of_le h₀ hleF₀ ?_
   have hF₀ (p : Nat.Primes) : F₀ p.val = 0 := by
     simp only [p.prop, ↓reduceIte, zero_div, F₀]
@@ -123,8 +121,7 @@ lemma summable_vonMangoldt_residueClass_non_primes_div :
     congr
   rw [hFF']
   refine (Nat.Primes.prodNatEquiv.symm.summable_iff (f := F')).mpr ?_
-  have hF'₀ (p : Nat.Primes) : F' (p, 0) = 0 := by
-    simp only [zero_add, pow_one, hF₀, F']
+  have hF'₀ (p : Nat.Primes) : F' (p, 0) = 0 := by simp only [zero_add, pow_one, hF₀, F']
   have hF'₁ : F'' = F' ∘ (Prod.map _root_.id (· + 1)) := by
     ext1
     simp only [Function.comp_apply, Prod.map_fst, id_eq, Prod.map_snd, F'', F']
@@ -133,7 +130,6 @@ lemma summable_vonMangoldt_residueClass_non_primes_div :
   · simp only [Set.range_prod_map, Set.range_id, Set.mem_prod, Set.mem_univ, Set.mem_range,
       Nat.exists_add_one_eq, true_and, not_lt, nonpos_iff_eq_zero] at hu
     rw [← hF'₀ u.1, ← hu]
-
 
 end ArithmeticFunction.vonMangoldt
 
