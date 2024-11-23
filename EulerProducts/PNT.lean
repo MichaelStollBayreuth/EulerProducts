@@ -174,9 +174,9 @@ lemma eqOn_auxFun (ha : IsUnit a) :
       (fun s ↦ L ↗(residueClass a) s - (q.totient : ℂ)⁻¹ / (s - 1))
       {s | 1 < s.re} := by
   intro s hs
-  simp only [Set.mem_setOf_eq] at hs
+  replace hs := Set.mem_setOf.mp hs
   simp only [LSeries_residueClass_eq ha hs, auxFun]
-  rw [neg_div, ← neg_add', mul_neg, ← neg_mul,  div_eq_mul_one_div (q.totient : ℂ)⁻¹,
+  rw [neg_div, ← neg_add', mul_neg, ← neg_mul, div_eq_mul_one_div (q.totient : ℂ)⁻¹,
     sub_eq_add_neg, ← neg_mul, ← mul_add]
   congrm (_ * ?_)
   -- this should be easier, but `IsUnit.inv ha` does not work here
