@@ -225,7 +225,7 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
     norm_cast
 
 /-- As `x` approaches `1` from the right along the real axis, the L-series of
-`ArithmeticFunction.vonMangoldt.residueClass` is bounded below by `C₁/(x-1) - C₂`. -/
+`ArithmeticFunction.vonMangoldt.residueClass` is bounded below by `(q.totient)⁻¹/(x-1) - C`. -/
 lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Ioc 1 2),
       (q.totient : ℝ)⁻¹ / (x - 1) - C ≤ ∑' n, residueClass a n / (n : ℝ) ^ x := by
@@ -265,7 +265,7 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
   have H₁ {x : ℝ} (hx : 1 < x) : ∑' n, residueClass a n / (n : ℝ) ^ x ≤ C := by
     refine tsum_le_tsum (fun n ↦ ?_) ?_ key
     · rcases n.eq_zero_or_pos with rfl | hn
-      · simp only [Nat.cast_zero, Real.zero_rpow (by linarith), div_zero, le_refl]
+      · simp only [Nat.cast_zero, Real.zero_rpow (zero_lt_one.trans hx).ne', div_zero, le_refl]
       · refine div_le_div_of_nonneg_left (residueClass_nonneg a _) (mod_cast hn) ?_
         conv_lhs => rw [← Real.rpow_one n]
         exact Real.rpow_le_rpow_of_exponent_le (by norm_cast) hx.le
@@ -278,19 +278,14 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
   have hq : 0 < (q.totient : ℝ)⁻¹ := inv_pos.mpr (mod_cast q.totient.pos_of_neZero)
   rcases le_or_lt (C + C') 0 with h₀ | h₀
   · have := hq.trans_le (H₁ (Set.right_mem_Ioc.mpr one_lt_two))
-    simp only [sub_pos, Nat.one_lt_ofNat, mul_pos_iff_of_pos_right] at this
+    rw [show (2 : ℝ) - 1 = 1 by norm_num, mul_one] at this
     exact (this.trans_le h₀).false
   · obtain ⟨ξ, hξ₁, hξ₂⟩ : ∃ ξ ∈ Set.Ioc 1 2, (C + C') * (ξ - 1) < (q.totient : ℝ)⁻¹ := by
-      refine ⟨min (1 + (q.totient : ℝ)⁻¹ / (C + C') / 2) 2, ⟨?_, ?_⟩, ?_⟩
-      · simp only [lt_inf_iff, lt_add_iff_pos_right, Nat.ofNat_pos, div_pos_iff_of_pos_right,
-          Nat.one_lt_ofNat, and_true]
-        exact div_pos hq h₀
-      · exact min_le_right ..
-      · simp only [← min_sub_sub_right, add_sub_cancel_left, ← lt_div_iff₀' h₀]
-        refine (min_le_left ..).trans_lt ?_
-        conv_rhs => rw [← div_one (_ / _)]
-        gcongr
-        exact one_lt_two
+      refine ⟨min (1 + (q.totient : ℝ)⁻¹ / (C + C') / 2) 2, ⟨?_, min_le_right ..⟩, ?_⟩
+      · simpa only [lt_inf_iff, lt_add_iff_pos_right, Nat.ofNat_pos, div_pos_iff_of_pos_right,
+          Nat.one_lt_ofNat, and_true] using div_pos hq h₀
+      · rw [← min_sub_sub_right, add_sub_cancel_left, ← lt_div_iff₀' h₀]
+        exact (min_le_left ..).trans_lt <| div_lt_self (div_pos hq h₀) one_lt_two
     exact ((H₁ hξ₁).trans_lt hξ₂).false
 
 end DirichletsThm
