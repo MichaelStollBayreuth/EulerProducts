@@ -10,11 +10,6 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 section auxiliary
 
-lemma Summable.prod_of_nonneg_of_summable_tsum {β γ : Type*} {f : β × γ → ℝ} (h₁ : ∀ x, 0 ≤ f x)
-    (h₂ : ∀ b, Summable fun c ↦ f (b, c)) (h₃ : Summable fun b ↦ ∑' c, f (b, c)) :
-    Summable f := by
-  sorry
-
 lemma Real.inv_rpow_eq_rpow_neg {x : ℝ} (hx : 0 ≤ x) (y : ℝ) : x⁻¹ ^ y = x ^ (-y) :=
   Real.rpow_neg hx y ▸ inv_rpow hx y
 
@@ -184,7 +179,7 @@ lemma summable_vonMangoldt_residueClass_non_primes :
     positivity
   refine Summable.mul_left _ ?_
   conv => enter [1, pk]; rw [Real.rpow_add <| hp₀ pk.1, Real.rpow_natCast]
-  refine Summable.prod_of_nonneg_of_summable_tsum (fun _ ↦ by positivity) (fun p ↦ ?_) ?_
+  refine (summable_prod_of_nonneg (fun _ ↦ by positivity)).mpr ⟨(fun p ↦ ?_), ?_⟩
   · dsimp only
     exact Summable.mul_right _ <| summable_geometric_of_lt_one (hp₀ p).le (hp₁ p)
   · dsimp only
@@ -296,47 +291,36 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl]
     norm_cast
 
-open Topology Filter in
-lemma LSeries_vonMangoldt_residueClass_tendsto_atTop (ha : IsUnit a) :
-    Tendsto (fun x : ℝ ↦ ∑' n, vonMangoldt.residueClass a n / (n : ℝ) ^ x)
-      (𝓝[>] 1) atTop := by
+lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
+    ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Ioc 1 2),
+      (q.totient : ℝ)⁻¹ / (x - 1) - C ≤ ∑' n, vonMangoldt.residueClass a n / (n : ℝ) ^ x := by
   have H {x : ℝ} (hx : 1 < x) :
       ∑' n, vonMangoldt.residueClass a n / (n : ℝ) ^ x =
         (auxFun a x).re + (q.totient : ℝ)⁻¹ / (x - 1) := by
-    apply_fun ((↑) : ℝ → ℂ) using ofReal_injective
-    push_cast
-    simp_rw [ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast]
-    convert_to L ↗(vonMangoldt.residueClass a) x = _
-    · simp only [div_eq_mul_inv, LSeries, term]
-      refine tsum_congr fun n ↦ ?_
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp only [vonMangoldt.residueClass_apply_zero, ofReal_zero, Nat.cast_zero, zero_mul,
-          ↓reduceIte]
-      · simp only [hn, ↓reduceIte]
-    · rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx)]
-      simp only [sub_add_cancel]
-  refine Tendsto.congr' (eventuallyEq_nhdsWithin_of_eqOn fun ⦃x⦄ hx ↦ H hx).symm ?_
-  clear H
-  have : ContinuousWithinAt (fun x : ℝ ↦ (auxFun a x).re) {x | 1 < x} 1 := by
-    refine continuous_re.continuousWithinAt.comp (t := (Set.univ : Set ℂ)) ?_ fun ⦃_⦄ _ ↦ trivial
-    change ContinuousWithinAt ((auxFun a) ∘ ofReal) ..
-    refine ContinuousWithinAt.comp (t := {s | 1 < s.re}) ?_ continuous_ofReal.continuousWithinAt
-      fun ⦃_⦄ a ↦ a
-    refine ContinuousWithinAt.mono (t := {s | 1 ≤ s.re}) ?_
-       fun s hs ↦ Set.mem_setOf.mpr <| (Set.mem_setOf.mp hs).le
-    exact ContinuousOn.continuousWithinAt (continuousOn_auxFun a) <| by
-      simp only [ofReal_one, Set.mem_setOf_eq, one_re, le_refl]
-  refine tendsto_atTop_add_left_of_le' (𝓝[>] 1) ((auxFun a 1).re - 1) ?_ ?_
-  · exact Tendsto.eventually_const_le (ofReal_one ▸ sub_one_lt _) this.tendsto
-  · conv => enter [1, x]; rw [div_eq_mul_inv]
-    refine Tendsto.comp (y := atTop) ?_ ?_
-    · refine tendsto_atTop_atTop.mpr fun x ↦ ⟨q.totient * x, fun y hy ↦ ?_⟩
-      exact (le_inv_mul_iff₀' <| mod_cast q.totient.pos_of_neZero).mpr hy
-    · refine tendsto_inv_zero_atTop.comp (y := 𝓝[>] 0) ?_
-      convert ContinuousWithinAt.tendsto_nhdsWithin_image ?_
-      · exact (sub_self _).symm
-      · simp only [Set.image_sub_const_Ioi, sub_self]
-      · exact (continuous_add_right (-1)).continuousWithinAt
+    refine ofReal_injective ?_
+    simp only [ofReal_tsum, ofReal_div, ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast,
+      ofReal_add, ofReal_inv, ofReal_sub, ofReal_one]
+    simp_rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx),
+      sub_add_cancel, LSeries, term]
+    refine tsum_congr fun n ↦ ?_
+    split_ifs with hn
+    · simp only [hn, residueClass_apply_zero, ofReal_zero, zero_div]
+    · rfl
+  have : ContinuousOn (fun x : ℝ ↦ (auxFun a x).re) (Set.Icc 1 2) := by
+    have h : Set.MapsTo ofReal (Set.Icc 1 2) {s | 1 ≤ s.re} := by
+      intro x hx
+      simp only [Set.mem_Icc, Set.mem_setOf_eq, ofReal_re] at hx ⊢
+      exact hx.1
+    exact continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
+      (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn h
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Icc 1 2), C ≤ (auxFun a x).re := by
+    obtain ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
+    exact ⟨C, fun {x} hx ↦ hC (auxFun a x).re <|
+      Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx⟩
+  refine ⟨-C, fun {x} hx ↦ ?_⟩
+  rw [H hx.1, add_comm, sub_le_iff_le_add, add_assoc, le_add_iff_nonneg_right, ← sub_eq_add_neg,
+    sub_nonneg]
+  exact hC <| Set.mem_Icc_of_Ioc hx
 
 open vonMangoldt Filter Topology in
 lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
@@ -355,9 +339,27 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
         exact Real.rpow_le_rpow_of_exponent_le (by norm_cast) hx.le
     · exact summable_real_of_abscissaOfAbsConv_lt <|
         (vonMangoldt.abscissaOfAbsConv_residueClass_le_one a).trans_lt <| mod_cast hx
-  have H₂ := tendsto_atTop.mp (LSeries_vonMangoldt_residueClass_tendsto_atTop ha) (C + 1)
-  rcases (H₂.and self_mem_nhdsWithin).exists with ⟨x, hx, h'x⟩
-  exact (lt_add_one C).not_le (hx.trans <| H₁ h'x)
+  obtain ⟨C', hC'⟩ := LSeries_vonMangoldt_residueClass_lower_bound ha
+  have H₁ {x} (hx : x ∈ Set.Ioc 1 2) : (q.totient : ℝ)⁻¹ ≤ (C + C') * (x - 1) :=
+    (div_le_iff₀ <| sub_pos.mpr hx.1).mp <|
+      sub_le_iff_le_add.mp <| (hC' hx).trans (H₁ hx.1)
+  have hq : 0 < (q.totient : ℝ)⁻¹ := inv_pos.mpr (mod_cast q.totient.pos_of_neZero)
+  rcases le_or_lt (C + C') 0 with h₀ | h₀
+  · have := hq.trans_le (H₁ (Set.right_mem_Ioc.mpr one_lt_two))
+    simp only [sub_pos, Nat.one_lt_ofNat, mul_pos_iff_of_pos_right] at this
+    exact (this.trans_le h₀).false
+  · obtain ⟨ξ, hξ₁, hξ₂⟩ : ∃ ξ ∈ Set.Ioc 1 2, (C + C') * (ξ - 1) < (q.totient : ℝ)⁻¹ := by
+      refine ⟨min (1 + (q.totient : ℝ)⁻¹ / (C + C') / 2) 2, ⟨?_, ?_⟩, ?_⟩
+      · simp only [lt_inf_iff, lt_add_iff_pos_right, Nat.ofNat_pos, div_pos_iff_of_pos_right,
+          Nat.one_lt_ofNat, and_true]
+        exact div_pos hq h₀
+      · exact min_le_right ..
+      · simp only [← min_sub_sub_right, add_sub_cancel_left, ← lt_div_iff₀' h₀]
+        refine (min_le_left ..).trans_lt ?_
+        conv_rhs => rw [← div_one (_ / _)]
+        gcongr
+        exact one_lt_two
+    exact ((H₁ hξ₁).trans_lt hξ₂).false
 
 end DirichletsThm
 
