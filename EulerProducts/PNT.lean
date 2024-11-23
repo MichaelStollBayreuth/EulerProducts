@@ -4,18 +4,6 @@ import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.PrimesInAP
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
-/-!
-### Auxiliary stuff
--/
-
-section auxiliary
-
-lemma Real.inv_rpow_eq_rpow_neg {x : ℝ} (hx : 0 ≤ x) (y : ℝ) : x⁻¹ ^ y = x ^ (-y) :=
-  Real.rpow_neg hx y ▸ inv_rpow hx y
-
-end auxiliary
-
-open scoped LSeries.notation
 
 open Complex
 
@@ -32,7 +20,7 @@ variable {q : ℕ} (a : ZMod q)
 /-- The set we are interested in (prime numbers in the residue class `a`) is the same as the support
 of `ArithmeticFunction.vonMangoldt.residueClass` restricted to primes (and divided by `n`;
 this is how this result is used later). -/
-lemma support_vonMangoldt_residueClass_prime_div :
+lemma support_residueClass_prime_div :
     Function.support (fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n) =
       {p : ℕ | p.Prime ∧ (p : ZMod q) = a} := by
   simp only [Function.support, ne_eq, div_eq_zero_iff, ite_eq_right_iff,
@@ -88,7 +76,7 @@ private lemma summable_F'' : Summable F'' := by
       |>.of_nonneg_of_le (fun p ↦ ?_) (fun p ↦ ?_)
     · have := sub_pos.mpr (hp₁ p)
       positivity
-    · rw [Real.inv_rpow_eq_rpow_neg p.val.cast_nonneg]
+    · rw [Real.inv_rpow p.val.cast_nonneg, Real.rpow_neg p.val.cast_nonneg]
       gcongr
       rw [inv_le_comm₀ (sub_pos.mpr (hp₁ p)) zero_lt_two, le_sub_comm,
         show (1 : ℝ) - 2⁻¹ = 2⁻¹ by norm_num, inv_le_inv₀ (mod_cast p.prop.pos) zero_lt_two]
@@ -97,7 +85,7 @@ private lemma summable_F'' : Summable F'' := by
 /-- The function `n ↦ Λ n / n`, restriced to non-primes in a residue class, is summable.
 This is used to convert results on `ArithmeticFunction.vonMangoldt.residueClass` to results
 on primes in an arithmetic progression. -/
-lemma summable_vonMangoldt_residueClass_non_primes_div :
+lemma summable_residueClass_non_primes_div :
     Summable fun n : ℕ ↦ (if n.Prime then 0 else residueClass a n) / n := by
   have h₀ (n : ℕ) : 0 ≤ (if n.Prime then 0 else residueClass a n) / n := by
     have := residueClass_nonneg a n
@@ -132,7 +120,6 @@ lemma summable_vonMangoldt_residueClass_non_primes_div :
     rw [← hF'₀ u.1, ← hu]
 
 end ArithmeticFunction.vonMangoldt
-
 
 namespace DirichletsThm
 
@@ -186,7 +173,7 @@ variable {a}
 /-- The auxiliary function agrees on `re s > 1` with the L-series of the von Mangoldt function
 restricted to the residue class `a : ZMod q` minus the principal part `(q.totient)⁻¹/(s-1)`
 of its pole at `s = 1`. -/
-lemma auxFun_prop (ha : IsUnit a) :
+lemma eqOn_auxFun (ha : IsUnit a) :
     Set.EqOn (auxFun a)
       (fun s ↦ L ↗(residueClass a) s - (q.totient : ℂ)⁻¹ / (s - 1))
       {s | 1 < s.re} := by
@@ -211,7 +198,7 @@ lemma auxFun_prop (ha : IsUnit a) :
 
 /-- The auxiliary function takes real values for real arguments `x > 1`. -/
 lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun a x).re := by
-  rw [auxFun_prop ha hx]
+  rw [eqOn_auxFun ha hx]
   simp only [sub_re, ofReal_sub]
   congr 1
   · rw [LSeries, re_tsum <| LSeriesSummable_of_abscissaOfAbsConv_lt_re <|
@@ -225,9 +212,17 @@ lemma auxFun_real (ha : IsUnit a) {x : ℝ} (hx : 1 < x) : auxFun a x = (auxFun 
   · rw [show (q.totient : ℂ) = (q.totient : ℝ) from rfl, ← ofReal_one, ← ofReal_sub, ← ofReal_inv,
       ← ofReal_div, ofReal_re]
 
+end DirichletsThm
+
+namespace ArithmeticFunction.vonMangoldt
+
+open DirichletsThm
+
+variable {q : ℕ} [NeZero q] {a : ZMod q}
+
 /-- As `x` approaches `1` from the right along the real axis, the L-series of
 `ArithmeticFunction.vonMangoldt.residueClass` is bounded below by `(q.totient)⁻¹/(x-1) - C`. -/
-lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
+lemma LSeries_residueClass_lower_bound (ha : IsUnit a) :
     ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Ioc 1 2),
       (q.totient : ℝ)⁻¹ / (x - 1) - C ≤ ∑' n, residueClass a n / (n : ℝ) ^ x := by
   have H {x : ℝ} (hx : 1 < x) :
@@ -235,7 +230,7 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     refine ofReal_injective ?_
     simp only [ofReal_tsum, ofReal_div, ofReal_cpow (Nat.cast_nonneg _), ofReal_natCast,
       ofReal_add, ofReal_inv, ofReal_sub, ofReal_one]
-    simp_rw [← auxFun_real ha hx, auxFun_prop ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx),
+    simp_rw [← auxFun_real ha hx, eqOn_auxFun ha <| Set.mem_setOf.mpr (ofReal_re x ▸ hx),
       sub_add_cancel, LSeries, term]
     refine tsum_congr fun n ↦ ?_
     split_ifs with hn
@@ -255,11 +250,11 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
 open vonMangoldt Filter Topology in
 /-- The function `n ↦ Λ n / n` restricted to primes in an invertible residue class
 is not summable. This then implies that there must be infinitely many such primes. -/
-lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
+lemma not_summable_residueClass_prime_div (ha : IsUnit a) :
     ¬ Summable fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n := by
   intro H
   have key : Summable fun n : ℕ ↦ residueClass a n / n := by
-    convert (summable_vonMangoldt_residueClass_non_primes_div a).add H using 2 with n
+    convert (summable_residueClass_non_primes_div a).add H using 2 with n
     simp only [← add_div, ite_add_ite, zero_add, add_zero, ite_self]
   let C := ∑' n, residueClass a n / n
   have H₁ {x : ℝ} (hx : 1 < x) : ∑' n, residueClass a n / (n : ℝ) ^ x ≤ C := by
@@ -271,7 +266,7 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
         exact Real.rpow_le_rpow_of_exponent_le (by norm_cast) hx.le
     · exact summable_real_of_abscissaOfAbsConv_lt <|
         (abscissaOfAbsConv_residueClass_le_one a).trans_lt <| mod_cast hx
-  obtain ⟨C', hC'⟩ := LSeries_vonMangoldt_residueClass_lower_bound ha
+  obtain ⟨C', hC'⟩ := LSeries_residueClass_lower_bound ha
   have H₁ {x} (hx : x ∈ Set.Ioc 1 2) : (q.totient : ℝ)⁻¹ ≤ (C + C') * (x - 1) :=
     (div_le_iff₀ <| sub_pos.mpr hx.1).mp <|
       sub_le_iff_le_add.mp <| (hC' hx).trans (H₁ hx.1)
@@ -288,7 +283,7 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
         exact (min_le_left ..).trans_lt <| div_lt_self (div_pos hq h₀) one_lt_two
     exact ((H₁ hξ₁).trans_lt hξ₂).false
 
-end DirichletsThm
+end ArithmeticFunction.vonMangoldt
 
 /-!
 ### Dirichlet's Theorem
@@ -308,9 +303,9 @@ theorem setOf_prime_and_eq_mod_infinite (ha : IsUnit a) :
     {p : ℕ | p.Prime ∧ (p : ZMod q) = a}.Infinite := by
   by_contra H
   rw [Set.not_infinite] at H
-  have := support_vonMangoldt_residueClass_prime_div a ▸ H
-  exact not_summable_vonMangoldt_residueClass_prime_div ha <|
-    summable_of_finite_support <| support_vonMangoldt_residueClass_prime_div a ▸ H
+  have := support_residueClass_prime_div a ▸ H
+  exact not_summable_residueClass_prime_div ha <|
+    summable_of_finite_support <| support_residueClass_prime_div a ▸ H
 
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
 integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
@@ -360,7 +355,7 @@ theorem Dirichlet_vonMangoldt (WIT : WienerIkeharaTheorem) {q : ℕ} [NeZero q] 
   simp only [H]
   refine WIT (F := auxFun a) (fun n ↦ ?_) ?_ ?_
   · exact Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
-  · convert auxFun_prop ha with s
+  · convert eqOn_auxFun ha with s
     push_cast
     rfl
   · exact continuousOn_auxFun a
