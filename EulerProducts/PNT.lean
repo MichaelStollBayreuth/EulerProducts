@@ -179,9 +179,6 @@ lemma continuousOn_auxFun : ContinuousOn (auxFun a) {s | 1 ≤ s.re} := by
   · simp only [ne_eq, Set.mem_setOf_eq, hs₁, false_or]
     exact fun χ ↦ LFunction_ne_zero_of_one_le_re χ (.inr hs₁) <| Set.mem_setOf.mp hs
 
---
-
-
 variable {a}
 
 /-- The auxiliary function agrees on `re s > 1` with the L-series of the von Mangoldt function
@@ -256,7 +253,8 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
   exact hC <| Set.mem_Icc_of_Ioc hx
 
 open vonMangoldt Filter Topology in
-/-- The function `n ↦ Λ n / n` restricted to an invertible residue class is not summable. -/
+/-- The function `n ↦ Λ n / n` restricted to primes in an invertible residue class
+is not summable. This then implies that there must be infinitely many such primes. -/
 lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
     ¬ Summable fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n := by
   intro H
@@ -298,17 +296,20 @@ lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
 end DirichletsThm
 
 /-!
-### Derivation of Dirichlet's Theorem (without Wiener-Ikehara)
+### Dirichlet's Theorem
 -/
 
 section DirichletsTheorem
 
+namespace Nat
+
 open ArithmeticFunction vonMangoldt DirichletsThm
 
+variable {q : ℕ} [NeZero q] {a : ZMod q}
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
 integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
 such that `(p : ZMod q) = a`. -/
-theorem Nat.setOf_prime_and_eq_mod_infinite {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+theorem setOf_prime_and_eq_mod_infinite (ha : IsUnit a) :
     {p : ℕ | p.Prime ∧ (p : ZMod q) = a}.Infinite := by
   by_contra H
   rw [Set.not_infinite] at H
@@ -319,11 +320,13 @@ theorem Nat.setOf_prime_and_eq_mod_infinite {q : ℕ} [NeZero q] {a : ZMod q} (h
 /-- **Dirichlet's Theorem** on primes in arithmetic progression: if `q` is a positive
 integer and `a : ZMod q` is a unit, then there are infintely many prime numbers `p`
 such that `(p : ZMod q) = a`. -/
-theorem Nat.forall_exists_prime_gt_and_eq_mod {q : ℕ} [NeZero q] {a : ZMod q} (ha : IsUnit a) :
+theorem forall_exists_prime_gt_and_eq_mod (ha : IsUnit a) :
     ∀ n : ℕ, ∃ p > n, p.Prime ∧ (p : ZMod q) = a := by
   intro n
   obtain ⟨p, hp₁, hp₂⟩ := Set.infinite_iff_exists_gt.mp (setOf_prime_and_eq_mod_infinite ha) n
   exact ⟨p, hp₂.gt, Set.mem_setOf.mp hp₁⟩
+
+end Nat
 
 end DirichletsTheorem
 
