@@ -256,6 +256,7 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
   exact hC <| Set.mem_Icc_of_Ioc hx
 
 open vonMangoldt Filter Topology in
+/-- The function `n ↦ Λ n / n` restricted to an invertible residue class is not summable. -/
 lemma not_summable_vonMangoldt_residueClass_prime_div (ha : IsUnit a) :
     ¬ Summable fun n : ℕ ↦ (if n.Prime then residueClass a n else 0) / n := by
   intro H
