@@ -244,12 +244,11 @@ lemma LSeries_vonMangoldt_residueClass_lower_bound (ha : IsUnit a) :
     continuous_re.continuousOn.comp (t := Set.univ) (continuousOn_auxFun a)
       (fun ⦃x⦄ a ↦ trivial) |>.comp continuous_ofReal.continuousOn fun x hx ↦ by
         simpa only [Set.mem_setOf_eq, ofReal_re] using hx.1
-  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ {x : ℝ} (_ : x ∈ Set.Icc 1 2), C ≤ (auxFun a x).re :=
-    have ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
-    ⟨C, fun {x} hx ↦ hC (auxFun a x).re <| Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx⟩
+  obtain ⟨C, hC⟩ := bddBelow_def.mp <| IsCompact.bddBelow_image isCompact_Icc this
+  replace hC {x : ℝ} (hx : x ∈ Set.Icc 1 2) : C ≤ (auxFun a x).re :=
+    hC (auxFun a x).re <| Set.mem_image_of_mem (fun x : ℝ ↦ (auxFun a ↑x).re) hx
   refine ⟨-C, fun {x} hx ↦ ?_⟩
-  rw [H hx.1, add_comm, sub_le_iff_le_add, add_assoc, le_add_iff_nonneg_right, ← sub_eq_add_neg,
-    sub_nonneg]
+  rw [H hx.1, add_comm, sub_neg_eq_add, add_le_add_iff_left]
   exact hC <| Set.mem_Icc_of_Ioc hx
 
 open vonMangoldt Filter Topology in
