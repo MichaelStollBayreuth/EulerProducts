@@ -2,9 +2,13 @@
 
 An attempt at formalizing facts on Euler products and L-series more generally in Lean
 
-Some results have by now made it into Mathlib.
+Most of the results developed here have by now made it into Mathlib, most notably a proof of
+**Drichlet's Theorem on Primes in Residue Classes**.
 
-Current projects:
+Apart from the uniqueness result for L-series, what is currently left in this repository
+are some bits and pieces that were not needed for the big result, but may still be useful.
+
+Contents:
 * [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean):
   auxiliary lemmas
 * [__EulerProducts/EulerProduct.lean__](EulerProducts/EulerProduct.lean):
@@ -15,8 +19,6 @@ Current projects:
   results on L-series of Dirichlet characters and specific arithmetic functions (like the Möbius and
   von Mangoldt functions)
 * [__EulerProducts/PNT.lean__](EulerProducts/PNT.lean):
-  a reduction of the __Prime Number Theorem__ (in the version $\psi(x) \sim x$) to a version of the
-  __Wiener-Ikehara Tauberian Theorem__. This also contains a proof of the non-vanishing
-  of Dirichlet L-functions of nontrivial characters along the line `Re s = 1`. This is material
-  that was created in the framework of the [__DirichletNonvanishing__](https://github.com/CBirkbeck/DirichletNonvanishing) project. The non-vanishing is then used to give a proof (the reduction) of 
-  *Dirichlet's Theorem* (to the Wiener-Ikehara Theorem), in a PNT-like version.
+  a reduction of an asymptotic version of __Dirichlet's Theorem__ to a version of the
+  __Wiener-Ikehara Tauberian Theorem__. Note that the Wiener-Ikehara Theorem is proved
+  in [__PNT+__](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd?tab=readme-ov-file).
