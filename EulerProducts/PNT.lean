@@ -36,12 +36,12 @@ theorem Dirichlet_vonMangoldt (WIT : WienerIkeharaTheorem) {q : ℕ} [NeZero q] 
       (Finset.range N).sum ({n : ℕ | (n : ZMod q) = a}.indicator Λ) :=
     (Finset.sum_indicator_eq_sum_filter _ _ (fun _ ↦ {n : ℕ | n = a}) _).symm
   simp only [H]
-  refine WIT (F := vonMangoldt.LfunctionResidueClassAux a) (fun n ↦ ?_) ?_ ?_
+  refine WIT (F := vonMangoldt.LFunctionResidueClassAux a) (fun n ↦ ?_) ?_ ?_
   · exact Set.indicator_apply_nonneg fun _ ↦ vonMangoldt_nonneg
-  · convert vonMangoldt.eqOn_LfunctionResidueClassAux ha with s
+  · convert vonMangoldt.eqOn_LFunctionResidueClassAux ha with s
     push_cast
     rfl
-  · exact vonMangoldt.continuousOn_LfunctionResidueClassAux a
+  · exact vonMangoldt.continuousOn_LFunctionResidueClassAux a
 
 /-- The *Wiener-Ikehara Theorem* implies the *Prime Number Theorem* in the form that
 `ψ x ∼ x`, where `ψ x = ∑ n < x, Λ n` and `Λ` is the von Mangoldt function. -/

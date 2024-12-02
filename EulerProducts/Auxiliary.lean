@@ -159,7 +159,9 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
   have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0 := by
     rw [← iteratedDeriv_succ']
     exact h (n + 1)
-  have hf' := (contDiff_succ_iff_deriv.mp <| hf.contDiff (n := 2)).2.differentiable rfl.le
+  have := hf.contDiff (n := 2)
+  rw [show (2 : WithTop ℕ∞) = 1 + 1 from rfl] at this
+  have hf' := (contDiff_succ_iff_deriv.mp <| this).2.2.differentiable rfl.le
   have hx : (0 : ℂ) ≤ x := by
     norm_cast
     simp only [Set.nonempty_Iio, interior_Ici', Set.mem_Ioi] at hx
