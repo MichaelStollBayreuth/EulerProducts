@@ -3,6 +3,14 @@ import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.LSeries.Linearity
 
+/-!
+# A converging L-series determines its coefficients
+
+We show that two functions `f` and `g : ℕ → ℂ` whose L-series agree and both converge somewhere
+must agree on all nonzero arguments. See `LSeries_eq_iff_of_abscissaOfAbsConv_lt_top`
+and `LSeries_injOn`.
+-/
+
 open LSeries Complex
 
 lemma Complex.cpow_natCast_add_one_ne_zero (n : ℕ) (z : ℂ) : (n + 1 : ℂ) ^ z ≠ 0 :=
