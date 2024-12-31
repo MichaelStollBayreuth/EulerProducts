@@ -237,3 +237,14 @@ lemma LSeries_eq_iff_of_abscissaOfAbsConv_lt_top {f g : ℕ → ℂ} (hf : absci
   refine ⟨fun H n hn ↦ ?_, fun H ↦ funext (LSeries_congr · fun {n} ↦ H n)⟩
   refine eq_of_LSeries_eventually_eq hf hg ?_ hn
   exact Filter.Eventually.of_forall fun x ↦ congr_fun H x
+
+/-- The map `f ↦ LSeries f` is injective on functions `f` such that `f 0 = 0` and the L-series
+of `f` converges somewhere. -/
+lemma LSeries_injOn : Set.InjOn LSeries {f | f 0 = 0 ∧ abscissaOfAbsConv f < ⊤} := by
+  intro f hf g hg h
+  simp only [Set.mem_setOf] at hf hg
+  replace h := (LSeries_eq_iff_of_abscissaOfAbsConv_lt_top hf.2 hg.2).mp h
+  ext1 n
+  cases n with
+  | zero => exact hf.1.trans hg.1.symm
+  | succ n => exact h _ n.zero_ne_add_one.symm
