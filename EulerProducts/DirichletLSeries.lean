@@ -27,8 +27,7 @@ lemma LSeriesSummable.mul_bounded {f g : ℕ → ℂ} {c : ℝ} {s : ℂ} (hs : 
   refine Summable.of_norm <| (hs.const_smul c).norm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
   rw [Complex.real_smul, ← LSeries.term_smul_apply, mul_comm]
   refine LSeries.norm_term_le s ?_
-  have hc : ‖(c : ℂ)‖ = c := by
-    simp only [Complex.norm_eq_abs, Complex.abs_ofReal, abs_eq_self, (norm_nonneg _).trans (hg 0)]
+  have hc : ‖(c : ℂ)‖ = c := by simp [(norm_nonneg _).trans (hg 0)]
   simpa only [Pi.mul_apply, norm_mul, Pi.smul_apply, smul_eq_mul, hc]
     using mul_le_mul_of_nonneg_right (hg n) <| norm_nonneg _
 

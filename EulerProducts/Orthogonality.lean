@@ -52,8 +52,7 @@ open Complex Real in
 instance Circle.hasEnoghRootsOfUnity {n : ℕ} [NeZero n] : HasEnoughRootsOfUnity Circle n where
   prim := by
     refine ⟨⟨cexp ((2 * π / n :) * I), ?_⟩, ?_⟩
-    · simpa only [Submonoid.mem_unitSphere, Complex.norm_eq_abs]
-        using abs_exp_ofReal_mul_I (2 * π / ↑n)
+    · simpa only [Submonoid.mem_unitSphere] using norm_exp_ofReal_mul_I (2 * π / ↑n)
     · refine IsPrimitiveRoot.of_map_of_injective (f := coeHom) ?_
         ((Set.injective_codRestrict Subtype.property).mp fun ⦃_ _⦄ a ↦ a)
       simp only [coeHom_apply]

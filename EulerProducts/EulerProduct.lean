@@ -49,13 +49,13 @@ namespace LSeries
 /-- The Euler product for the L-series of a weakly multiplicative sequence `f` -/
 lemma eulerProduct_of_multiplicative {f : ℕ → ℂ} (h₁ : f 1 = 1)
     (hf : ∀ {m n}, m.Coprime n → f (m * n) = f m * f n) {s : ℂ} (hs : LSeriesSummable f s) :
-    Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, ∑' e, term f s (p ^ e)) atTop (𝓝 (L f s)) :=
+    Tendsto (fun n : ℕ ↦ ∏ p ∈ primesBelow n, ∑' e, term f s (p ^ e)) atTop (𝓝 (L f s)) :=
   eulerProduct (term_at_one h₁ s) (term_multiplicative hf s) hs.norm (term_zero ..)
 
 /-- The Euler product for the L-series of a completely multiplicative sequence `f` -/
 lemma eulerProduct_of_completelyMultiplicative {f : ℕ → ℂ} (h₁ : f 1 = 1)
     (hf : ∀ m n, f (m * n) = f m * f n) {s : ℂ} (hs : LSeriesSummable f s) :
-    Tendsto (fun n : ℕ ↦ ∏ p in primesBelow n, (1 - term f s p)⁻¹) atTop (𝓝 (L f s)) :=
+    Tendsto (fun n : ℕ ↦ ∏ p ∈ primesBelow n, (1 - term f s p)⁻¹) atTop (𝓝 (L f s)) :=
   eulerProduct_completely_multiplicative
     (f := { toFun := term f s,
             map_zero' := term_zero ..,
