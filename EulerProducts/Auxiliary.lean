@@ -66,12 +66,10 @@ lemma HasDerivAt.of_hasDerivAt_ofReal_comp {z : ℝ} {f : ℝ → ℝ} {u : ℂ}
     (hf : HasDerivAt (fun y ↦ (f y : ℂ)) u z) :
     ∃ u' : ℝ, u = u' ∧ HasDerivAt f u' z := by
   lift u to ℝ
-  · have H := (imCLM.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt.deriv
-    simp only [Function.comp_def, imCLM_apply, ofReal_im, deriv_const] at H
-    rwa [eq_comm, comp_apply, imCLM_apply, smulRight_apply, one_apply, one_smul] at H
+  · simpa [Function.comp_def] using (imCLM.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt.deriv.symm
   refine ⟨u, rfl, ?_⟩
   convert (reCLM.hasFDerivAt.comp z hf.hasFDerivAt).hasDerivAt
-  rw [comp_apply, smulRight_apply, one_apply, one_smul, reCLM_apply, ofReal_re]
+  simp
 
 lemma DifferentiableAt.ofReal_comp_iff {z : ℝ} {f : ℝ → ℝ} :
     DifferentiableAt ℝ (fun (y : ℝ) ↦ (f y : ℂ)) z ↔ DifferentiableAt ℝ f z := by
@@ -161,7 +159,7 @@ theorem monotoneOn_of_iteratedDeriv_nonneg {f : ℂ → ℂ} (hf : Differentiabl
   have hD' (n : ℕ) : 0 ≤ iteratedDeriv n (deriv f) 0 := by
     rw [← iteratedDeriv_succ']
     exact h (n + 1)
-  have hf' := (contDiff_succ_iff_deriv.mp <| hf.contDiff (n := 1 + 1)).2.2.differentiable le_rfl
+  have hf' := (contDiff_succ_iff_deriv.mp <| hf.contDiff (n := 1 + 1)).2.2.differentiable one_ne_zero
   have hx : (0 : ℂ) ≤ x := by
     norm_cast
     simp only [Set.nonempty_Iio, interior_Ici', Set.mem_Ioi] at hx
