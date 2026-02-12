@@ -19,7 +19,7 @@ as special cases.
 -/
 
 
-open scoped LSeries.notation
+open scoped LSeries.notation ArithmeticFunction.Moebius ArithmeticFunction.zeta
 
 lemma LSeriesSummable.mul_bounded {f g : ℕ → ℂ} {c : ℝ} {s : ℂ} (hs : LSeriesSummable f s)
     (hg : ∀ n, ‖g n‖ ≤ c) :
