@@ -14,9 +14,6 @@ instance Monoid.neZero_card_of_finite {M : Type*} [Monoid M] [Finite M] : NeZero
   refine ⟨Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩⟩
 -/
 
--- [Mathlib.Analysis.Complex.Circle]
-@[simp, norm_cast] lemma Circle.coe_pow (z : Circle) (n : ℕ) : (↑(z ^ n) : ℂ) = z ^ n := rfl
-
 -- [Mathlib.Analysis.Normed.Field.UnitBall]
 @[simp] lemma Submonoid.mem_unitSphere {R : Type*} [NormedDivisionRing R] {x : R} :
     x ∈ unitSphere R ↔ ‖x‖ = 1 := by
