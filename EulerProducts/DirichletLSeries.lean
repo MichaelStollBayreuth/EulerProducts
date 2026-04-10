@@ -25,6 +25,7 @@ lemma LSeriesSummable.mul_bounded {f g : ℕ → ℂ} {c : ℝ} {s : ℂ} (hs : 
     (hg : ∀ n, ‖g n‖ ≤ c) :
     LSeriesSummable (f * g) s := by
   refine Summable.of_norm <| (hs.const_smul c).norm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦ ?_
+  set_option backward.isDefEq.respectTransparency false in
   rw [Complex.real_smul, ← LSeries.term_smul_apply, mul_comm]
   refine LSeries.norm_term_le s ?_
   have hc : ‖(c : ℂ)‖ = c := by simp [(norm_nonneg _).trans (hg 0)]

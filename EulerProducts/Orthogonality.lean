@@ -28,7 +28,7 @@ noncomputable def Circle.rootsOfUnityMulEquiv (n : ℕ) [NeZero n] :
   invFun ζ := rootsOfUnity.mkOfPowEq ⟨(ζ : ℂˣ),
       Submonoid.mem_unitSphere.mpr (Complex.norm_eq_one_of_mem_rootsOfUnity ζ.prop)⟩
       (ext <| by simp only [coe_pow, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity ..).mp ζ.prop,
-                   Units.val_one, OneMemClass.coe_one])
+                   Units.val_one, coe_one])
   left_inv ζ := by ext; simp
   right_inv ζ := by ext; simp
 
