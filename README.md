@@ -8,6 +8,8 @@ Most of the results developed here have by now made it into Mathlib, most notabl
 What is currently left in this repository
 are some bits and pieces that were not needed for the big result, but may still be useful.
 
+However, this project is no longer active and therefore now archived.
+
 Contents:
 * [__EulerProducts/Auxiliary.lean__](EulerProducts/Auxiliary.lean):
   auxiliary lemmas
